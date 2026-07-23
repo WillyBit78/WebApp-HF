@@ -10,7 +10,7 @@ export const MOCK_CATEGORIES = {
   'EDEFI Mayores': ['+30', '+35', '+42'],
   'EDEFI Baby': ['2013', '2014', '2015', '2016', '2017', '2018'],
   'FUTSALA Promo': ['2016', '2017', '2018'],
-  'FUTSALA Masculino': ['1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7va', '8va'],
+  'FUTSALA Masculino': ['1ra', '3ra', '4ta', '5ta', '6ta', '7ma', '8va'],
   'BAFI Masculino': ['1ra', 'Reserva', '3ra', '4ta', '5ta']
 };
 
@@ -22,8 +22,44 @@ export const MOCK_USERS = [
     email: 'admin@haedofutsal.com.ar',
     telefono: '11-4567-8901',
     rol: 'admin',
-    categoria: 'Todos',
+    categoria: 'Administración',
     numeroSocio: 100,
+    estadoCuota: 'al_dia',
+    montoCuota: 15000
+  },
+  {
+    id: 'usr-2',
+    nombre: 'Mariana',
+    apellido: 'López',
+    email: 'finanzas@haedofutsal.com.ar',
+    telefono: '11-3322-1100',
+    rol: 'contador',
+    categoria: 'Finanzas',
+    numeroSocio: 101,
+    estadoCuota: 'al_dia',
+    montoCuota: 15000
+  },
+  {
+    id: 'usr-3',
+    nombre: 'Diego',
+    apellido: 'Santi',
+    email: 'coach@haedofutsal.com.ar',
+    telefono: '11-6655-4433',
+    rol: 'coach',
+    categoria: 'FUTSALA Masculino (1ra)',
+    numeroSocio: 102,
+    estadoCuota: 'al_dia',
+    montoCuota: 15000
+  },
+  {
+    id: 'usr-4',
+    nombre: 'Lucas',
+    apellido: 'Rossi',
+    email: 'lucas.rossi@email.com',
+    telefono: '11-9876-5432',
+    rol: 'socio',
+    categoria: 'FUTSALA Masculino (1ra)',
+    numeroSocio: 201,
     estadoCuota: 'al_dia',
     montoCuota: 15000
   }
@@ -53,28 +89,6 @@ export const MOCK_EVENTS = [
     fecha: '2026-07-23 19:30',
     resultado: null,
     detalles: 'Traer zapatillas para parquet y botella de agua.'
-  },
-  {
-    id: 'evt-103',
-    titulo: 'Partido Baby: Haedo Futsal vs Morón Futsal',
-    tipo: 'partido',
-    categoria: 'EDEFI Baby - 2015',
-    rival: 'Deportivo Morón',
-    lugar: 'Polideportivo Morón',
-    fecha: '2026-07-26 15:30',
-    resultado: 'Próximo',
-    detalles: 'Salida en colectivo desde el club a las 14:00 hs.'
-  },
-  {
-    id: 'evt-104',
-    titulo: 'Entrenamiento Promo',
-    tipo: 'entrenamiento',
-    categoria: 'FUTSALA Promo - 2017',
-    rival: null,
-    lugar: 'Cancha 2 - Haedo Futsal',
-    fecha: '2026-07-24 18:00',
-    resultado: null,
-    detalles: 'Trabajo de definición e intensidad.'
   }
 ];
 

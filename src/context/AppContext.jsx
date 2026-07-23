@@ -174,13 +174,18 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
   }, [mercadoPagoTransfers]);
 
-  // Current active logged in user based on selected role (with fallback to avoid blank screen)
-  const currentUser = users.find(u => u.rol === activeRoleId) || users[0] || {
-    id: 'usr-default',
-    nombre: 'Usuario',
-    apellido: 'Administrador',
-    rol: activeRoleId || 'admin',
-    categoria: 'Todas'
+  // Current active logged in user based on selected role (with fallback matching activeRoleId to avoid blank screen)
+  const currentUser = users.find(u => u.rol === activeRoleId) || {
+    id: `usr-fallback-${activeRoleId}`,
+    nombre: activeRoleId === 'admin' ? 'Gonzalo' : activeRoleId === 'contador' ? 'Mariana' : activeRoleId === 'coach' ? 'Diego' : 'Lucas',
+    apellido: activeRoleId === 'admin' ? 'Martínez' : activeRoleId === 'contador' ? 'López' : activeRoleId === 'coach' ? 'Santi' : 'Rossi',
+    email: `${activeRoleId}@haedofutsal.com.ar`,
+    telefono: '11-4567-8901',
+    rol: activeRoleId,
+    categoria: 'BAFI Femenino (1ra)',
+    numeroSocio: 100,
+    estadoCuota: 'al_dia',
+    montoCuota: 15000
   };
 
   useEffect(() => {
