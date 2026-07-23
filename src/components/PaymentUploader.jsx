@@ -95,13 +95,13 @@ export const PaymentUploader = ({ onSuccess }) => {
         </div>
       </div>
 
-      {/* PWA Mobile Share Target Install Tip Banner */}
-      <div className="bg-gradient-to-r from-slate-950 via-sky-950/40 to-slate-950 border border-sky-500/30 p-3.5 rounded-xl text-xs text-sky-200 mb-4 flex items-start gap-2.5">
-        <Sparkles className="w-4 h-4 text-sky-400 shrink-0 mt-0.5 animate-pulse" />
+      {/* Seamless Mobile Receipt Upload Banner */}
+      <div className="bg-slate-800/80 border border-slate-700/80 p-3.5 rounded-xl text-xs text-slate-300 mb-4 flex items-start gap-2.5">
+        <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
         <div>
-          <strong className="text-white block font-bold">📱 ¡Compartir Comprobante desde la App de tu Banco o Mercado Pago!</strong>
-          <span className="text-[11px] text-slate-300 block mt-0.5">
-            Agrega Haedo Futsal a la pantalla de inicio de tu celular (presionando <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar App"</strong> en tu navegador). La app aparecerá automáticamente como opción directa al presionar <strong>"Compartir Comprobante"</strong> desde Mercado Pago, Cuenta DNI o Ualá.
+          <strong className="text-white block font-bold">📲 Subir comprobante desde tu celular</strong>
+          <span className="text-[11px] text-slate-400 block mt-0.5">
+            Presiona el área de abajo para adjuntar la foto o captura guardada de Mercado Pago, Cuenta DNI, Ualá o tu banco. El sistema extraerá los datos automáticamente.
           </span>
         </div>
       </div>
