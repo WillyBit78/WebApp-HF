@@ -7,6 +7,8 @@ import { DashboardCoach } from './components/DashboardCoach';
 import { DashboardSocio } from './components/DashboardSocio';
 import { CalendarModule } from './components/CalendarModule';
 import { NoticeBoard } from './components/NoticeBoard';
+import { BottomNav } from './components/BottomNav';
+import { Sidebar } from './components/Sidebar';
 
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
@@ -47,10 +49,12 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden font-sans">
+      <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
+      <div className="flex-1 flex flex-col overflow-y-auto">
       <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
         {currentTab === 'dashboard' && renderDashboardByRole()}
         {currentTab === 'calendar' && (
           <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />
@@ -71,6 +75,10 @@ function MainApp() {
           </div>
         </div>
       </footer>
+
+      <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
+
+            </div>
 
       {/* Modals */}
       {modalUserOpen && <ModalAddUser onClose={() => setModalUserOpen(false)} />}
