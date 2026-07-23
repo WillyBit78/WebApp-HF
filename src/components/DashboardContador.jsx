@@ -36,10 +36,13 @@ export const DashboardContador = () => {
     deleteMovimientoFinanciero,
     mercadoPagoTransfers,
     vincularTransferenciaMP,
-    sincronizarMercadoPago
+    sincronizarMercadoPago,
+    cuotasPorCategoria,
+    updateCuotaCategoria
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
+  const [showCuotasModal, setShowCuotasModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('en_revision');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
@@ -215,12 +218,20 @@ export const DashboardContador = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowModalMov(true)}
-                className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
-              >
-                <Plus className="w-4 h-4" /> Registrar Ingreso / Gasto
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setShowCuotasModal(true)}
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20"
+                >
+                  <DollarSign className="w-4 h-4" /> Precios Cuotas por Categoría
+                </button>
+                <button
+                  onClick={() => setShowModalMov(true)}
+                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                >
+                  <Plus className="w-4 h-4" /> Registrar Ingreso / Gasto
+                </button>
+              </div>
             </div>
           </div>
 
@@ -746,6 +757,65 @@ export const DashboardContador = () => {
               className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-xl text-xs font-bold"
             >
               Cerrar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Precios de Cuotas Mensuales por Categoría Madre */}
+      {showCuotasModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-amber-400" />
+                Precios de Cuotas por Categoría Madre
+              </h3>
+              <button onClick={() => setShowCuotasModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-xs text-slate-400">
+              Las sub-categorías de cada plantel heredan el valor mensual fijado para su Categoría Madre correspondiente.
+            </p>
+
+            <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
+              {[
+                { name: 'BAFI Femenino', tipo: 'Adulto', sub: '1ra, Reserva' },
+                { name: 'EDEFI Mayores', tipo: 'Adulto', sub: '+30, +35, +42' },
+                { name: 'EDEFI Baby', tipo: 'Infantil', sub: '2013, 2014, 2015, 2016, 2017, 2018' },
+                { name: 'FUTSALA Promo', tipo: 'Infantil', sub: '2016, 2017, 2018' },
+                { name: 'FUTSALA Masculino', tipo: 'Juvenil', sub: '1ra, 3ra, 4ta, 5ta, 6ta, 7ma, 8va' },
+                { name: 'BAFI Masculino', tipo: 'Juvenil', sub: '1ra, Reserva, 3ra, 4ta, 5ta' }
+              ].map((cat) => (
+                <div key={cat.name} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                  <div>
+                    <div className="font-bold text-white text-sm flex items-center gap-2">
+                      {cat.name}
+                      <span className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded font-mono">{cat.tipo}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-0.5">
+                      Sub-categorías: <strong className="text-amber-300/80">{cat.sub}</strong>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-slate-400 font-bold">$</span>
+                    <input
+                      type="number"
+                      value={cuotasPorCategoria[cat.name] || 15000}
+                      onChange={(e) => updateCuotaCategoria(cat.name, e.target.value)}
+                      className="w-24 bg-slate-900 border border-slate-700 text-emerald-400 font-bold px-2.5 py-1.5 rounded-lg text-right"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowCuotasModal(false)}
+              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg shadow-amber-500/20 text-xs"
+            >
+              Guardar Precios de Cuotas
             </button>
           </div>
         </div>

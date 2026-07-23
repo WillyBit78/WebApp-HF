@@ -5,6 +5,15 @@ export const MOCK_ROLES = [
   { id: 'socio', name: 'Socio / Deportista', description: 'Consulta de cuenta corriente, subida de comprobantes MP y agenda de partidos.' }
 ];
 
+export const MOCK_CATEGORIES = {
+  'BAFI Femenino': ['1ra', 'Reserva'],
+  'EDEFI Mayores': ['+30', '+35', '+42'],
+  'EDEFI Baby': ['2013', '2014', '2015', '2016', '2017', '2018'],
+  'FUTSALA Promo': ['2016', '2017', '2018'],
+  'FUTSALA Masculino': ['1ra', '2da', '3ra', '4ta', '5ta', '6ta', '7va', '8va'],
+  'BAFI Masculino': ['1ra', 'Reserva', '3ra', '4ta', '5ta']
+};
+
 export const MOCK_USERS = [
   {
     id: 'usr-1',
@@ -17,78 +26,6 @@ export const MOCK_USERS = [
     numeroSocio: 100,
     estadoCuota: 'al_dia',
     montoCuota: 15000
-  },
-  {
-    id: 'usr-2',
-    nombre: 'Mariana',
-    apellido: 'López (Contadora)',
-    email: 'finanzas@haedofutsal.com.ar',
-    telefono: '11-3322-1100',
-    rol: 'contador',
-    categoria: 'Todos',
-    numeroSocio: 101,
-    estadoCuota: 'al_dia',
-    montoCuota: 15000
-  },
-  {
-    id: 'usr-3',
-    nombre: 'Diego',
-    apellido: 'Santi (DT Primera)',
-    email: 'coach@haedofutsal.com.ar',
-    telefono: '11-6655-4433',
-    rol: 'coach',
-    categoria: 'Primera',
-    numeroSocio: 102,
-    estadoCuota: 'al_dia',
-    montoCuota: 15000
-  },
-  {
-    id: 'usr-4',
-    nombre: 'Lucas',
-    apellido: 'Rossi (Jugador)',
-    email: 'lucas.rossi@email.com',
-    telefono: '11-9876-5432',
-    rol: 'socio',
-    categoria: 'Primera',
-    numeroSocio: 204,
-    estadoCuota: 'al_dia',
-    montoCuota: 15000
-  },
-  {
-    id: 'usr-5',
-    nombre: 'Joaquín',
-    apellido: 'Gómez',
-    email: 'joaco.gomez@email.com',
-    telefono: '11-2244-6688',
-    rol: 'socio',
-    categoria: 'Sub-17',
-    numeroSocio: 205,
-    estadoCuota: 'pendiente',
-    montoCuota: 15000
-  },
-  {
-    id: 'usr-6',
-    nombre: 'Mateo',
-    apellido: 'Fernández',
-    email: 'mateo.fer@email.com',
-    telefono: '11-7788-9900',
-    rol: 'socio',
-    categoria: 'Sub-15',
-    numeroSocio: 206,
-    estadoCuota: 'moroso',
-    montoCuota: 15000
-  },
-  {
-    id: 'usr-7',
-    nombre: 'Sofia',
-    apellido: 'Alvarez',
-    email: 'sofi.alvarez@email.com',
-    telefono: '11-5544-3322',
-    rol: 'socio',
-    categoria: 'Femenino',
-    numeroSocio: 207,
-    estadoCuota: 'al_dia',
-    montoCuota: 15000
   }
 ];
 
@@ -99,7 +36,7 @@ export const MOCK_EVENTS = [
     id: 'evt-101',
     titulo: 'Partido Liga AFAR: Haedo Futsal vs Ramos Mejía',
     tipo: 'partido',
-    categoria: 'Primera',
+    categoria: 'FUTSALA Masculino - 1ra',
     rival: 'Ramos Mejía Futsal',
     lugar: 'Sede Central - Microestadio Haedo',
     fecha: '2026-07-25 21:00',
@@ -110,7 +47,7 @@ export const MOCK_EVENTS = [
     id: 'evt-102',
     titulo: 'Entrenamiento Táctico y Físico',
     tipo: 'entrenamiento',
-    categoria: 'Primera',
+    categoria: 'FUTSALA Masculino - 1ra',
     rival: null,
     lugar: 'Cancha 1 - Haedo Futsal',
     fecha: '2026-07-23 19:30',
@@ -119,9 +56,9 @@ export const MOCK_EVENTS = [
   },
   {
     id: 'evt-103',
-    titulo: 'Partido Sub-17: Haedo Futsal vs Morón Futsal',
+    titulo: 'Partido Baby: Haedo Futsal vs Morón Futsal',
     tipo: 'partido',
-    categoria: 'Sub-17',
+    categoria: 'EDEFI Baby - 2015',
     rival: 'Deportivo Morón',
     lugar: 'Polideportivo Morón',
     fecha: '2026-07-26 15:30',
@@ -130,9 +67,9 @@ export const MOCK_EVENTS = [
   },
   {
     id: 'evt-104',
-    titulo: 'Entrenamiento Sub-15 & Sub-13',
+    titulo: 'Entrenamiento Promo',
     tipo: 'entrenamiento',
-    categoria: 'Sub-15',
+    categoria: 'FUTSALA Promo - 2017',
     rival: null,
     lugar: 'Cancha 2 - Haedo Futsal',
     fecha: '2026-07-24 18:00',

@@ -112,6 +112,27 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
+  // Precios de Cuotas por Categoría Madre
+  const [cuotasPorCategoria, setCuotasPorCategoria] = useState(() => {
+    const saved = localStorage.getItem('hf_cuotas_categoria');
+    return saved ? JSON.parse(saved) : {
+      'BAFI Femenino': 15000,
+      'EDEFI Mayores': 15000,
+      'EDEFI Baby': 15000,
+      'FUTSALA Promo': 15000,
+      'FUTSALA Masculino': 15000,
+      'BAFI Masculino': 15000
+    };
+  });
+
+  const updateCuotaCategoria = (catName, nuevoMonto) => {
+    setCuotasPorCategoria(prev => {
+      const updated = { ...prev, [catName]: Number(nuevoMonto) };
+      localStorage.setItem('hf_cuotas_categoria', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   const clubSettingsDefault = {
     nombreClub: 'Haedo Futsal',
     aliasMercadoPago: 'HAEDOFUTSAL.MP',
@@ -446,6 +467,8 @@ export const AppProvider = ({ children }) => {
       logs,
       registrarLog,
       registrarPagoEfectivoCoach,
+      cuotasPorCategoria,
+      updateCuotaCategoria,
       clubSettings,
       setClubSettings,
       roles: MOCK_ROLES,
