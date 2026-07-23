@@ -13,6 +13,7 @@ import { Sidebar } from './components/Sidebar';
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
 import { ModalAddNotice } from './components/Modals/ModalAddNotice';
+import { PWAInstallBanner } from './components/PWAInstallBanner';
 
 function MainApp() {
   const { activeRoleId } = useApp();
@@ -65,6 +66,8 @@ function MainApp() {
       {modalUserOpen && <ModalAddUser onClose={() => setModalUserOpen(false)} />}
       {modalEventOpen && <ModalAddEvent onClose={() => setModalEventOpen(false)} />}
       {modalNoticeOpen && <ModalAddNotice onClose={() => setModalNoticeOpen(false)} />}
+      
+      <PWAInstallBanner />
     </div>
   );
 }
