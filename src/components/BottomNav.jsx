@@ -9,7 +9,6 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
     { id: 'profile', label: 'Mi Perfil', icon: User },
   ];
 
-  // Item especial para socios: Acceso rápido a pagos
   const socioItem = { id: 'payments', label: 'Pagar', icon: CreditCard };
 
   return (
@@ -22,9 +21,7 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
             <button
               key={item.id}
               onClick={() => setCurrentTab(item.id)}
-              className={`flex flex-col items-center gap-1 transition-all ${
-                isActive ? 'text-amber-400 scale-110' : 'text-slate-500'
-              }`}
+              className={`flex flex-col items-center gap-1 transition-all ${isActive ? 'text-amber-400 scale-110' : 'text-slate-500'}`}
             >
               <Icon className={`w-6 h-6 ${isActive ? 'fill-amber-400/20' : ''}`} />
               <span className="text-[10px] font-medium">{item.label}</span>
@@ -32,13 +29,10 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
           );
         })}
         
-        {/* Solo mostrar el botón de pago rápido si es Socio */}
         {activeRoleId === 'socio' && (
           <button 
             onClick={() => setCurrentTab('payments')} 
-            className={`flex flex-col items-center gap-1 transition-all ${
-              currentTab === 'payments' ? 'text-amber-400 scale-110' : 'text-slate-500'
-            }`}
+            className={`flex flex-col items-center gap-1 transition-all ${currentTab === 'payments' ? 'text-amber-400 scale-110' : 'text-slate-500'}`}
           >
             <div className="p-1.5 bg-amber-500 rounded-full text-slate-900 shadow-lg shadow-amber-500/30">
               <CreditCard className="w-6 h-6" />
@@ -50,11 +44,3 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
     </div>
   );
 };
-```
-
-**Ahora, voy a integrar este `BottomNav` en la estructura principal de la aplicación para que sea visible solo en móviles.** Para ello, necesito ver el archivo `src/App.jsx` y saber dónde se renderiza el layout general.
-
-```tool
-TOOL_NAME: read_file
-BEGIN_ARG: filepath
-"src/App.jsx"
