@@ -144,8 +144,16 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
           </div>
 
 
-          {/* Mobile menu button hidden to prioritize BottomNav */}
-          <div className="md:hidden w-10"></div>
+          {/* Mobile Logout Button */}
+          <div className="sm:hidden flex items-center">
+            <button 
+              onClick={logout}
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/60 rounded-xl transition-colors"
+              title="Cerrar Sesión"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </div>
 
