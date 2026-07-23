@@ -16,7 +16,7 @@ import { ModalAddNotice } from './components/Modals/ModalAddNotice';
 
 function MainApp() {
   const { activeRoleId } = useApp();
-  const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices
+  const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices, finance, users, settings
 
   const [modalUserOpen, setModalUserOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
@@ -41,12 +41,13 @@ function MainApp() {
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
           {currentTab === 'dashboard' && renderDashboardByRole()}
+          {currentTab === 'calendar' && <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />}
+          {currentTab === 'notices' && <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />}
           {currentTab === 'finance' && <DashboardContador />}
           {currentTab === 'users' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
           {currentTab === 'settings' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
-          {currentTab === 'calendar' && <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />}
-          {currentTab === 'notices' && <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />}
         </main>
+
         <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
           <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
             <div>
@@ -56,9 +57,9 @@ function MainApp() {
               Desarrollado para PC y Celular • Integra Supabase + Vercel + GitHub
             </div>
           </div>
-      </footer>
+        </footer>
 
-      <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
+        <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
       </div>
 
       {modalUserOpen && <ModalAddUser onClose={() => setModalUserOpen(false)} />}
@@ -75,4 +76,3 @@ export default function App() {
     </AppProvider>
   );
 }
-
