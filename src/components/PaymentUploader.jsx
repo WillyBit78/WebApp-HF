@@ -81,15 +81,28 @@ export const PaymentUploader = ({ onSuccess }) => {
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 text-white shadow-2xl">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
-          <CreditCard className="w-6 h-6" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+            <CreditCard className="w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="font-bold text-lg text-white">Reportar Pago de Cuota</h3>
+            <p className="text-xs text-slate-400">
+              Sube el comprobante de transferencia enviado a <strong>{clubSettings.aliasMercadoPago}</strong>
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* PWA Mobile Share Target Install Tip Banner */}
+      <div className="bg-gradient-to-r from-slate-950 via-sky-950/40 to-slate-950 border border-sky-500/30 p-3.5 rounded-xl text-xs text-sky-200 mb-4 flex items-start gap-2.5">
+        <Sparkles className="w-4 h-4 text-sky-400 shrink-0 mt-0.5 animate-pulse" />
         <div>
-          <h3 className="font-bold text-lg text-white">Reportar Pago de Cuota</h3>
-          <p className="text-xs text-slate-400">
-            Sube el comprobante de transferencia enviado a <strong>{clubSettings.aliasMercadoPago}</strong>
-          </p>
+          <strong className="text-white block font-bold">📱 ¡Compartir Comprobante desde la App de tu Banco o Mercado Pago!</strong>
+          <span className="text-[11px] text-slate-300 block mt-0.5">
+            Agrega Haedo Futsal a la pantalla de inicio de tu celular (presionando <strong>"Añadir a pantalla de inicio"</strong> o <strong>"Instalar App"</strong> en tu navegador). La app aparecerá automáticamente como opción directa al presionar <strong>"Compartir Comprobante"</strong> desde Mercado Pago, Cuenta DNI o Ualá.
+          </span>
         </div>
       </div>
 
