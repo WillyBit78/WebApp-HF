@@ -46,6 +46,7 @@ export const DashboardContador = () => {
   // Filters for Movimientos
   const [filterCaja, setFilterCaja] = useState('todas');
   const [filterTipo, setFilterTipo] = useState('todos');
+  const [filterResponsable, setFilterResponsable] = useState('todos');
 
   // Scanner & Auto-match state
   const [scanningId, setScanningId] = useState(null);
