@@ -109,6 +109,48 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
+  // Sistema de Audit Logs de Eventos
+  const [logs, setLogs] = useState(() => {
+    const saved = localStorage.getItem('hf_logs');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'log-1',
+        fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+        usuarioNombre: 'Diego Santi',
+        usuarioRol: 'coach',
+        tipoEvento: 'pago_efectivo_coach',
+        descripcion: 'Cobro de cuota mensual en efectivo a socio Lucas Rossi',
+        detalles: 'Monto: $15.000 • Responsable de custodia de efectivo: Diego Santi (Coach)'
+      },
+      {
+        id: 'log-2',
+        fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+        usuarioNombre: 'Mariana López',
+        usuarioRol: 'contador',
+        tipoEvento: 'comprobante_aprobado',
+        descripcion: 'Comprobante MP N° 994827164 aprobado y conciliado',
+        detalles: 'Monto: $15.000 • Socio: Lucas Rossi'
+      },
+      {
+        id: 'log-3',
+        fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+        usuarioNombre: 'Gonzalo Martínez',
+        usuarioRol: 'admin',
+        tipoEvento: 'alta_usuario',
+        descripcion: 'Alta de nuevo socio en Categoría Primera',
+        detalles: 'Socio: Marcos Paz (#205)'
+      }
+    ];
+  });
+
+  const clubSettingsDefault = {
+    nombreClub: 'Haedo Futsal',
+    aliasMercadoPago: 'HAEDOFUTSAL.MP',
+    cuitClub: '30-71234567-8',
+    montoCuotaGeneral: 15000,
+    cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
+  };
+
   const [clubSettings, setClubSettings] = useState({
     nombreClub: 'Haedo Futsal',
     aliasMercadoPago: 'HAEDOFUTSAL.MP',
@@ -145,6 +187,10 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
   }, [mercadoPagoTransfers]);
 
+  useEffect(() => {
+    localStorage.setItem('hf_logs', JSON.stringify(logs));
+  }, [logs]);
+
   // Attempt Supabase sync if credentials exist
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
@@ -153,6 +199,51 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // --- ACTIONS ---
+
+  // Registrar Evento en el Log de Auditoría
+  const registrarLog = (tipoEvento, descripcion, detalles = '') => {
+    const newLog = {
+      id: `log-${Date.now()}`,
+      fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+      usuarioNombre: currentUser ? `${currentUser.nombre} ${currentUser.apellido}` : 'Sistema',
+      usuarioRol: currentUser ? currentUser.rol : 'sistema',
+      tipoEvento,
+      descripcion,
+      detalles
+    };
+    setLogs(prev => [newLog, ...prev]);
+  };
+
+  // Registrar Pago en Efectivo realizado a un Coach
+  const registrarPagoEfectivoCoach = (socioId, monto = 15000, concepto = 'Cuota social mensual en efectivo') => {
+    const socioTarget = users.find(u => u.id === socioId);
+    if (!socioTarget) return false;
+
+    // 1. Actualizar estado de cuota a 'al_dia'
+    setUsers(prev => prev.map(u => 
+      u.id === socioId ? { ...u, estadoCuota: 'al_dia' } : u
+    ));
+
+    // 2. Registrar movimiento de caja en Cuotas con indicación de quién posee el efectivo
+    const responsableEfectivo = `${currentUser.nombre} ${currentUser.apellido} (${currentUser.rol.toUpperCase()})`;
+    addMovimientoFinanciero({
+      caja: 'cuotas',
+      tipo: 'ingreso',
+      monto: Number(monto),
+      concepto: `${concepto} - Socio: ${socioTarget.nombre} ${socioTarget.apellido} (Efectivo retenido por: ${responsableEfectivo})`,
+      categoria: 'Cuotas Efectivo',
+      responsable: responsableEfectivo
+    });
+
+    // 3. Registrar en Log de auditoría
+    registrarLog(
+      'pago_efectivo_coach',
+      `Cobro de cuota en efectivo a ${socioTarget.nombre} ${socioTarget.apellido}`,
+      `Monto: $${Number(monto).toLocaleString('es-AR')} • Responsable que posee el efectivo: ${responsableEfectivo}`
+    );
+
+    return true;
+  };
 
   // Vincular y Conciliar Transferencia de Mercado Pago con Comprobante de Socio
   const vincularTransferenciaMP = (mpId, paymentId) => {
@@ -180,9 +271,17 @@ export const AppProvider = ({ children }) => {
       id: `mov-${Date.now()}`,
       fecha: new Date().toLocaleDateString('es-AR'),
       monto: Number(movData.monto),
+      responsable: movData.responsable || `${currentUser.nombre} ${currentUser.apellido} (${currentUser.rol.toUpperCase()})`,
       ...movData
     };
     setMovimientosFinancieros(prev => [newMov, ...prev]);
+
+    // Audit Log
+    registrarLog(
+      movData.tipo === 'ingreso' ? 'ingreso_manual' : 'gasto_manual',
+      `${movData.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'} registrado en ${movData.caja === 'cuotas' ? 'Caja Cuotas' : 'Caja Torneos'}`,
+      `Monto: $${Number(movData.monto).toLocaleString('es-AR')} • Concepto: ${movData.concepto} • Registrado por: ${currentUser.nombre} ${currentUser.apellido}`
+    );
   };
 
   const deleteMovimientoFinanciero = (movId) => {
@@ -212,6 +311,13 @@ export const AppProvider = ({ children }) => {
       u.id === currentUser.id ? { ...u, estadoCuota: 'pendiente' } : u
     ));
 
+    // Audit Log
+    registrarLog(
+      'comprobante_recibido',
+      `Nuevo comprobante enviado a revisión por ${currentUser.nombre} ${currentUser.apellido}`,
+      `N° Operación: ${newPayment.numeroOperacion} • Monto: $${newPayment.monto.toLocaleString('es-AR')} • Billetera: ${newPayment.billeteraOrigen}`
+    );
+
     return newPayment;
   };
 
@@ -232,6 +338,13 @@ export const AppProvider = ({ children }) => {
           ));
         }
 
+        // Audit Log
+        registrarLog(
+          newStatus === 'aprobado' ? 'comprobante_aprobado' : 'comprobante_rechazado',
+          `Comprobante N° ${p.numeroOperacion} marcado como ${newStatus.toUpperCase()}`,
+          `Socio: ${p.socioNombre} • Monto: $${p.monto.toLocaleString('es-AR')} • Procesado por: ${currentUser.nombre} ${currentUser.apellido}`
+        );
+
         return updated;
       }
       return p;
@@ -242,6 +355,7 @@ export const AppProvider = ({ children }) => {
   const addOrUpdateUser = (userData) => {
     if (userData.id) {
       setUsers(prev => prev.map(u => u.id === userData.id ? { ...u, ...userData } : u));
+      registrarLog('modificacion_usuario', `Datos de usuario modificados (${userData.nombre} ${userData.apellido})`, `Categoría: ${userData.categoria} • Rol: ${userData.rol}`);
     } else {
       const newUser = {
         id: `usr-${Date.now()}`,
@@ -251,10 +365,15 @@ export const AppProvider = ({ children }) => {
         ...userData
       };
       setUsers(prev => [...prev, newUser]);
+      registrarLog('alta_usuario', `Alta de nuevo usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol} • Categoría: ${newUser.categoria} • N° Socio: #${newUser.numeroSocio}`);
     }
   };
 
   const deleteUser = (userId) => {
+    const target = users.find(u => u.id === userId);
+    if (target) {
+      registrarLog('baja_usuario', `Baja de usuario (${target.nombre} ${target.apellido})`, `N° Socio: #${target.numeroSocio} • Rol: ${target.rol}`);
+    }
     setUsers(prev => prev.filter(u => u.id !== userId));
   };
 
@@ -330,6 +449,9 @@ export const AppProvider = ({ children }) => {
       deleteMovimientoFinanciero,
       mercadoPagoTransfers,
       vincularTransferenciaMP,
+      logs,
+      registrarLog,
+      registrarPagoEfectivoCoach,
       clubSettings,
       setClubSettings,
       roles: MOCK_ROLES,

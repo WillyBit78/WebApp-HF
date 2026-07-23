@@ -117,6 +117,7 @@ export const DashboardContador = () => {
   const filteredMovimientos = movimientosFinancieros.filter(m => {
     if (filterCaja !== 'todas' && m.caja !== filterCaja) return false;
     if (filterTipo !== 'todos' && m.tipo !== filterTipo) return false;
+    if (filterResponsable !== 'todos' && m.responsable && !m.responsable.toLowerCase().includes(filterResponsable.toLowerCase())) return false;
     return true;
   });
 
@@ -296,6 +297,17 @@ export const DashboardContador = () => {
 
               <div className="flex flex-wrap gap-2 text-xs">
                 <select
+                  value={filterResponsable}
+                  onChange={(e) => setFilterResponsable(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 text-amber-300 px-3 py-1.5 rounded-xl font-bold"
+                >
+                  <option value="todos">Todos los Coaches / Responsables</option>
+                  <option value="Diego Santi">Diego Santi (Coach DT)</option>
+                  <option value="Mariana">Mariana López (Contador)</option>
+                  <option value="Gonzalo">Gonzalo Martínez (Admin)</option>
+                </select>
+
+                <select
                   value={filterCaja}
                   onChange={(e) => setFilterCaja(e.target.value)}
                   className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl font-medium"
@@ -325,7 +337,7 @@ export const DashboardContador = () => {
                     <th className="p-3">Caja</th>
                     <th className="p-3">Tipo</th>
                     <th className="p-3">Concepto / Descripción</th>
-                    <th className="p-3">Categoría</th>
+                    <th className="p-3">Responsable / Custodia Efectivo</th>
                     <th className="p-3 text-right">Monto</th>
                     <th className="p-3 text-right rounded-r-xl">Acciones</th>
                   </tr>
@@ -357,7 +369,9 @@ export const DashboardContador = () => {
                           </span>
                         </td>
                         <td className="p-3 font-medium text-white">{m.concepto}</td>
-                        <td className="p-3 text-slate-400">{m.categoria}</td>
+                        <td className="p-3 font-semibold text-amber-300 text-[11px]">
+                          {m.responsable || 'Administración Central'}
+                        </td>
                         <td className={`p-3 text-right font-black text-sm ${
                           m.tipo === 'ingreso' ? 'text-emerald-400' : 'text-rose-400'
                         }`}>
