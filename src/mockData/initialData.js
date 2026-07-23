@@ -92,47 +92,7 @@ export const MOCK_USERS = [
   }
 ];
 
-export const MOCK_PAYMENTS = [
-  {
-    id: 'pay-001',
-    socioId: 'usr-4',
-    socioNombre: 'Lucas Rossi',
-    numeroOperacion: '9847362514',
-    monto: 15000,
-    billeteraOrigen: 'Mercado Pago',
-    emisorNombre: 'Lucas Ezequiel Rossi',
-    fechaTransferencia: '2026-07-20 14:32',
-    comprobanteUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
-    estado: 'aprobado',
-    observaciones: 'Pago cuota Julio 2026 - Aprobado automáticamente'
-  },
-  {
-    id: 'pay-002',
-    socioId: 'usr-5',
-    socioNombre: 'Joaquín Gómez',
-    numeroOperacion: '7723910482',
-    monto: 15000,
-    billeteraOrigen: 'Cuenta DNI',
-    emisorNombre: 'Roberto Gómez (Padre)',
-    fechaTransferencia: '2026-07-22 18:15',
-    comprobanteUrl: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=400&q=80',
-    estado: 'en_revision',
-    observaciones: 'Transferencia recibida desde Cuenta DNI. Pendiente de verificación por contador.'
-  },
-  {
-    id: 'pay-003',
-    socioId: 'usr-7',
-    socioNombre: 'Sofia Alvarez',
-    numeroOperacion: '4512983476',
-    monto: 15000,
-    billeteraOrigen: 'Ualá',
-    emisorNombre: 'Sofia Alvarez',
-    fechaTransferencia: '2026-07-21 09:40',
-    comprobanteUrl: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
-    estado: 'aprobado',
-    observaciones: 'Pago cuota Julio 2026'
-  }
-];
+export const MOCK_PAYMENTS = [];
 
 export const MOCK_EVENTS = [
   {
@@ -181,23 +141,4 @@ export const MOCK_EVENTS = [
   }
 ];
 
-export const MOCK_NOTICES = [
-  {
-    id: 'not-1',
-    titulo: '📢 Recordatorio Cuotas de Julio 2026',
-    contenido: 'Les recordamos a todos los socios que la fecha límite para abonar la cuota con bonificación es el día 10 de cada mes. Por favor subir el comprobante de Mercado Pago/Transferencia desde el botón de la App.',
-    categoriaDestino: 'Todos',
-    urgente: true,
-    autor: 'Administración Haedo Futsal',
-    fecha: '2026-07-01'
-  },
-  {
-    id: 'not-2',
-    titulo: '⚽ Convocatoria Especial de Entrenamientos',
-    contenido: 'Este jueves todas las categorías (Sub-13 a Primera) tendrán revisión médica de rutina antes del partido del fin de semana.',
-    categoriaDestino: 'Todos',
-    urgente: false,
-    autor: 'Diego Santi (DT)',
-    fecha: '2026-07-20'
-  }
-];
+export const MOCK_NOTICES = [];
