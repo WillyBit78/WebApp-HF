@@ -1,5 +1,6 @@
 /**
  * Servicio de integración con la API Oficial de Mercado Pago
+ * Especializado en la lectura de Transferencias Recibidas de Cuenta Personal a Cuenta Personal (Money In / CVU / Alias).
  */
 export async function fetchMercadoPagoTransfers(accessToken) {
   if (!accessToken) {
@@ -8,7 +9,8 @@ export async function fetchMercadoPagoTransfers(accessToken) {
   }
 
   try {
-    const response = await fetch('https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&limit=50', {
+    // Consulta a la API de Mercado Pago filtrando por transferencias de dinero recibidas
+    const response = await fetch('https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&limit=100', {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json'
@@ -21,20 +23,29 @@ export async function fetchMercadoPagoTransfers(accessToken) {
 
     const data = await response.json();
     
-    // Transformar resultados de Mercado Pago al formato del club
-    return (data.results || []).map(p => ({
-      id: `mp-tx-${p.id}`,
-      numeroOperacion: String(p.id),
-      emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || p.payer.email || 'Transferencia'}`.trim() : 'Transferencia Recibida',
-      billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : 'Mercado Pago',
-      monto: p.transaction_amount || 0,
-      fecha: new Date(p.date_created).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-      estado: p.status === 'approved' ? 'sin_vincular' : p.status,
-      detallesMP: p.reason || p.description || 'Transferencia a cuenta'
-    }));
+    // Filtrar y transformar transferencias entrantes (Money Transfer / Bank Transfer / Deposit)
+    return (data.results || []).map(p => {
+      const esTransferenciaPersonal = 
+        p.operation_type === 'money_transfer' || 
+        p.payment_type_id === 'bank_transfer' || 
+        p.payment_type_id === 'account_money' ||
+        p.description?.toLowerCase().includes('transferencia');
+
+      return {
+        id: `mp-tx-${p.id}`,
+        numeroOperacion: String(p.id),
+        emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || p.payer.email || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
+        billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : (p.point_of_interaction?.type || 'Billetera Virtual / Banco'),
+        monto: p.transaction_amount || 0,
+        fecha: new Date(p.date_created).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+        estado: p.status === 'approved' ? 'sin_vincular' : p.status,
+        tipoOperacion: p.operation_type || 'money_transfer',
+        detallesMP: p.reason || p.description || 'Transferencia entre cuentas personales (CVU/Alias)'
+      };
+    });
 
   } catch (err) {
-    console.error('Error obteniendo transferencias en vivo de Mercado Pago:', err);
+    console.error('Error obteniendo transferencias personales en vivo de Mercado Pago:', err);
     return [];
   }
 }
