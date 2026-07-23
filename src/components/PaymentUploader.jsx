@@ -35,12 +35,46 @@ export const PaymentUploader = ({ onSuccess }) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result);
-      };
-      reader.readAsDataURL(selectedFile);
-      simulateOCR();
+      if (selectedFile.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX_SIZE = 800;
+
+            if (width > height && width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            } else if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Compress to 0.7 quality JPEG
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            setPreviewUrl(dataUrl);
+            simulateOCR();
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(selectedFile);
+      } else {
+        // Fallback for non-images
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewUrl(reader.result);
+          simulateOCR();
+        };
+        reader.readAsDataURL(selectedFile);
+      }
     }
   };
 

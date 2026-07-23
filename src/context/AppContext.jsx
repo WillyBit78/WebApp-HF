@@ -154,27 +154,42 @@ export const AppProvider = ({ children }) => {
 
   // Save to localStorage on change
   useEffect(() => {
-    localStorage.setItem('hf_users', JSON.stringify(users));
+    try {
+      localStorage.setItem('hf_users', JSON.stringify(users));
+    } catch (e) { console.error('Error saving users to localStorage:', e); }
   }, [users]);
 
   useEffect(() => {
-    localStorage.setItem('hf_payments', JSON.stringify(payments));
+    try {
+      localStorage.setItem('hf_payments', JSON.stringify(payments));
+    } catch (e) {
+      console.error('Error saving payments to localStorage (Quota Exceeded?):', e);
+      alert('Error: No se pudo guardar el comprobante porque excede el límite de memoria local de tu navegador. Sube una imagen más ligera o borra el historial.');
+    }
   }, [payments]);
 
   useEffect(() => {
-    localStorage.setItem('hf_events', JSON.stringify(events));
+    try {
+      localStorage.setItem('hf_events', JSON.stringify(events));
+    } catch (e) { console.error(e); }
   }, [events]);
 
   useEffect(() => {
-    localStorage.setItem('hf_notices', JSON.stringify(notices));
+    try {
+      localStorage.setItem('hf_notices', JSON.stringify(notices));
+    } catch (e) { console.error(e); }
   }, [notices]);
 
   useEffect(() => {
-    localStorage.setItem('hf_movimientos', JSON.stringify(movimientosFinancieros));
+    try {
+      localStorage.setItem('hf_movimientos', JSON.stringify(movimientosFinancieros));
+    } catch (e) { console.error(e); }
   }, [movimientosFinancieros]);
 
   useEffect(() => {
-    localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
+    try {
+      localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
+    } catch (e) { console.error(e); }
   }, [mercadoPagoTransfers]);
 
   // Update currentUser in localStorage when it changes
@@ -209,7 +224,9 @@ export const AppProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    localStorage.setItem('hf_logs', JSON.stringify(logs));
+    try {
+      localStorage.setItem('hf_logs', JSON.stringify(logs));
+    } catch (e) { console.error(e); }
   }, [logs]);
 
   // --- Mercado Pago Live Integration ---
