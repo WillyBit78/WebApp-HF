@@ -8,6 +8,20 @@ export const LoginScreen = () => {
   const [clave, setClave] = useState('');
   const [error, setError] = useState(false);
 
+  const [devClicks, setDevClicks] = useState(0);
+
+  const handleLogoClick = () => {
+    const newClicks = devClicks + 1;
+    setDevClicks(newClicks);
+    if (newClicks >= 5) {
+      if (window.confirm('🔧 MODO DESARROLLADOR: ¿Deseas purgar la base de datos local y reiniciar la app?')) {
+        localStorage.clear();
+        window.location.reload();
+      }
+      setDevClicks(0);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError(false);
@@ -31,7 +45,10 @@ export const LoginScreen = () => {
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center justify-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/20 font-black text-slate-950 text-3xl tracking-tighter mb-4">
+          <div 
+            onClick={handleLogoClick}
+            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/20 font-black text-slate-950 text-3xl tracking-tighter mb-4 cursor-pointer select-none active:scale-95 transition-transform"
+          >
             HF
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
@@ -93,20 +110,6 @@ export const LoginScreen = () => {
             Ingresar al Sistema
           </button>
         </form>
-
-        <div className="mt-8 text-center">
-          <button
-            onClick={() => {
-              if (window.confirm('¿Estás seguro de que deseas reiniciar la base de datos local? Esto borrará los datos de prueba cacheados en tu navegador.')) {
-                localStorage.clear();
-                window.location.reload();
-              }
-            }}
-            className="text-[11px] text-slate-500 hover:text-slate-300 transition-colors underline decoration-slate-700"
-          >
-            ¿Problemas de caché? Restablecer Base de Datos
-          </button>
-        </div>
       </div>
     </div>
   );
