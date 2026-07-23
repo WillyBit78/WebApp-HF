@@ -41,6 +41,9 @@ function MainApp() {
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
           {currentTab === 'dashboard' && renderDashboardByRole()}
+          {currentTab === 'finance' && <DashboardContador />}
+          {currentTab === 'users' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
+          {currentTab === 'settings' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
           {currentTab === 'calendar' && <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />}
           {currentTab === 'notices' && <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />}
         </main>
