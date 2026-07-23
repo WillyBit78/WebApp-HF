@@ -71,42 +71,10 @@ export const AppProvider = ({ children }) => {
     ];
   });
 
-  // Transferencias recibidas en vivo en la cuenta de Mercado Pago del club
+  // Transferencias recibidas en vivo en la cuenta de Mercado Pago del club (limpio para datos reales)
   const [mercadoPagoTransfers, setMercadoPagoTransfers] = useState(() => {
     const saved = localStorage.getItem('hf_mp_transfers');
-    return saved ? JSON.parse(saved) : [
-      {
-        id: 'mp-tx-994827164',
-        numeroOperacion: '994827164',
-        emisorNombre: 'Lucas Rossi',
-        billeteraOrigen: 'Mercado Pago',
-        monto: 15000,
-        fecha: new Date().toLocaleDateString('es-AR') + ' 14:22',
-        estado: 'sin_vincular',
-        socioIdSugerido: 'usr-4'
-      },
-      {
-        id: 'mp-tx-883719204',
-        numeroOperacion: '883719204',
-        emisorNombre: 'Carlos Gomez',
-        billeteraOrigen: 'Cuenta DNI',
-        monto: 15000,
-        fecha: new Date().toLocaleDateString('es-AR') + ' 11:05',
-        estado: 'sin_vincular',
-        socioIdSugerido: 'usr-5'
-      },
-      {
-        id: 'mp-tx-771294810',
-        numeroOperacion: '771294810',
-        emisorNombre: 'Mariana Lopez',
-        billeteraOrigen: 'Ualá',
-        monto: 15000,
-        fecha: new Date().toLocaleDateString('es-AR') + ' 09:15',
-        estado: 'conciliado',
-        socioNombre: 'Mariana López',
-        asociadoAPagoId: 'pay-2'
-      }
-    ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Sistema de Audit Logs de Eventos
