@@ -29,6 +29,48 @@ export const AppProvider = ({ children }) => {
     return saved ? JSON.parse(saved) : MOCK_NOTICES;
   });
 
+  const [movimientosFinancieros, setMovimientosFinancieros] = useState(() => {
+    const saved = localStorage.getItem('hf_movimientos');
+    return saved ? JSON.parse(saved) : [
+      {
+        id: 'mov-1',
+        caja: 'cuotas',
+        tipo: 'ingreso',
+        monto: 45000,
+        concepto: 'Cobro de cuotas sociales presenciales en sede',
+        categoria: 'Cuotas',
+        fecha: new Date().toLocaleDateString('es-AR')
+      },
+      {
+        id: 'mov-2',
+        caja: 'torneos',
+        tipo: 'ingreso',
+        monto: 60000,
+        concepto: 'Inscripciones Torneo Clausura AFAR (Categoría Primera)',
+        categoria: 'Torneos',
+        fecha: new Date().toLocaleDateString('es-AR')
+      },
+      {
+        id: 'mov-3',
+        caja: 'torneos',
+        tipo: 'gasto',
+        monto: 18000,
+        concepto: 'Pago de ternas arbitrales y mesa de control Fecha 1',
+        categoria: 'Arbitrajes',
+        fecha: new Date().toLocaleDateString('es-AR')
+      },
+      {
+        id: 'mov-4',
+        caja: 'cuotas',
+        tipo: 'gasto',
+        monto: 12000,
+        concepto: 'Compra de pelotas de futsal de competición y conos',
+        categoria: 'Indumentaria e Insumos',
+        fecha: new Date().toLocaleDateString('es-AR')
+      }
+    ];
+  });
+
   const [clubSettings, setClubSettings] = useState({
     nombreClub: 'Haedo Futsal',
     aliasMercadoPago: 'HAEDOFUTSAL.MP',
@@ -57,6 +99,10 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_notices', JSON.stringify(notices));
   }, [notices]);
 
+  useEffect(() => {
+    localStorage.setItem('hf_movimientos', JSON.stringify(movimientosFinancieros));
+  }, [movimientosFinancieros]);
+
   // Attempt Supabase sync if credentials exist
   useEffect(() => {
     if (isSupabaseConfigured && supabase) {
@@ -65,6 +111,21 @@ export const AppProvider = ({ children }) => {
   }, []);
 
   // --- ACTIONS ---
+
+  // Add new financial transaction (Ingreso o Gasto)
+  const addMovimientoFinanciero = (movData) => {
+    const newMov = {
+      id: `mov-${Date.now()}`,
+      fecha: new Date().toLocaleDateString('es-AR'),
+      monto: Number(movData.monto),
+      ...movData
+    };
+    setMovimientosFinancieros(prev => [newMov, ...prev]);
+  };
+
+  const deleteMovimientoFinanciero = (movId) => {
+    setMovimientosFinancieros(prev => prev.filter(m => m.id !== movId));
+  };
 
   // 1. Submit payment receipt (From Socio)
   const uploadPaymentReceipt = (receiptData) => {
@@ -167,6 +228,32 @@ export const AppProvider = ({ children }) => {
   const sociosPendientesCount = users.filter(u => u.estadoCuota === 'pendiente').length;
   const sociosMorososCount = users.filter(u => u.estadoCuota === 'moroso').length;
 
+  // Cajas separadas y Balance General
+  const ingresosCuotasMov = movimientosFinancieros
+    .filter(m => m.caja === 'cuotas' && m.tipo === 'ingreso')
+    .reduce((sum, m) => sum + Number(m.monto), 0);
+  
+  const gastosCuotasMov = movimientosFinancieros
+    .filter(m => m.caja === 'cuotas' && m.tipo === 'gasto')
+    .reduce((sum, m) => sum + Number(m.monto), 0);
+
+  const ingresosCuotasTotal = totalRecaudado + ingresosCuotasMov;
+  const saldoCajaCuotas = ingresosCuotasTotal - gastosCuotasMov;
+
+  const ingresosTorneosTotal = movimientosFinancieros
+    .filter(m => m.caja === 'torneos' && m.tipo === 'ingreso')
+    .reduce((sum, m) => sum + Number(m.monto), 0);
+
+  const gastosTorneosTotal = movimientosFinancieros
+    .filter(m => m.caja === 'torneos' && m.tipo === 'gasto')
+    .reduce((sum, m) => sum + Number(m.monto), 0);
+
+  const saldoCajaTorneos = ingresosTorneosTotal - gastosTorneosTotal;
+
+  const totalIngresosGlobal = ingresosCuotasTotal + ingresosTorneosTotal;
+  const totalGastosGlobal = gastosCuotasMov + gastosTorneosTotal;
+  const balanceGeneralTotal = saldoCajaCuotas + saldoCajaTorneos;
+
   return (
     <AppContext.Provider value={{
       activeRoleId,
@@ -176,6 +263,9 @@ export const AppProvider = ({ children }) => {
       payments,
       events,
       notices,
+      movimientosFinancieros,
+      addMovimientoFinanciero,
+      deleteMovimientoFinanciero,
       clubSettings,
       setClubSettings,
       roles: MOCK_ROLES,
@@ -191,7 +281,17 @@ export const AppProvider = ({ children }) => {
         sociosAlDiaCount,
         sociosPendientesCount,
         sociosMorososCount,
-        totalSocios: users.length
+        totalSocios: users.length,
+        // Balances profesionales
+        ingresosCuotasTotal,
+        gastosCuotasMov,
+        saldoCajaCuotas,
+        ingresosTorneosTotal,
+        gastosTorneosTotal,
+        saldoCajaTorneos,
+        totalIngresosGlobal,
+        totalGastosGlobal,
+        balanceGeneralTotal
       }
     }}>
       {children}
