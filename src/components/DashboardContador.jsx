@@ -16,7 +16,13 @@ import {
   ArrowDownRight, 
   Trash2, 
   Filter, 
-  DollarSign
+  DollarSign,
+  RefreshCw,
+  Zap,
+  CheckCheck,
+  Link,
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 
 export const DashboardContador = () => {
@@ -27,16 +33,22 @@ export const DashboardContador = () => {
     clubSettings,
     movimientosFinancieros,
     addMovimientoFinanciero,
-    deleteMovimientoFinanciero
+    deleteMovimientoFinanciero,
+    mercadoPagoTransfers,
+    vincularTransferenciaMP
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'auditoria'
+  const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
   const [filterStatus, setFilterStatus] = useState('en_revision');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
 
   // Filters for Movimientos
-  const [filterCaja, setFilterCaja] = useState('todas'); // 'todas' | 'cuotas' | 'torneos'
-  const [filterTipo, setFilterTipo] = useState('todos'); // 'todos' | 'ingreso' | 'gasto'
+  const [filterCaja, setFilterCaja] = useState('todas');
+  const [filterTipo, setFilterTipo] = useState('todos');
+
+  // Scanner & Auto-match state
+  const [scanningId, setScanningId] = useState(null);
+  const [matchResult, setMatchResult] = useState(null);
 
   // Modal New Movimiento
   const [showModalMov, setShowModalMov] = useState(false);
@@ -67,6 +79,36 @@ export const DashboardContador = () => {
     setShowModalMov(false);
   };
 
+  // Auto-Match Scanner Simulator for Mercado Pago Transfer
+  const handleAutoMatch = (mpTx) => {
+    setScanningId(mpTx.id);
+    setMatchResult(null);
+
+    setTimeout(() => {
+      // Find pending receipt with matching N° de Operación or Monto & Socio Name
+      const match = payments.find(p => 
+        p.estado === 'en_revision' && (
+          p.numeroOperacion === mpTx.numeroOperacion || 
+          (Number(p.monto) === Number(mpTx.monto) && p.socioNombre.toLowerCase().includes(mpTx.emisorNombre.toLowerCase().split(' ')[0]))
+        )
+      );
+
+      if (match) {
+        vincularTransferenciaMP(mpTx.id, match.id);
+        setMatchResult({
+          type: 'success',
+          message: `¡COINCIDENCIA EXACTA! Transferencia N° ${mpTx.numeroOperacion} conciliada con comprobante de ${match.socioNombre}. Cuota acreditada a Caja Cuotas en tiempo real.`
+        });
+      } else {
+        setMatchResult({
+          type: 'warning',
+          message: `No se encontró un comprobante pendiente con N° de Operación ${mpTx.numeroOperacion}. Se puede vincular manualmente.`
+        });
+      }
+      setScanningId(null);
+    }, 1200);
+  };
+
   const filteredPayments = payments.filter(p => {
     if (filterStatus === 'todos') return true;
     return p.estado === filterStatus;
@@ -78,46 +120,66 @@ export const DashboardContador = () => {
     return true;
   });
 
+  const pendientesRevCount = payments.filter(p => p.estado === 'en_revision').length;
+
   return (
     <div className="space-y-6">
-      {/* Header & Sub-Tabs Navigation */}
-      <div className="bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 border border-amber-500/20 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* Header Navigation */}
+      <div className="bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 border border-amber-500/20 p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
             <Wallet className="w-4 h-4" /> SECTOR FINANZAS Y CONTABILIDAD
           </div>
-          <h2 className="text-2xl font-extrabold text-white">Gestión Financiera & Cajas del Club</h2>
+          <h2 className="text-2xl font-extrabold text-white">Gestión Financiera & Mercado Pago</h2>
           <p className="text-xs text-slate-400 mt-1">
-            Control contable profesional de <strong>Cuotas Mensuales</strong> y <strong>Caja de Torneos</strong> en tiempo real.
+            Conciliación inteligente en tiempo real para la cuenta <strong>{clubSettings.aliasMercadoPago}</strong>
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        {/* 3 Main Sub-Tabs */}
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('control_financiero')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'control_financiero'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
             <Scale className="w-4 h-4" />
-            Control Financiero & Balance
+            Balance General & Cajas
+          </button>
+
+          <button
+            onClick={() => setActiveTab('mp_feed')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+              activeTab === 'mp_feed'
+                ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
+                : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
+            }`}
+          >
+            <RefreshCw className="w-4 h-4" />
+            Transferencias Mercado Pago
+            {mercadoPagoTransfers.filter(t => t.estado === 'sin_vincular').length > 0 && (
+              <span className="bg-sky-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full text-[10px]">
+                {mercadoPagoTransfers.filter(t => t.estado === 'sin_vincular').length}
+              </span>
+            )}
           </button>
 
           <button
             onClick={() => setActiveTab('auditoria')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 relative ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'auditoria'
                 ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
             <FileCheck className="w-4 h-4" />
-            Auditoría Comprobantes MP
-            {stats.pagosPendientesRev.length > 0 && (
+            Auditoría de Comprobantes
+            {pendientesRevCount > 0 && (
               <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full text-[10px] animate-pulse">
-                {stats.pagosPendientesRev.length}
+                {pendientesRevCount}
               </span>
             )}
           </button>
@@ -232,7 +294,6 @@ export const DashboardContador = () => {
                 Historial de Movimientos de Caja
               </h3>
 
-              {/* Filtros */}
               <div className="flex flex-wrap gap-2 text-xs">
                 <select
                   value={filterCaja}
@@ -321,13 +382,110 @@ export const DashboardContador = () => {
         </div>
       )}
 
-      {/* TAB 2: AUDITORÍA DE COMPROBANTES MERCADO PAGO */}
+      {/* TAB 2: TRANSFERENCIAS EN VIVO MERCADO PAGO */}
+      {activeTab === 'mp_feed' && (
+        <div className="space-y-6">
+          <div className="bg-slate-900 border border-sky-500/30 p-6 rounded-2xl shadow-xl">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
+              <div>
+                <span className="text-xs font-bold text-sky-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                  <RefreshCw className="w-4 h-4 animate-spin" /> CONEXIÓN EN TIEMPO REAL - MERCADO PAGO
+                </span>
+                <h3 className="text-xl font-extrabold text-white">Transferencias Recibidas en Cuenta del Club</h3>
+                <p className="text-xs text-slate-400 mt-1">
+                  Alias oficial: <strong className="text-sky-300 font-mono">{clubSettings.aliasMercadoPago}</strong> • Titular: {clubSettings.cuentaTitular}
+                </p>
+              </div>
+
+              <div className="bg-sky-950/40 border border-sky-500/20 px-4 py-2 rounded-xl text-xs text-sky-300 font-semibold flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                Sincronización Automática Activa
+              </div>
+            </div>
+
+            {/* Notification alert banner */}
+            {matchResult && (
+              <div className={`p-4 rounded-xl text-xs font-medium flex items-center justify-between gap-3 ${
+                matchResult.type === 'success' ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-200' : 'bg-amber-500/20 border border-amber-500/40 text-amber-200'
+              }`}>
+                <span>{matchResult.message}</span>
+                <button onClick={() => setMatchResult(null)} className="font-bold hover:text-white">✕</button>
+              </div>
+            )}
+
+            {/* MP Transfer List */}
+            <div className="space-y-3 mt-4">
+              {mercadoPagoTransfers.map((tx) => {
+                const isConciliado = tx.estado === 'conciliado';
+                const isScanning = scanningId === tx.id;
+
+                return (
+                  <div 
+                    key={tx.id}
+                    className={`bg-slate-950 border p-4 rounded-xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
+                      isConciliado ? 'border-emerald-500/30 bg-slate-950/40' : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2.5 rounded-xl text-xs font-bold ${
+                        isConciliado ? 'bg-emerald-500/20 text-emerald-400' : 'bg-sky-500/20 text-sky-400'
+                      }`}>
+                        <DollarSign className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-white text-base">{tx.emisorNombre}</span>
+                          <span className="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                            {tx.billeteraOrigen}
+                          </span>
+                        </div>
+                        <div className="text-xs text-slate-400 mt-0.5">
+                          N° Operación MP: <strong className="font-mono text-slate-200">{tx.numeroOperacion}</strong> • {tx.fecha}
+                        </div>
+                        {isConciliado && (
+                          <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
+                            <CheckCheck className="w-3.5 h-3.5" /> Conciliado con socio: {tx.socioNombre}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                      <div className="text-right">
+                        <div className="text-lg font-black text-emerald-400">${Number(tx.monto).toLocaleString('es-AR')}</div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
+                          isConciliado ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
+                        }`}>
+                          {isConciliado ? 'Acreditado' : 'Sin Vincular'}
+                        </span>
+                      </div>
+
+                      {!isConciliado && (
+                        <button
+                          disabled={isScanning}
+                          onClick={() => handleAutoMatch(tx)}
+                          className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 disabled:opacity-50"
+                        >
+                          <Zap className={`w-4 h-4 ${isScanning ? 'animate-bounce' : ''}`} />
+                          {isScanning ? 'Comparando...' : 'Comparar & Conciliar'}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: AUDITORÍA DE COMPROBANTES MERCADO PAGO */}
       {activeTab === 'auditoria' && (
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
               {[
-                { id: 'en_revision', label: `Pendientes de Revisión (${stats.pagosPendientesRev.length})` },
+                { id: 'en_revision', label: `Pendientes de Revisión (${pendientesRevCount})` },
                 { id: 'aprobado', label: 'Aprobados' },
                 { id: 'rechazado', label: 'Rechazados' },
                 { id: 'todos', label: 'Historial Completo' }
@@ -491,7 +649,7 @@ export const DashboardContador = () => {
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Monto ($)</label>
+                <label className="block text-slate-400 mb-1 font-semibold font-mono">Monto ($)</label>
                 <input
                   type="number"
                   required
