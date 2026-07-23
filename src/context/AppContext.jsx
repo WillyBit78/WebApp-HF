@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_USERS, MOCK_PAYMENTS, MOCK_EVENTS, MOCK_NOTICES, MOCK_ROLES } from '../mockData/initialData';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { fetchMercadoPagoTransfers } from '../services/mercadopago';
 
 const AppContext = createContext();
 
@@ -159,11 +160,29 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_logs', JSON.stringify(logs));
   }, [logs]);
 
-  // Attempt Supabase sync if credentials exist
-  useEffect(() => {
-    if (isSupabaseConfigured && supabase) {
-      console.log('Supabase configurado: listos para sincronizar datos remotos.');
+  // --- Mercado Pago Live Integration ---
+  const mpAccessToken = import.meta.env.VITE_MP_ACCESS_TOKEN || 'APP_USR-3322444120483456-072316-c328d2ad7cb6de93a33a94812589756e-43153257';
+
+  const sincronizarMercadoPago = async () => {
+    if (!mpAccessToken) return;
+    try {
+      const realTransfers = await fetchMercadoPagoTransfers(mpAccessToken);
+      if (realTransfers && realTransfers.length > 0) {
+        setMercadoPagoTransfers(prev => {
+          // Merge avoiding duplicates by numeroOperacion / id
+          const existingIds = new Set(prev.map(t => t.numeroOperacion));
+          const newItems = realTransfers.filter(t => !existingIds.has(t.numeroOperacion));
+          return [...newItems, ...prev];
+        });
+      }
+    } catch (err) {
+      console.error('Error sincronizando Mercado Pago:', err);
     }
+  };
+
+  // Sincronizar transferencias entrantes al cargar la app
+  useEffect(() => {
+    sincronizarMercadoPago();
   }, []);
 
   // --- ACTIONS ---
@@ -417,6 +436,7 @@ export const AppProvider = ({ children }) => {
       deleteMovimientoFinanciero,
       mercadoPagoTransfers,
       vincularTransferenciaMP,
+      sincronizarMercadoPago,
       logs,
       registrarLog,
       registrarPagoEfectivoCoach,

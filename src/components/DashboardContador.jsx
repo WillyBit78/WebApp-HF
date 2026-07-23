@@ -35,7 +35,8 @@ export const DashboardContador = () => {
     addMovimientoFinanciero,
     deleteMovimientoFinanciero,
     mercadoPagoTransfers,
-    vincularTransferenciaMP
+    vincularTransferenciaMP,
+    sincronizarMercadoPago
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
@@ -411,9 +412,17 @@ export const DashboardContador = () => {
                 </p>
               </div>
 
-              <div className="bg-sky-950/40 border border-sky-500/20 px-4 py-2 rounded-xl text-xs text-sky-300 font-semibold flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4" />
-                Sincronización Automática Activa
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => sincronizarMercadoPago()}
+                  className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Sincronizar Ahora
+                </button>
+                <div className="bg-sky-950/40 border border-sky-500/20 px-3.5 py-2 rounded-xl text-xs text-sky-300 font-semibold flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4" />
+                  API MP Conectada
+                </div>
               </div>
             </div>
 
