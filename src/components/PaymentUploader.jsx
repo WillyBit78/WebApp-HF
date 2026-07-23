@@ -35,7 +35,11 @@ export const PaymentUploader = ({ onSuccess }) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(selectedFile);
       simulateOCR();
     }
   };
