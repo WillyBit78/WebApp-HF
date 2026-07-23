@@ -171,14 +171,14 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
 
             <div className="flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl">
               <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs">
-                {currentUser.nombre.charAt(0)}
+                {currentUser?.nombre ? currentUser.nombre.charAt(0) : 'U'}
               </div>
               <div className="text-left">
                 <div className="text-xs font-semibold text-white leading-tight">
-                  {currentUser.nombre} {currentUser.apellido.split(' ')[0]}
+                  {currentUser?.nombre || 'Usuario'} {currentUser?.apellido ? currentUser.apellido.split(' ')[0] : ''}
                 </div>
                 <div className="text-[10px] text-slate-400 capitalize">
-                  {currentUser.rol} • {currentUser.categoria}
+                  {activeRoleId}
                 </div>
               </div>
             </div>

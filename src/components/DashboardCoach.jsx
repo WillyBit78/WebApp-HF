@@ -56,7 +56,7 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
           </div>
           <h2 className="text-2xl font-extrabold text-white">Gestión de Planteles y Convocatorias</h2>
           <p className="text-xs text-slate-400 mt-1">
-            DT Activo: <strong>{currentUser.nombre} {currentUser.apellido}</strong> (Categoría {currentUser.categoria})
+            DT Activo: <strong>{currentUser?.nombre} {currentUser?.apellido}</strong> (Categoría {currentUser?.categoria})
           </p>
         </div>
 

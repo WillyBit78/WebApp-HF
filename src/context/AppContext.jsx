@@ -128,9 +128,6 @@ export const AppProvider = ({ children }) => {
     cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
   });
 
-  // Current active logged in user based on selected role
-  const currentUser = users.find(u => u.rol === activeRoleId) || users[0];
-
   // Save to localStorage on change
   useEffect(() => {
     localStorage.setItem('hf_users', JSON.stringify(users));
@@ -156,6 +153,15 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
   }, [mercadoPagoTransfers]);
 
+  // Current active logged in user based on selected role (with fallback to avoid blank screen)
+  const currentUser = users.find(u => u.rol === activeRoleId) || users[0] || {
+    id: 'usr-default',
+    nombre: 'Usuario',
+    apellido: 'Administrador',
+    rol: activeRoleId || 'admin',
+    categoria: 'Todas'
+  };
+
   useEffect(() => {
     localStorage.setItem('hf_logs', JSON.stringify(logs));
   }, [logs]);
@@ -167,16 +173,16 @@ export const AppProvider = ({ children }) => {
     if (!mpAccessToken) return;
     try {
       const realTransfers = await fetchMercadoPagoTransfers(mpAccessToken);
-      if (realTransfers && realTransfers.length > 0) {
+      if (Array.isArray(realTransfers) && realTransfers.length > 0) {
         setMercadoPagoTransfers(prev => {
-          // Merge avoiding duplicates by numeroOperacion / id
-          const existingIds = new Set(prev.map(t => t.numeroOperacion));
+          const prevArray = Array.isArray(prev) ? prev : [];
+          const existingIds = new Set(prevArray.map(t => t.numeroOperacion));
           const newItems = realTransfers.filter(t => !existingIds.has(t.numeroOperacion));
-          return [...newItems, ...prev];
+          return [...newItems, ...prevArray];
         });
       }
     } catch (err) {
-      console.error('Error sincronizando Mercado Pago:', err);
+      console.warn('Sincronización Mercado Pago en segundo plano:', err);
     }
   };
 
