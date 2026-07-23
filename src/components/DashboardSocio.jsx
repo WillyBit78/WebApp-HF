@@ -41,7 +41,7 @@ export const DashboardSocio = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                Socio N°: <strong className="text-amber-400 font-mono">#{currentUser.numeroSocio}</strong> • {currentUser.email}
+                Socio N°: <strong className="text-amber-400 font-mono">#{currentUser.numeroSocio}</strong>
               </p>
             </div>
           </div>

@@ -209,7 +209,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
                     <td className="p-3 font-mono font-bold text-amber-400">#{u.numeroSocio}</td>
                     <td className="p-3">
                       <div className="font-bold text-white">{u.nombre} {u.apellido}</div>
-                      <div className="text-[10px] text-slate-400">{u.email} • {u.telefono}</div>
+                      <div className="text-[10px] text-slate-400">{u.telefono}</div>
                     </td>
                     <td className="p-3">
                       <span className="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[11px] font-medium text-slate-300">

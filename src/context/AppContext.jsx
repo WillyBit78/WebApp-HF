@@ -6,9 +6,12 @@ import { fetchMercadoPagoTransfers } from '../services/mercadopago';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // Active role selector for demo (admin, contador, coach, socio)
-  const [activeRoleId, setActiveRoleId] = useState('admin');
-  
+  // Actual authenticated user
+  const [currentUser, setCurrentUser] = useState(() => {
+    const saved = localStorage.getItem('hf_current_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+
   // Data states initialized from localStorage or mockData
   const [users, setUsers] = useState(() => {
     const saved = localStorage.getItem('hf_users');
@@ -174,18 +177,35 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('hf_mp_transfers', JSON.stringify(mercadoPagoTransfers));
   }, [mercadoPagoTransfers]);
 
-  // Current active logged in user based on selected role (with fallback matching activeRoleId to avoid blank screen)
-  const currentUser = users.find(u => u.rol === activeRoleId) || {
-    id: `usr-fallback-${activeRoleId}`,
-    nombre: activeRoleId === 'admin' ? 'Gonzalo' : activeRoleId === 'contador' ? 'Mariana' : activeRoleId === 'coach' ? 'Diego' : 'Lucas',
-    apellido: activeRoleId === 'admin' ? 'Martínez' : activeRoleId === 'contador' ? 'López' : activeRoleId === 'coach' ? 'Santi' : 'Rossi',
-    email: `${activeRoleId}@haedofutsal.com.ar`,
-    telefono: '11-4567-8901',
-    rol: activeRoleId,
-    categoria: 'BAFI Femenino (1ra)',
-    numeroSocio: 100,
-    estadoCuota: 'al_dia',
-    montoCuota: 15000
+  // Update currentUser in localStorage when it changes
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('hf_current_user', JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem('hf_current_user');
+    }
+  }, [currentUser]);
+
+  // Login function
+  const login = (usuario, clave) => {
+    const userMatch = users.find(u => 
+      u.usuario?.toLowerCase() === usuario.toLowerCase() && 
+      u.clave === clave
+    );
+    if (userMatch) {
+      setCurrentUser(userMatch);
+      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Usuario: ${userMatch.usuario} • Rol: ${userMatch.rol}`);
+      return true;
+    }
+    return false;
+  };
+
+  // Logout function
+  const logout = () => {
+    if (currentUser) {
+      registrarLog('logout_usuario', `Cierre de sesión`, `Usuario: ${currentUser.usuario}`);
+    }
+    setCurrentUser(null);
   };
 
   useEffect(() => {
@@ -456,9 +476,9 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      activeRoleId,
-      setActiveRoleId,
       currentUser,
+      login,
+      logout,
       users,
       payments,
       events,

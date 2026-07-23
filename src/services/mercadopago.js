@@ -34,7 +34,7 @@ export async function fetchMercadoPagoTransfers(accessToken) {
       return {
         id: `mp-tx-${p.id}`,
         numeroOperacion: String(p.id),
-        emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || p.payer.email || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
+        emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
         billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : (p.point_of_interaction?.type || 'Billetera Virtual / Banco'),
         monto: p.transaction_amount || 0,
         fecha: new Date(p.date_created).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),

@@ -20,7 +20,6 @@ export const ModalAddUser = ({ onClose }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     apellido: '',
-    email: '',
     telefono: '',
     rol: 'socio',
     categoria: 'BAFI Femenino (1ra)'
@@ -46,10 +45,22 @@ export const ModalAddUser = ({ onClose }) => {
     }));
   };
 
+  // Autogenerar usuario: Inicial nombre + apellido completo (sin espacios y en mayúsculas)
+  const generarUsuario = () => {
+    if (!formData.nombre || !formData.apellido) return '';
+    const inicial = formData.nombre.charAt(0).toUpperCase();
+    const apellido = formData.apellido.replace(/\s+/g, '').toUpperCase();
+    return `${inicial}${apellido}`;
+  };
+
+  const usuarioGenerado = generarUsuario();
+
   const handleSubmit = (e) => {
     e.preventDefault();
     addOrUpdateUser({
       ...formData,
+      usuario: usuarioGenerado,
+      clave: '1234', // PIN por defecto
       montoCuota: cuotasPorCategoria[categoriaMadre] || 15000
     });
     onClose();
@@ -91,15 +102,15 @@ export const ModalAddUser = ({ onClose }) => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-slate-400 mb-1">Email</label>
-            <input
-              type="email"
-              required
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
-            />
+          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium">Usuario de Acceso:</span>
+              <span className="text-amber-400 font-black tracking-widest">{usuarioGenerado || '---'}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs">
+              <span className="text-slate-400 font-medium">PIN de Seguridad:</span>
+              <span className="text-slate-300 font-mono tracking-widest">1234 (Por defecto)</span>
+            </div>
           </div>
 
           <div>

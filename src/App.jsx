@@ -9,6 +9,7 @@ import { CalendarModule } from './components/CalendarModule';
 import { NoticeBoard } from './components/NoticeBoard';
 import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
+import { LoginScreen } from './components/LoginScreen';
 
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
@@ -17,12 +18,18 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
-  const { activeRoleId } = useApp();
+  const { currentUser } = useApp();
   const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices, finance, users, settings
 
   const [modalUserOpen, setModalUserOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
   const [modalNoticeOpen, setModalNoticeOpen] = useState(false);
+
+  if (!currentUser) {
+    return <LoginScreen />;
+  }
+
+  const activeRoleId = currentUser.rol || 'socio';
 
   const renderDashboardByRole = () => {
     switch (activeRoleId) {

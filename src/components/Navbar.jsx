@@ -13,11 +13,12 @@ import {
   Sparkles,
   Trophy,
   Download,
-  Smartphone
+  Smartphone,
+  LogOut
 } from 'lucide-react';
 
 export const Navbar = ({ currentTab, setCurrentTab }) => {
-  const { activeRoleId, setActiveRoleId, roles, currentUser, stats } = useApp();
+  const { roles, currentUser, stats, logout } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   
@@ -67,55 +68,6 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
 
   return (
     <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white">
-      {/* Role Switcher Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border-b border-amber-500/20 px-4 py-1.5 text-xs text-slate-300">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span className="font-medium text-amber-300">MODO INTERACTIVO DE ACCESO:</span>
-            <span className="hidden sm:inline text-slate-400">Selecciona el nivel de acceso para probar la app:</span>
-          </div>
-
-          <div className="relative">
-            <button
-              onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-              className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-full font-medium text-slate-200 transition-all text-xs"
-            >
-              {getRoleIcon(activeRoleId)}
-              <span className="capitalize">{activeRoleId}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
-            </button>
-
-            {roleDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[11px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wider">
-                  Cambiar Rol de Acceso
-                </div>
-                {roles.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      setActiveRoleId(r.id);
-                      setRoleDropdownOpen(false);
-                    }}
-                    className={`w-full text-left p-2 rounded-lg flex items-start gap-2.5 transition-all ${
-                      activeRoleId === r.id 
-                        ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300' 
-                        : 'hover:bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    <div className="mt-0.5">{getRoleIcon(r.id)}</div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">{r.name}</div>
-                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{r.description}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
 
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -159,7 +111,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
 
           {/* Active User Badge & Stats */}
           <div className="hidden sm:flex items-center gap-3">
-            {stats.pagosPendientesRev.length > 0 && (activeRoleId === 'admin' || activeRoleId === 'contador') && (
+            {stats.pagosPendientesRev.length > 0 && (currentUser?.rol === 'admin' || currentUser?.rol === 'contador') && (
               <div 
                 onClick={() => setCurrentTab('dashboard')}
                 className="cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 animate-pulse"
@@ -169,20 +121,28 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
               </div>
             )}
 
-            <div className="flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/80 px-3 py-1.5 rounded-xl">
+            <div className="flex items-center gap-2.5 bg-slate-800/80 border border-slate-700/80 pl-3 pr-2 py-1.5 rounded-xl">
               <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs">
                 {currentUser?.nombre ? currentUser.nombre.charAt(0) : 'U'}
               </div>
-              <div className="text-left">
+              <div className="text-left pr-2 border-r border-slate-700">
                 <div className="text-xs font-semibold text-white leading-tight">
                   {currentUser?.nombre || 'Usuario'} {currentUser?.apellido ? currentUser.apellido.split(' ')[0] : ''}
                 </div>
                 <div className="text-[10px] text-slate-400 capitalize">
-                  {activeRoleId}
+                  {currentUser?.rol}
                 </div>
               </div>
+              <button 
+                onClick={logout}
+                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors"
+                title="Cerrar Sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           </div>
+
 
           {/* Mobile menu button hidden to prioritize BottomNav */}
           <div className="md:hidden w-10"></div>
