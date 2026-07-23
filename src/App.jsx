@@ -14,6 +14,7 @@ import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
 import { ModalAddNotice } from './components/Modals/ModalAddNotice';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
   const { activeRoleId } = useApp();
@@ -33,6 +34,28 @@ function MainApp() {
     }
   };
 
+  const renderContent = () => {
+    switch (currentTab) {
+      case 'dashboard':
+        return renderDashboardByRole();
+      case 'calendar':
+        return <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'notices':
+        return <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />;
+      case 'finance':
+        return <DashboardContador />;
+      case 'users':
+        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'settings':
+        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'profile':
+      case 'payments':
+        return <DashboardSocio />;
+      default:
+        return renderDashboardByRole();
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden font-sans">
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
@@ -41,12 +64,7 @@ function MainApp() {
         <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
         <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
-          {currentTab === 'dashboard' && renderDashboardByRole()}
-          {currentTab === 'calendar' && <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />}
-          {currentTab === 'notices' && <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />}
-          {currentTab === 'finance' && <DashboardContador />}
-          {currentTab === 'users' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
-          {currentTab === 'settings' && <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />}
+          {renderContent()}
         </main>
 
         <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
@@ -74,8 +92,10 @@ function MainApp() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <MainApp />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <MainApp />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
