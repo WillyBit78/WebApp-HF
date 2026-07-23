@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { 
   ShieldCheck, 
@@ -11,13 +11,43 @@ import {
   X, 
   ChevronDown,
   Sparkles,
-  Trophy
+  Trophy,
+  Download,
+  Smartphone
 } from 'lucide-react';
 
 export const Navbar = ({ currentTab, setCurrentTab }) => {
   const { activeRoleId, setActiveRoleId, roles, currentUser, stats } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  
+  // PWA Installation prompt state
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult) => {
+        if (choiceResult.outcome === 'accepted') {
+          console.log('El usuario instaló la PWA de Haedo Futsal');
+        }
+        setDeferredPrompt(null);
+      });
+    } else {
+      setShowInstallModal(true);
+    }
+  };
 
   const getRoleIcon = (roleId) => {
     switch(roleId) {
@@ -39,50 +69,63 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white">
       {/* Role Switcher Banner */}
       <div className="bg-gradient-to-r from-slate-900 via-amber-950/40 to-slate-900 border-b border-amber-500/20 px-4 py-1.5 text-xs text-slate-300">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
             <span className="font-medium text-amber-300">DEMO INTERACTIVA DE ACCESO:</span>
             <span className="hidden sm:inline text-slate-400">Selecciona el nivel de acceso para probar la app:</span>
           </div>
 
-          <div className="relative">
+          <div className="flex items-center gap-2">
+            {/* Install App Button */}
             <button
-              onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-              className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-full font-medium text-slate-200 transition-all text-xs"
+              onClick={handleInstallClick}
+              className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-full font-bold text-[11px] flex items-center gap-1 transition-all shadow-sm"
+              title="Instalar App en el Celular para compartir comprobantes"
             >
-              {getRoleIcon(activeRoleId)}
-              <span className="capitalize">{activeRoleId}</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Download className="w-3 h-3 text-emerald-400" />
+              <span className="hidden xs:inline">📲 Instalar App</span>
+              <span className="xs:hidden">Instalar</span>
             </button>
 
-            {roleDropdownOpen && (
-              <div className="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50">
-                <div className="text-[11px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wider">
-                  Cambiar Rol de Acceso
+            <div className="relative">
+              <button
+                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                className="flex items-center gap-1.5 bg-slate-800/80 hover:bg-slate-800 border border-slate-700 px-3 py-1 rounded-full font-medium text-slate-200 transition-all text-xs"
+              >
+                {getRoleIcon(activeRoleId)}
+                <span className="capitalize">{activeRoleId}</span>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+
+              {roleDropdownOpen && (
+                <div className="absolute right-0 mt-1 w-64 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-2 z-50">
+                  <div className="text-[11px] font-semibold text-slate-400 px-3 py-1 uppercase tracking-wider">
+                    Cambiar Rol de Acceso
+                  </div>
+                  {roles.map((r) => (
+                    <button
+                      key={r.id}
+                      onClick={() => {
+                        setActiveRoleId(r.id);
+                        setRoleDropdownOpen(false);
+                      }}
+                      className={`w-full text-left p-2 rounded-lg flex items-start gap-2.5 transition-all ${
+                        activeRoleId === r.id 
+                          ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300' 
+                          : 'hover:bg-slate-800 text-slate-300'
+                      }`}
+                    >
+                      <div className="mt-0.5">{getRoleIcon(r.id)}</div>
+                      <div>
+                        <div className="font-semibold text-xs text-white">{r.name}</div>
+                        <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{r.description}</div>
+                      </div>
+                    </button>
+                  ))}
                 </div>
-                {roles.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => {
-                      setActiveRoleId(r.id);
-                      setRoleDropdownOpen(false);
-                    }}
-                    className={`w-full text-left p-2 rounded-lg flex items-start gap-2.5 transition-all ${
-                      activeRoleId === r.id 
-                        ? 'bg-amber-500/10 border border-amber-500/30 text-amber-300' 
-                        : 'hover:bg-slate-800 text-slate-300'
-                    }`}
-                  >
-                    <div className="mt-0.5">{getRoleIcon(r.id)}</div>
-                    <div>
-                      <div className="font-semibold text-xs text-white">{r.name}</div>
-                      <div className="text-[10px] text-slate-400 leading-tight mt-0.5">{r.description}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -159,8 +202,47 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
         </div>
       </div>
 
-            {/* Mobile Drawer removed to prioritize BottomNav */}
-      <div className="hidden"></div>
+            {/* Mobile PWA Installation Guide Modal */}
+      {showInstallModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-xs">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-emerald-400" />
+                Cómo Instalar Haedo Futsal en tu Celular
+              </h3>
+              <button onClick={() => setShowInstallModal(false)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <p className="text-slate-300">
+              Para que la app de <strong>Haedo Futsal</strong> aparezca en tu celular como opción al presionar <strong>"Compartir Comprobante"</strong> desde Mercado Pago o tu banco:
+            </p>
+
+            <div className="space-y-3">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+                <div className="font-bold text-amber-300">🤖 En Android (Chrome / Edge):</div>
+                <p className="text-slate-400">
+                  Toca los <strong>3 puntos verticales</strong> (arriba a la derecha) en tu navegador y selecciona <strong>"Añadir a la pantalla de inicio"</strong> o <strong>"Instalar aplicación"</strong>.
+                </p>
+              </div>
+
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+                <div className="font-bold text-sky-300">🍎 En iPhone / iOS (Safari):</div>
+                <p className="text-slate-400">
+                  Toca el botón <strong>Compartir</strong> (cuadrado con flecha hacia arriba abajo en la pantalla) y selecciona <strong>"Agregar al inicio"</strong>.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowInstallModal(false)}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 text-xs"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
