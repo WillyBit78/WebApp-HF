@@ -77,17 +77,7 @@ export const PaymentUploader = ({ onSuccess }) => {
 
       const fullDataUrl = canvas.toDataURL('image/jpeg', 1.0);
       
-      const ocrCanvas = document.createElement('canvas');
-      const ocrCtx = ocrCanvas.getContext('2d');
-      const cropHeight = canvas.height * 0.7;
-      const cropY = canvas.height - cropHeight;
-      ocrCanvas.width = canvas.width;
-      ocrCanvas.height = cropHeight;
-      ocrCtx.drawImage(canvas, 0, cropY, canvas.width, cropHeight, 0, 0, canvas.width, cropHeight);
-      
-      const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
-
-      return { dataUrl: fullDataUrl, ocrDataUrl };
+      return { dataUrl: fullDataUrl, ocrDataUrl: fullDataUrl };
     } catch (err) {
       console.error("Error convirtiendo PDF a imagen:", err);
       return null;
@@ -118,20 +108,9 @@ export const PaymentUploader = ({ onSuccess }) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Generamos una segunda versión recortada (solo el 70% inferior) para el OCR.
-            const ocrCanvas = document.createElement('canvas');
-            const ocrCtx = ocrCanvas.getContext('2d');
-            const cropHeight = height * 0.7;
-            const cropY = height - cropHeight;
-            ocrCanvas.width = width;
-            ocrCanvas.height = cropHeight;
-            ocrCtx.drawImage(canvas, 0, cropY, width, cropHeight, 0, 0, width, cropHeight);
-            
-            const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
             const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-
             setPreviewUrl(dataUrl);
-            processReceipt(dataUrl, null, ocrDataUrl);
+            processReceipt(dataUrl, null, dataUrl);
           };
           img.src = event.target.result;
         };
@@ -203,8 +182,8 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          // Usar la imagen recortada si existe, sino la completa
-          const targetImage = ocrDataUrl || dataUrl;
+          // Usar la imagen completa (sin recortes para no perder fechas en el encabezado)
+          const targetImage = dataUrl;
           
           const worker = await Tesseract.createWorker('spa');
           await worker.setParameters({
