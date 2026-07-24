@@ -287,7 +287,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           } else {
             // Intentar extraer monto y nombres usando expresiones regulares (fallback para comprobantes externos a MP)
             const montoMatch = textNorm.match(/\$ ?([\d.,]+)/);
-            const montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
+            montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
             
             const dateMatch = textNorm.match(/(?:^|\D)(\d{1,2}[/\\-]\d{1,2}(?:[/\\-]\d{2,4})?)(?:\D|$)/);
             const timeMatch = textNorm.match(/(?:^|\D)(\d{1,2}:\d{2})(?:\D|$)/);
@@ -365,7 +365,7 @@ export const PaymentUploader = ({ onSuccess }) => {
          }
       } else if (finalStatus !== 'aprobado') {
          if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? '$' + montoExtraido : '❌'}`;
+            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? montoExtraido : '❌'}\n[DEBUG OCR]: ${textNorm.substring(0, 150)}`;
          } else {
             autoObservaciones = `Requiere revisión: No se detectaron datos válidos en la imagen.`;
          }
