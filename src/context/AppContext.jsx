@@ -310,7 +310,16 @@ export const AppProvider = ({ children }) => {
       await Promise.all([
         supabase.from('payments').insert([newPayment]),
         supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', currentUser.id)
-      ]).catch(console.error);
+      ]).then((results) => {
+        const error = results[0]?.error || results[1]?.error;
+        if (error) {
+          console.error("Supabase insert error:", error);
+          alert("Error guardando en base de datos: " + (error.message || JSON.stringify(error)));
+        }
+      }).catch(err => {
+        console.error("Supabase request error:", err);
+        alert("Error de conexión con la base de datos: " + err.message);
+      });
     }
 
     registrarLog('comprobante_recibido', `Comprobante subido por ${currentUser.nombre}`);
