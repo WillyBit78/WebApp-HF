@@ -163,6 +163,7 @@ export const PaymentUploader = ({ onSuccess }) => {
       let autoObservaciones = 'Comprobante subido desde app.';
       let extractedNumeroOperacion = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
       let matchedTransfer = null;
+      let textNorm = '';
 
       if (sampleOverride) {
         // Lógica de simulación
@@ -190,7 +191,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             .replace(/I/g, '1')
             .replace(/S/g, '5');
 
-          const textNorm = normalizeStr(result.data.text);
+          textNorm = normalizeStr(result.data.text);
           console.log("Texto extraído normalizado:", textNorm);
 
           // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
@@ -224,7 +225,13 @@ export const PaymentUploader = ({ onSuccess }) => {
            autoObservaciones = `Requiere revisión: El monto teórico ($${parsedData.monto}) no coincide con el registro de MP ($${matchedTransfer.monto}).`;
          }
       } else if (finalStatus !== 'aprobado') {
-         autoObservaciones = `Requiere revisión: No se detectó un N° de operación o COELSA ID válido en la imagen.`;
+         // Pasamos lo que leyó el OCR para debug
+         if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
+            const snippet = textNorm.substring(0, 150);
+            autoObservaciones = `Requiere revisión: OCR no encontró coincidencia. Texto leído: ${snippet}...`;
+         } else {
+            autoObservaciones = `Requiere revisión: No se detectó un N° de operación válido en la imagen.`;
+         }
       }
 
       setPaymentStatus(finalStatus);
