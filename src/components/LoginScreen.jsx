@@ -40,22 +40,22 @@ export const LoginScreen = () => {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
 
       <div className="w-full max-w-md relative z-10">
         <div className="flex flex-col items-center justify-center mb-8">
           <div 
             onClick={handleLogoClick}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/20 font-black text-slate-950 text-3xl tracking-tighter mb-4 cursor-pointer select-none active:scale-95 transition-transform overflow-hidden"
+            className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer select-none active:scale-95 transition-transform"
           >
-            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain" />
+            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.5)]" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-            HAEDO <span className="text-amber-400 font-extrabold">FUTSAL</span>
+            HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
           </h1>
           <p className="text-slate-400 font-medium tracking-wide mt-1">
-            Plataforma de Gestión Oficial
+            Más que un Club
           </p>
         </div>
 
