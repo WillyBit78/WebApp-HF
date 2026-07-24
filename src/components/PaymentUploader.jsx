@@ -119,16 +119,23 @@ export const PaymentUploader = ({ onSuccess }) => {
 
       // 2. Lógica de validación automática estricta e invisible
       let finalStatus = 'en_revision';
+      let autoObservaciones = 'Comprobante subido desde app.';
       
       // Chequear contra transferencias de MP
       const transferMatch = mercadoPagoTransfers?.find(t => t.numeroOperacion === parsedData.numeroOperacion);
       
-      // Si la simulación forzó el primer ejemplo, aprobamos mágicamente para testing, 
-      // sino usamos la lógica real de match
-      if (transferMatch && Number(transferMatch.monto) === Number(parsedData.monto)) {
-         finalStatus = 'aprobado';
+      if (transferMatch) {
+         if (Number(transferMatch.monto) === Number(parsedData.monto)) {
+           finalStatus = 'aprobado';
+           autoObservaciones = 'Validación automática exitosa.';
+         } else {
+           autoObservaciones = `Requiere revisión: El monto detectado ($${parsedData.monto}) no coincide con el registro de MP ($${transferMatch.monto}).`;
+         }
       } else if (sampleOverride && sampleOverride.numeroOperacion === '9841029481') {
-         finalStatus = 'aprobado'; // Para que el botón de prueba rápida funcione como Aprobado
+         finalStatus = 'aprobado'; 
+         autoObservaciones = 'Validación automática exitosa (Simulación).';
+      } else {
+         autoObservaciones = `Requiere revisión: El N° de operación ${parsedData.numeroOperacion} no fue encontrado en el sistema de Mercado Pago.`;
       }
 
       setPaymentStatus(finalStatus);
@@ -137,6 +144,7 @@ export const PaymentUploader = ({ onSuccess }) => {
       uploadPaymentReceipt({
         ...parsedData,
         estado: finalStatus,
+        observaciones: autoObservaciones,
         comprobanteUrl: dataUrl
       });
 
