@@ -112,7 +112,7 @@ export const AppProvider = ({ children }) => {
   };
 
   // Mercado Pago
-  const mpAccessToken = import.meta.env.VITE_MP_ACCESS_TOKEN || '';
+  const mpAccessToken = import.meta.env.VITE_MP_ACCESS_TOKEN || 'APP_USR-3322444120483456-072316-c328d2ad7cb6de93a33a94812589756e-43153257';
   const sincronizarMercadoPago = async () => {
     if (!mpAccessToken) return;
     try {
