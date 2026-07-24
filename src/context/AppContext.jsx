@@ -47,7 +47,8 @@ export const AppProvider = ({ children }) => {
       if (eventType === 'INSERT') {
         setter(prev => {
           if (prev.some(item => item.id === newRow.id)) {
-            return prev.map(item => item.id === newRow.id ? newRow : item);
+            // MERGE instead of replace to preserve optimistic camelCase keys that Realtime WAL might lowercase
+            return prev.map(item => item.id === newRow.id ? { ...item, ...newRow } : item);
           }
           return appendAtEnd ? [...prev, newRow] : [newRow, ...prev];
         });
