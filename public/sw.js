@@ -1,5 +1,5 @@
 // Service Worker para PWA Haedo Futsal
-const CACHE_NAME = 'haedo-futsal-v2'; // Cambiar versión para forzar actualización
+const CACHE_NAME = 'haedo-futsal-v3'; // Cambiar versión para forzar actualización
 const urlsToCache = [
   '/',
   '/index.html',

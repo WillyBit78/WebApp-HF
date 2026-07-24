@@ -33,7 +33,7 @@
       "files": [
         {
           "name": "receiptImage",
-          "accept": ["image/*"]
+          "accept": ["image/jpeg", "image/png", "image/webp", "image/gif", "image/*", "application/pdf", ".pdf", ".jpg", ".jpeg", ".png"]
         }
       ]
     }
