@@ -40,7 +40,17 @@ export const PWAInstallBanner = () => {
           <div>
             <div className="font-extrabold text-sm flex items-center gap-1.5">
               <span>Haedo Futsal</span>
-              <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded uppercase shadow-sm">App Oficial</span>
+              <span 
+                className="text-blue-500 font-bold tracking-wider"
+                style={{ 
+                  fontFamily: "'Caveat', cursive", 
+                  fontSize: '1.2rem',
+                  lineHeight: '1',
+                  textShadow: '0 0 2px rgba(255,255,255,0.8), 0 1px 1px rgba(255,255,255,0.9), 0 -1px 1px rgba(255,255,255,0.9), 1px 0 1px rgba(255,255,255,0.9), -1px 0 1px rgba(255,255,255,0.9)'
+                }}
+              >
+                más que un club
+              </span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5">
               Instala la aplicación en tu celular con 1 solo clic.

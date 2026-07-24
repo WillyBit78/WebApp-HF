@@ -54,8 +54,16 @@ export const LoginScreen = () => {
           <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
             HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
           </h1>
-          <p className="text-slate-400 font-medium tracking-wide mt-1">
-            Más que un Club
+          <p 
+            className="text-blue-600 font-bold tracking-wider mt-0 w-full text-center" 
+            style={{ 
+              fontFamily: "'Caveat', cursive", 
+              fontSize: '2.5rem',
+              lineHeight: '1',
+              textShadow: '0 0 4px rgba(255,255,255,0.8), 0 1px 2px rgba(255,255,255,0.9), 0 -1px 2px rgba(255,255,255,0.9), 1px 0 2px rgba(255,255,255,0.9), -1px 0 2px rgba(255,255,255,0.9)'
+            }}
+          >
+            más que un club
           </p>
         </div>
 
@@ -79,7 +87,7 @@ export const LoginScreen = () => {
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value.toUpperCase())}
                   placeholder="Ej: PLOPEZ"
-                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all font-medium uppercase"
+                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all font-medium uppercase"
                 />
               </div>
             </div>
@@ -97,7 +105,7 @@ export const LoginScreen = () => {
                   value={clave}
                   onChange={(e) => setClave(e.target.value.replace(/\D/g, ''))}
                   placeholder="••••"
-                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-500/50 transition-all text-xl tracking-[0.5em] font-black"
+                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all text-xl tracking-[0.5em] font-black"
                 />
               </div>
             </div>
@@ -105,7 +113,7 @@ export const LoginScreen = () => {
 
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold py-3.5 rounded-xl shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 text-base"
+            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 text-base"
           >
             Ingresar al Sistema
           </button>

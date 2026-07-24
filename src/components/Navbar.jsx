@@ -81,8 +81,16 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
               <span className="font-bold text-lg text-white tracking-tight flex items-center gap-1">
                 HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
               </span>
-              <span className="text-[10px] block text-slate-400 font-medium tracking-wide">
-                GESTIÓN OFICIAL DE CLUB
+              <span 
+                className="text-blue-500 font-bold tracking-wider -mt-1 block"
+                style={{ 
+                  fontFamily: "'Caveat', cursive", 
+                  fontSize: '1.4rem',
+                  lineHeight: '1',
+                  textShadow: '0 0 2px rgba(255,255,255,0.8), 0 1px 1px rgba(255,255,255,0.9), 0 -1px 1px rgba(255,255,255,0.9), 1px 0 1px rgba(255,255,255,0.9), -1px 0 1px rgba(255,255,255,0.9)'
+                }}
+              >
+                más que un club
               </span>
             </div>
           </div>
