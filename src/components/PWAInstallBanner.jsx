@@ -46,7 +46,7 @@ export const PWAInstallBanner = () => {
                   fontFamily: "'Caveat', cursive", 
                   fontSize: '0.96rem',
                   lineHeight: '1',
-                  textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
+                  WebkitTextStroke: '0.5px rgba(255,255,255,0.7)'
                 }}
               >
                 más que un club

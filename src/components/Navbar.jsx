@@ -79,7 +79,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             </div>
             <div>
               <span className="font-bold text-lg text-white tracking-tight flex items-center gap-1">
-                HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
+                HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
               </span>
               <span 
                 className="text-blue-900 font-bold tracking-wider -mt-1 block"
@@ -87,7 +87,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                   fontFamily: "'Caveat', cursive", 
                   fontSize: '1.12rem',
                   lineHeight: '1',
-                  textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
+                  WebkitTextStroke: '0.5px rgba(255,255,255,0.7)'
                 }}
               >
                 más que un club

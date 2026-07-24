@@ -40,13 +40,14 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
         </div>
         <div className="flex flex-col">
           <span className="font-bold text-white leading-none">HAEDO</span>
+          <span className="text-[10px] font-normal text-red-500 tracking-widest uppercase">Futsal</span>
           <span 
             className="text-blue-900 font-bold tracking-wider"
             style={{ 
               fontFamily: "'Caveat', cursive", 
               fontSize: '1.12rem',
               lineHeight: '1',
-              textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
+              WebkitTextStroke: '0.3px rgba(255,255,255,0.7)'
             }}
           >
             más que un club
