@@ -28,8 +28,15 @@ function MainApp() {
   if (loadingDb) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500 mb-4"></div>
-        <p>Conectando con la base de datos...</p>
+        <div className="relative w-24 h-24 mb-6">
+           <img 
+             src="/logo.png" 
+             alt="Haedo Futsal Logo" 
+             className="w-full h-full object-contain animate-pulse drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" 
+           />
+           <div className="absolute inset-0 rounded-full border-2 border-brand-500/30 animate-ping"></div>
+        </div>
+        <p className="font-semibold tracking-wide text-brand-400 animate-pulse">Conectando con la base de datos...</p>
       </div>
     );
   }

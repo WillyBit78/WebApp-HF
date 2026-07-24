@@ -281,7 +281,7 @@ export const AppProvider = ({ children }) => {
       id: `pay-${Date.now()}`,
       socioId: currentUser.id,
       socioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
-      numeroOperacion: receiptData.numeroOperacion || `MP-${Math.floor(Math.random() * 900000000)}`,
+      numeroOperacion: receiptData.numeroOperacion || `MANUAL-SYS-${Date.now()}`,
       monto: Number(receiptData.monto) || 15000,
       billeteraOrigen: receiptData.billeteraOrigen || 'Mercado Pago',
       emisorNombre: receiptData.emisorNombre || `${currentUser.nombre}`,

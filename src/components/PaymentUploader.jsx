@@ -243,6 +243,24 @@ export const PaymentUploader = ({ onSuccess }) => {
             // El COELSA ID es largo (22 alfanuméricos), permitimos hasta 4 typos por errores de OCR
             if (coelsaNorm && isFuzzyMatch(coelsaNorm, textNorm, 4)) return true;
             
+            // Fallback por Fecha y Hora (Si extrae "24/7/26, 12:11" del comprobante y existe en MP)
+            if (t.fecha) {
+              // t.fecha viene como "24/7/2026, 12:11"
+              // Buscamos si los números clave de esa fecha (dia, mes, hora, minuto) aparecen muy cerca en el texto leído
+              const [datePart, timePart] = t.fecha.split(', ');
+              if (datePart && timePart) {
+                 const [day, month] = datePart.split('/');
+                 const [hour, min] = timePart.split(':');
+                 const dayMonthRegex = new RegExp(`\\b${day}\\s*[/\\-]\\s*0?${month}\\b`);
+                 const timeRegex = new RegExp(`\\b${hour}\\s*:\\s*${min}\\b`);
+                 
+                 // Si el texto incluye la misma fecha (día/mes) y la misma hora exacta (hora:min)
+                 if (dayMonthRegex.test(textNorm) && timeRegex.test(textNorm)) {
+                   return true;
+                 }
+              }
+            }
+            
             return false;
           });
 
@@ -269,21 +287,42 @@ export const PaymentUploader = ({ onSuccess }) => {
             const montoMatch = textNorm.match(/\$ ?([\d.,]+)/);
             const montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
             
-            // Intentar buscar un COELSA ID en el texto aunque no esté en MP para evitar duplicados locales
-            const coelsaMatch = textNorm.match(/1[A-Z0-9]{20,21}/);
-            const numeroMatch = textNorm.match(/\b\d{10,12}\b/);
+            // Intentar extraer Fecha/Hora del texto leído (Ej: 24/7/26 12:11)
+            const dateMatch = textNorm.match(/\b\d{1,2}\s*[/\\-]\s*\d{1,2}(?:\s*[/\\-]\s*\d{2,4})?\b/);
+            const timeMatch = textNorm.match(/\b\d{1,2}\s*:\s*\d{2}\b/);
             
-            if (coelsaMatch) extractedNumeroOperacion = coelsaMatch[0];
-            else if (numeroMatch) extractedNumeroOperacion = numeroMatch[0];
-            else extractedNumeroOperacion = `MANUAL-${Math.floor(Math.random() * 900000000)}`;
+            const fechaExtraida = dateMatch ? dateMatch[0] : null;
+            const horaExtraida = timeMatch ? timeMatch[0] : null;
             
-            // Re-chequear doble spend con el ID extraído (aunque no esté en MP)
-            const isDuplicate = payments.some(p => String(p.numeroOperacion) === String(extractedNumeroOperacion));
+            // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
+            let isDuplicate = false;
+            if (fechaExtraida && horaExtraida) {
+               isDuplicate = payments.some(p => {
+                 if (p.estado !== 'aprobado' && p.estado !== 'en_revision') return false;
+                 // Si el comprobante antiguo no tiene la foto guardada, o si no guardamos la fecha en MP, al menos que coincida fecha/hora en observaciones o fechaTransferencia
+                 const obsText = (p.observaciones || '').toLowerCase();
+                 const fhText = (p.fechaTransferencia || '').toLowerCase();
+                 const fNorm = fechaExtraida.toLowerCase();
+                 const hNorm = horaExtraida.toLowerCase();
+                 return (obsText.includes(fNorm) && obsText.includes(hNorm)) || 
+                        (fhText.includes(fNorm) && fhText.includes(hNorm));
+               });
+            }
+
             if (isDuplicate) {
               finalStatus = 'rechazado';
-              autoObservaciones = `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`;
+              autoObservaciones = `Requiere revisión: Comprobante duplicado. Ya existe un comprobante registrado con fecha ${fechaExtraida} y hora ${horaExtraida}.`;
+              extractedNumeroOperacion = `RECHAZADO-${Date.now()}`;
             } else {
-              autoObservaciones = `Requiere revisión manual. No se encontró el N° de operación en MP.\nPosible Monto: ${montoExtraido}\nID Extraído: ${extractedNumeroOperacion}\nTexto leído: ${textNorm}`;
+              // Asignar ID Secuencial
+              const countManuals = payments.filter(p => String(p.numeroOperacion).startsWith('MANUAL-')).length;
+              extractedNumeroOperacion = `MANUAL-${(countManuals + 1).toString().padStart(4, '0')}`;
+              
+              autoObservaciones = `Requiere revisión manual. No se encontró el N° de operación en MP.\nPosible Monto: ${montoExtraido}\nID Asignado: ${extractedNumeroOperacion}\nTexto leído: ${textNorm}`;
+              
+              if (fechaExtraida && horaExtraida) {
+                autoObservaciones += `\nFecha/Hora extraída: ${fechaExtraida} ${horaExtraida}`;
+              }
             }
           }
         }

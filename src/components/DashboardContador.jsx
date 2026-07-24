@@ -46,6 +46,22 @@ export const DashboardContador = () => {
   const [showCuotasModal, setShowCuotasModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('en_revision');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [selectedPayments, setSelectedPayments] = useState([]);
+  const [isZoomed, setIsZoomed] = useState(false);
+
+  const handleBulkDelete = () => {
+    if (selectedPayments.length === 0) return;
+    if (window.confirm(`¿Estás seguro de eliminar ${selectedPayments.length} comprobantes de forma permanente?`)) {
+      selectedPayments.forEach(id => deletePayment(id));
+      setSelectedPayments([]);
+    }
+  };
+
+  const togglePaymentSelection = (id) => {
+    setSelectedPayments(prev => 
+      prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]
+    );
+  };
   const [isZoomed, setIsZoomed] = useState(false);
 
   // Filters for Movimientos
@@ -531,14 +547,23 @@ export const DashboardContador = () => {
                   key={tab.id}
                   onClick={() => setFilterStatus(tab.id)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                    filterStatus === tab.id
-                      ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
-                      : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                    filterStatus === tab.id 
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
+                      : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
+              
+              {selectedPayments.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  className="ml-auto px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/20 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" /> Eliminar ({selectedPayments.length})
+                </button>
+              )}
             </div>
           </div>
 
@@ -557,8 +582,16 @@ export const DashboardContador = () => {
                     p.estado === 'en_revision' ? 'border-amber-500/40 bg-slate-900/90' : 'border-slate-800'
                   }`}
                 >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
+                  <div className="flex justify-between items-start mb-3 gap-3">
+                    <div className="pt-1">
+                      <input 
+                        type="checkbox" 
+                        checked={selectedPayments.includes(p.id)}
+                        onChange={() => togglePaymentSelection(p.id)}
+                        className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900 cursor-pointer"
+                      />
+                    </div>
+                    <div className="flex-1">
                       <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
                         {p.billeteraOrigen} • N° {p.numeroOperacion}
                       </div>
