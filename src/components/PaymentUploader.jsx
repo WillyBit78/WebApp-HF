@@ -202,12 +202,13 @@ export const PaymentUploader = ({ onSuccess }) => {
           }];
 
           const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código \`\`\`json ni nada más, solo el objeto JSON).
-Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale null. No inventes datos.
+Si un campo no se encuentra en el comprobante o no estás seguro, asignale null. No inventes datos.
 {
   "fecha": "DD/MM/YYYY", // Ej: "12/07/2026"
   "hora": "HH:MM", // Ej: "18:44"
   "monto": 15000, // Número entero o flotante sin formato
-  "id_operacion": "texto", // MUY IMPORTANTE: Buscá el "COELSA ID" o "Código de Autenticación" que suele ser largo y tener letras y números (ej: 1LMP...). Si no hay ninguno alfanumérico, extraé el "Número de operación".
+  "coelsa_id": "texto o null", // Buscá el "COELSA ID", "Código de Autenticación" o un código alfanumérico largo (ej: 1LMP...).
+  "numero_operacion": "texto o null", // Buscá el "Número de operación", "Nº de transacción" que suele ser numérico.
   "emisor": "Nombre Apellido"
 }`;
 
@@ -223,75 +224,81 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
             
             console.log("Resultado Gemini:", geminiResult);
           } catch (e) {
-            console.error("Error contactando a Gemini o parseando JSON:", e);
-            throw new Error(`Error IA: ${e.message || e}`);
+            console.error("Error parseando JSON de Gemini:", e);
+            throw new Error("La IA no devolvió un formato válido.");
           }
 
           fechaExtraida = geminiResult.fecha || null;
           horaExtraida = geminiResult.hora || null;
           montoExtraido = geminiResult.monto ? `$${geminiResult.monto.toLocaleString('es-AR')}` : 'Desconocido';
-          textNorm = JSON.stringify(geminiResult); // Lo guardamos para el debug string si es necesario
+          textNorm = JSON.stringify(geminiResult);
 
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           
-          // A veces Gemini devuelve "1LMP... - Id Bancario". Nos quedamos solo con la primera parte alfanumérica pura.
-          const rawId = String(geminiResult.id_operacion || '').split(/[-\s]/)[0];
-          const extractedId = cleanStr(rawId);
+          // Limpiamos los textos basura que Gemini a veces agrega (ej: "1LMP... - Id Bancario")
+          const rawCoelsa = String(geminiResult.coelsa_id || '').split(/[-\s]/)[0];
+          const extractedCoelsa = cleanStr(rawCoelsa);
           
-          // Cruce: buscamos si el id de operación extraído o el monto/fecha/hora existen en MP
+          const rawNumOp = String(geminiResult.numero_operacion || '').split(/[-\s]/)[0];
+          const extractedNumOp = cleanStr(rawNumOp);
+          
+          // Cruce robusto
           matchedTransfer = mercadoPagoTransfers?.find(t => {
-            if (extractedId.length > 5) {
-              const numOpNorm = cleanStr(t.numeroOperacion);
-              const coelsaNorm = cleanStr(t.coelsaId);
-              if (extractedId === numOpNorm) return true;
-              // Permitir coincidencia parcial para el COELSA ID por si Gemini omitió algo
-              if (coelsaNorm && (coelsaNorm.includes(extractedId) || extractedId.includes(coelsaNorm))) return true;
-            }
+            const numOpNorm = cleanStr(t.numeroOperacion);
+            const coelsaNorm = cleanStr(t.coelsaId);
             
-            // Fallback por Fecha y Hora si Gemini no sacó ID pero sí sacó fecha/hora exacta
+            if (extractedCoelsa.length > 5 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
+            if (extractedNumOp.length > 5 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
+            
+            // Fallback súper flexible por Fecha y Hora (extraemos solo los números para ignorar formatos raros de navegadores)
             if (t.fecha && fechaExtraida && horaExtraida) {
-              // El formato de t.fecha puede variar según el navegador: "12/7/2026, 18:44" o "12/7/2026 6:44 p.m."
-              const parts = t.fecha.split(/[\s,]+/); 
-              if (parts.length >= 2) {
-                 const datePart = parts[0];
-                 const timePart = parts.slice(1).join(' ');
+               const tNums = String(t.fecha).match(/\d+/g) || [];
+               const gDateNums = String(fechaExtraida).match(/\d+/g) || [];
+               
+               if (tNums.length >= 5 && gDateNums.length >= 2) {
+                 const tDay = parseInt(tNums[0]);
+                 const tMonth = parseInt(tNums[1]);
+                 const gDay = parseInt(gDateNums[0]);
+                 const gMonth = parseInt(gDateNums[1]);
                  
-                 const [day, month] = datePart.split('/');
-                 const [gDay, gMonth] = fechaExtraida.split('/');
-                 
-                 if (parseInt(day) === parseInt(gDay) && parseInt(month) === parseInt(gMonth)) {
-                   // Si el monto extraído coincide exactamente con el monto de MP, lo damos por bueno
+                 // Si coincide día y mes
+                 if (tDay === gDay && tMonth === gMonth) {
+                   // Y el monto es idéntico
                    if (geminiResult.monto && Number(geminiResult.monto) === Number(t.monto)) {
-                     // Comparar hora, admitimos un margen de error de unos minutos
-                     const [tHour, tMin] = timePart.split(' ')[0].split(':');
-                     let isPM = timePart.toLowerCase().includes('p');
-                     let hour24 = parseInt(tHour);
-                     if (isPM && hour24 < 12) hour24 += 12;
-                     if (!isPM && hour24 === 12) hour24 = 0;
                      
-                     const [gHour, gMin] = horaExtraida.split(':');
+                     // Extraemos hora de la base de datos (con lógica AM/PM)
+                     const tHourRaw = parseInt(tNums[3]);
+                     const tMin = parseInt(tNums[4]);
+                     let isPM = String(t.fecha).toLowerCase().includes('p');
+                     let tHour24 = tHourRaw;
+                     if (isPM && tHourRaw < 12) tHour24 += 12;
+                     if (!isPM && tHourRaw === 12) tHour24 = 0;
                      
-                     // Fix para minutos: Convertir todo a minutos absolutos para evitar error al cruzar la hora (ej 18:59 a 19:02)
-                     const tTotalMins = hour24 * 60 + parseInt(tMin);
-                     const gTotalMins = parseInt(gHour) * 60 + parseInt(gMin);
-                     
-                     // Ampliamos el margen a 15 minutos de tolerancia
-                     if (Math.abs(tTotalMins - gTotalMins) <= 15) {
-                       return true;
+                     // Extraemos hora de la imagen
+                     const gTimeNums = String(horaExtraida).match(/\d+/g) || [];
+                     if (gTimeNums.length >= 2) {
+                       const gHour = parseInt(gTimeNums[0]);
+                       const gMin = parseInt(gTimeNums[1]);
+                       
+                       const tTotalMins = tHour24 * 60 + tMin;
+                       const gTotalMins = gHour * 60 + gMin;
+                       
+                       // 30 minutos de tolerancia (IA super flexible)
+                       if (Math.abs(tTotalMins - gTotalMins) <= 30) {
+                         return true;
+                       }
                      }
                    }
                  }
-              }
+               }
             }
-            
             return false;
           });
 
           if (matchedTransfer) {
-            // El usuario prefiere el COELSA ID si existe (para transferencias externas), sino el ID interno de MP.
+            // Preferimos guardar el COELSA ID
             extractedNumeroOperacion = matchedTransfer.coelsaId ? matchedTransfer.coelsaId : matchedTransfer.numeroOperacion;
             
-            // Check for double spend (duplicate upload) using String to prevent type mismatch
             const isDuplicate = payments.some(p => 
                String(p.numeroOperacion) === String(extractedNumeroOperacion) && 
                (p.estado === 'aprobado' || p.estado === 'en_revision')
@@ -301,7 +308,6 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
                finalStatus = 'rechazado';
                autoObservaciones = `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`;
             } else {
-               // Normal successful match
                autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
             }
           } else {
@@ -310,13 +316,8 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
             if (fechaExtraida && horaExtraida) {
                isDuplicate = payments.some(p => {
                  if (p.estado !== 'aprobado' && p.estado !== 'en_revision') return false;
-                 // Si el comprobante antiguo no tiene la foto guardada, o si no guardamos la fecha en MP, al menos que coincida fecha/hora en observaciones o fechaTransferencia
                  const obsText = (p.observaciones || '').toLowerCase();
-                 const fhText = (p.fechaTransferencia || '').toLowerCase();
-                 const fNorm = fechaExtraida.toLowerCase();
-                 const hNorm = horaExtraida.toLowerCase();
-                 return (obsText.includes(fNorm) && obsText.includes(hNorm)) || 
-                        (fhText.includes(fNorm) && fhText.includes(hNorm));
+                 return obsText.includes(fechaExtraida) && obsText.includes(horaExtraida) && p.socioId === currentUser.id;
                });
             }
 
