@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock } from 'lucide-react';
-import Tesseract from 'tesseract.js';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurar el worker de PDF.js usando CDN para evitar problemas de Vite
@@ -110,24 +110,9 @@ export const PaymentUploader = ({ onSuccess }) => {
 
             const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
             
-            // Para el OCR, vamos a unir el 20% superior (donde suele estar la fecha) 
-            // y el 30% inferior (donde suele estar el ID y los detalles) para omitir el centro oscuro
-            const ocrCanvas = document.createElement('canvas');
-            const ocrCtx = ocrCanvas.getContext('2d');
-            const topHeight = height * 0.2;
-            const bottomHeight = height * 0.3;
-            ocrCanvas.width = width;
-            ocrCanvas.height = topHeight + bottomHeight;
-            
-            // Dibujar parte superior
-            ocrCtx.drawImage(canvas, 0, 0, width, topHeight, 0, 0, width, topHeight);
-            // Dibujar parte inferior
-            ocrCtx.drawImage(canvas, 0, height - bottomHeight, width, bottomHeight, 0, topHeight, width, bottomHeight);
-            
-            const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
-            
+            // Para Gemini, solo necesitamos pasar la imagen original sin recortes.
             setPreviewUrl(dataUrl);
-            processReceipt(dataUrl, null, ocrDataUrl);
+            processReceipt(dataUrl, null);
           };
           img.src = event.target.result;
         };
@@ -141,7 +126,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           
           if (result && result.dataUrl) {
             setPreviewUrl(result.dataUrl);
-            processReceipt(result.dataUrl, null, result.ocrDataUrl); // Pasamos imagen completa y recortada
+            processReceipt(result.dataUrl, null);
           } else {
             const fallbackReader = new FileReader();
             fallbackReader.onloadend = () => {
@@ -199,63 +184,79 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          // Usar la imagen recortada especial para el OCR (si existe)
-          const targetImage = ocrDataUrl || dataUrl;
-          
-          const worker = await Tesseract.createWorker('spa');
-          await worker.setParameters({
-            tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
-          });
-          const result = await worker.recognize(targetImage);
-          await worker.terminate();
-          
-          // Normalizar el texto: quitar espacios, guiones, saltos, y tratar O/0 I/1 S/5 como iguales
-          const normalizeStr = (str) => String(str).toUpperCase()
-            .replace(/[\s\-\_]/g, '')
-            .replace(/O/g, '0')
-            .replace(/I/g, '1')
-            .replace(/S/g, '5');
+          // Usar Gemini para analizar la imagen completa
+          const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+          // Gemini 1.5 Flash es rapidísimo y excelente para tareas visuales de este tipo
+          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-          textNorm = normalizeStr(result.data.text);
-          console.log("Texto extraído normalizado:", textNorm);
-
-          const isFuzzyMatch = (target, text, maxTypos = 4) => {
-            if (!target || target.length < 10) return text.includes(target);
-            for (let i = 0; i <= text.length - target.length; i++) {
-              let typos = 0;
-              for (let j = 0; j < target.length; j++) {
-                if (text[i+j] !== target[j]) typos++;
-                if (typos > maxTypos) break;
-              }
-              if (typos <= maxTypos) return true;
+          // Convertir dataUrl base64 a formato InlineData para Gemini
+          const base64Data = dataUrl.split(',')[1];
+          const imageParts = [{
+            inlineData: {
+              data: base64Data,
+              mimeType: "image/jpeg"
             }
-            return false;
-          };
+          }];
 
-          // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
+          const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código \`\`\`json ni nada más, solo el objeto JSON).
+Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale null. No inventes datos.
+{
+  "fecha": "DD/MM/YYYY", // Ej: "12/07/2026"
+  "hora": "HH:MM", // Ej: "18:44"
+  "monto": 15000, // Número entero o flotante sin formato
+  "id_operacion": "texto", // Buscá el "Número de operación", "N° de transacción", "Código de autenticación" o "COELSA ID". Suele ser largo, alfanumérico o numérico.
+  "emisor": "texto" // Nombre de la persona o entidad que envía el dinero, si figura
+}`;
+
+          let geminiResult = {};
+          try {
+            const result = await model.generateContent([prompt, ...imageParts]);
+            const response = await result.response;
+            let text = response.text();
+            
+            // Limpiar posible formato Markdown
+            text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            geminiResult = JSON.parse(text);
+            
+            console.log("Resultado Gemini:", geminiResult);
+          } catch (e) {
+            console.error("Error contactando a Gemini o parseando JSON:", e);
+            throw new Error("No se pudo analizar el comprobante con la Inteligencia Artificial.");
+          }
+
+          fechaExtraida = geminiResult.fecha || null;
+          horaExtraida = geminiResult.hora || null;
+          montoExtraido = geminiResult.monto ? `$${geminiResult.monto.toLocaleString('es-AR')}` : 'Desconocido';
+          textNorm = JSON.stringify(geminiResult); // Lo guardamos para el debug string si es necesario
+
+          const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+          const extractedId = cleanStr(geminiResult.id_operacion);
+          
+          // Cruce: buscamos si el id de operación extraído o el monto/fecha/hora existen en MP
           matchedTransfer = mercadoPagoTransfers?.find(t => {
-            const numOpNorm = normalizeStr(t.numeroOperacion);
-            const coelsaNorm = t.coelsaId ? normalizeStr(t.coelsaId) : null;
+            if (extractedId.length > 5) {
+              const numOpNorm = cleanStr(t.numeroOperacion);
+              const coelsaNorm = cleanStr(t.coelsaId);
+              if (extractedId === numOpNorm) return true;
+              // Permitir coincidencia parcial para el COELSA ID por si Gemini omitió algo
+              if (coelsaNorm && (coelsaNorm.includes(extractedId) || extractedId.includes(coelsaNorm))) return true;
+            }
             
-            // El número de operación de MP es corto (11 números), exigimos coincidencia exacta o 1 typo
-            if (isFuzzyMatch(numOpNorm, textNorm, 1)) return true;
-            // El COELSA ID es largo (22 alfanuméricos), permitimos hasta 4 typos por errores de OCR
-            if (coelsaNorm && isFuzzyMatch(coelsaNorm, textNorm, 4)) return true;
-            
-            // Fallback por Fecha y Hora (Si extrae "24/7/26, 12:11" del comprobante y existe en MP)
-            if (t.fecha) {
-              // t.fecha viene como "24/7/2026, 12:11"
-              // Buscamos si los números clave de esa fecha (dia, mes, hora, minuto) aparecen muy cerca en el texto leído
+            // Fallback por Fecha y Hora si Gemini no sacó ID pero sí sacó fecha/hora exacta
+            if (t.fecha && fechaExtraida && horaExtraida) {
               const [datePart, timePart] = t.fecha.split(', ');
               if (datePart && timePart) {
+                 // MP devuelve '12/7/2026' y '6:44 p. m.' (es-AR format default)
+                 // Para comparar, llevamos la fecha y hora de Gemini a fechas nativas si es posible
+                 // Pero como eso puede ser frágil, comparamos el día/mes
                  const [day, month] = datePart.split('/');
-                 const [hour, min] = timePart.split(':');
-                 const dayMonthRegex = new RegExp(`(?:^|\\D)${day}\\s*[/\\-]\\s*0?${month}(?:\\D|$)`);
-                 const timeRegex = new RegExp(`(?:^|\\D)${hour}\\s*:\\s*${min}(?:\\D|$)`);
+                 const [gDay, gMonth] = fechaExtraida.split('/');
                  
-                 // Si el texto incluye la misma fecha (día/mes) y la misma hora exacta (hora:min)
-                 if (dayMonthRegex.test(textNorm) && timeRegex.test(textNorm)) {
-                   return true;
+                 if (parseInt(day) === parseInt(gDay) && parseInt(month) === parseInt(gMonth)) {
+                   // Si el monto extraído coincide exactamente con el monto de MP, lo damos por bueno
+                   if (geminiResult.monto && Number(geminiResult.monto) === Number(t.monto)) {
+                     return true;
+                   }
                  }
               }
             }
@@ -281,16 +282,6 @@ export const PaymentUploader = ({ onSuccess }) => {
                autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
             }
           } else {
-            // Intentar extraer monto y nombres usando expresiones regulares (fallback para comprobantes externos a MP)
-            const montoMatch = textNorm.match(/\$ ?([\d.,]+)/);
-            montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
-            
-            const dateMatch = textNorm.match(/(?:^|\D)(\d{1,2}[/\\-]\d{1,2}(?:[/\\-]\d{2,4})?)(?:\D|$)/);
-            const timeMatch = textNorm.match(/(?:^|\D)(\d{1,2}:\d{2})(?:\D|$)/);
-            
-            fechaExtraida = dateMatch ? dateMatch[1] : null;
-            horaExtraida = timeMatch ? timeMatch[1] : null;
-            
             // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
             let isDuplicate = false;
             if (fechaExtraida && horaExtraida) {
