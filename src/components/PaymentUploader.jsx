@@ -75,7 +75,21 @@ export const PaymentUploader = ({ onSuccess }) => {
         viewport: viewport
       }).promise;
       
-      return canvas.toDataURL('image/jpeg', 0.8);
+      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imgData.data;
+      for (let i = 0; i < data.length; i += 4) {
+         const r = data[i];
+         const g = data[i+1];
+         const b = data[i+2];
+         const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+         const color = gray < 210 ? 0 : 255;
+         data[i] = color;
+         data[i+1] = color;
+         data[i+2] = color;
+      }
+      ctx.putImageData(imgData, 0, 0);
+
+      return canvas.toDataURL('image/jpeg', 1.0);
     } catch (err) {
       console.error("Error convirtiendo PDF a imagen:", err);
       return null;
@@ -109,8 +123,27 @@ export const PaymentUploader = ({ onSuccess }) => {
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
+
+            // Filtro de Binarización para ayudar al OCR (convierte texto gris a negro puro)
+            // Muchas billeteras (ej. Personal Pay) tienen texto gris claro en fondo blanco
+            // que Tesseract ignora por culpa del encabezado oscuro.
+            const imgData = ctx.getImageData(0, 0, width, height);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+              const r = data[i];
+              const g = data[i+1];
+              const b = data[i+2];
+              // Escala de grises
+              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+              // Threshold estricto: si es más oscuro que un gris muy claro, hacerlo negro.
+              const color = gray < 210 ? 0 : 255;
+              data[i] = color;     // R
+              data[i+1] = color;   // G
+              data[i+2] = color;   // B
+            }
+            ctx.putImageData(imgData, 0, 0);
             
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
             setPreviewUrl(dataUrl);
             processReceipt(dataUrl, null);
           };
