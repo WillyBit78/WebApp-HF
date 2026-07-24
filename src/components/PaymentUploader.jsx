@@ -185,7 +185,11 @@ export const PaymentUploader = ({ onSuccess }) => {
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
           // Usar Gemini para analizar la imagen completa
-          const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+          const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+          if (!apiKey) {
+            throw new Error("Falta configurar la VITE_GEMINI_API_KEY en Vercel.");
+          }
+          const genAI = new GoogleGenerativeAI(apiKey);
           // Gemini 1.5 Flash es rapidísimo y excelente para tareas visuales de este tipo
           const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -221,7 +225,7 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
             console.log("Resultado Gemini:", geminiResult);
           } catch (e) {
             console.error("Error contactando a Gemini o parseando JSON:", e);
-            throw new Error("No se pudo analizar el comprobante con la Inteligencia Artificial.");
+            throw new Error(`Error IA: ${e.message || e}`);
           }
 
           fechaExtraida = geminiResult.fecha || null;
