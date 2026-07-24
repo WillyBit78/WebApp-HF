@@ -233,7 +233,10 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
           textNorm = JSON.stringify(geminiResult); // Lo guardamos para el debug string si es necesario
 
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-          const extractedId = cleanStr(geminiResult.id_operacion);
+          
+          // A veces Gemini devuelve "1LMP... - Id Bancario". Nos quedamos solo con la primera parte alfanumérica pura.
+          const rawId = String(geminiResult.id_operacion || '').split(/[-\s]/)[0];
+          const extractedId = cleanStr(rawId);
           
           // Cruce: buscamos si el id de operación extraído o el monto/fecha/hora existen en MP
           matchedTransfer = mercadoPagoTransfers?.find(t => {
@@ -267,7 +270,13 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
                      if (!isPM && hour24 === 12) hour24 = 0;
                      
                      const [gHour, gMin] = horaExtraida.split(':');
-                     if (Math.abs(parseInt(gHour) - hour24) <= 1 && Math.abs(parseInt(gMin) - parseInt(tMin)) <= 5) {
+                     
+                     // Fix para minutos: Convertir todo a minutos absolutos para evitar error al cruzar la hora (ej 18:59 a 19:02)
+                     const tTotalMins = hour24 * 60 + parseInt(tMin);
+                     const gTotalMins = parseInt(gHour) * 60 + parseInt(gMin);
+                     
+                     // Ampliamos el margen a 15 minutos de tolerancia
+                     if (Math.abs(tTotalMins - gTotalMins) <= 15) {
                        return true;
                      }
                    }
