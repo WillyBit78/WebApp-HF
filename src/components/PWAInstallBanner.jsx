@@ -34,7 +34,7 @@ export const PWAInstallBanner = () => {
     <div className="fixed bottom-20 md:bottom-6 left-4 right-4 max-w-md mx-auto z-50 bg-gradient-to-r from-slate-900 via-slate-900 to-red-950/40 border border-red-500/50 p-4 rounded-2xl shadow-2xl backdrop-blur-lg text-white animate-bounce-short">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
+          <div className="w-[72px] h-[72px] flex items-center justify-center shrink-0 overflow-hidden">
             <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <div>

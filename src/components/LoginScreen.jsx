@@ -47,7 +47,7 @@ export const LoginScreen = () => {
         <div className="flex flex-col items-center justify-center mb-8">
           <div 
             onClick={handleLogoClick}
-            className="w-32 h-32 flex items-center justify-center mb-4 cursor-pointer select-none active:scale-95 transition-transform"
+            className="w-48 h-48 flex items-center justify-center mb-4 cursor-pointer select-none active:scale-95 transition-transform"
           >
             <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.5)]" />
           </div>

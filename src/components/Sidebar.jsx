@@ -35,7 +35,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
     <aside className="hidden md:flex flex-col w-64 h-screen sticky top-0 bg-slate-900 border-r border-slate-800 text-slate-300">
       {/* Logo Section */}
       <div className="p-6 flex items-center gap-3">
-        <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+        <div className="w-[72px] h-[72px] flex items-center justify-center overflow-hidden">
           <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
         </div>
         <div className="flex flex-col">
