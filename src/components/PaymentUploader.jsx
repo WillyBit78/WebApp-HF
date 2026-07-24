@@ -207,8 +207,8 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
   "fecha": "DD/MM/YYYY", // Ej: "12/07/2026"
   "hora": "HH:MM", // Ej: "18:44"
   "monto": 15000, // Número entero o flotante sin formato
-  "id_operacion": "texto", // Buscá el "Número de operación", "N° de transacción", "Código de autenticación" o "COELSA ID". Suele ser largo, alfanumérico o numérico.
-  "emisor": "texto" // Nombre de la persona o entidad que envía el dinero, si figura
+  "id_operacion": "texto", // MUY IMPORTANTE: Buscá el "COELSA ID" o "Código de Autenticación" que suele ser largo y tener letras y números (ej: 1LMP...). Si no hay ninguno alfanumérico, extraé el "Número de operación".
+  "emisor": "Nombre Apellido"
 }`;
 
           let geminiResult = {};
@@ -217,9 +217,9 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
             const response = await result.response;
             let text = response.text();
             
-            // Limpiar posible formato Markdown
-            text = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            geminiResult = JSON.parse(text);
+            // Limpiar cualquier markdown residual
+            const cleanedText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
+            geminiResult = JSON.parse(cleanedText);
             
             console.log("Resultado Gemini:", geminiResult);
           } catch (e) {
@@ -247,18 +247,29 @@ Si un campo no se encuentra en el comprobante o no estás 100% seguro, asignale 
             
             // Fallback por Fecha y Hora si Gemini no sacó ID pero sí sacó fecha/hora exacta
             if (t.fecha && fechaExtraida && horaExtraida) {
-              const [datePart, timePart] = t.fecha.split(', ');
-              if (datePart && timePart) {
-                 // MP devuelve '12/7/2026' y '6:44 p. m.' (es-AR format default)
-                 // Para comparar, llevamos la fecha y hora de Gemini a fechas nativas si es posible
-                 // Pero como eso puede ser frágil, comparamos el día/mes
+              // El formato de t.fecha puede variar según el navegador: "12/7/2026, 18:44" o "12/7/2026 6:44 p.m."
+              const parts = t.fecha.split(/[\s,]+/); 
+              if (parts.length >= 2) {
+                 const datePart = parts[0];
+                 const timePart = parts.slice(1).join(' ');
+                 
                  const [day, month] = datePart.split('/');
                  const [gDay, gMonth] = fechaExtraida.split('/');
                  
                  if (parseInt(day) === parseInt(gDay) && parseInt(month) === parseInt(gMonth)) {
                    // Si el monto extraído coincide exactamente con el monto de MP, lo damos por bueno
                    if (geminiResult.monto && Number(geminiResult.monto) === Number(t.monto)) {
-                     return true;
+                     // Comparar hora, admitimos un margen de error de unos minutos
+                     const [tHour, tMin] = timePart.split(' ')[0].split(':');
+                     let isPM = timePart.toLowerCase().includes('p');
+                     let hour24 = parseInt(tHour);
+                     if (isPM && hour24 < 12) hour24 += 12;
+                     if (!isPM && hour24 === 12) hour24 = 0;
+                     
+                     const [gHour, gMin] = horaExtraida.split(':');
+                     if (Math.abs(parseInt(gHour) - hour24) <= 1 && Math.abs(parseInt(gMin) - parseInt(tMin)) <= 5) {
+                       return true;
+                     }
                    }
                  }
               }
