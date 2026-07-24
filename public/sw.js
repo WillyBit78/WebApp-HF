@@ -31,6 +31,33 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Web Share Target Interception
+  if (event.request.method === 'POST' && event.request.url.includes('/share-receipt')) {
+    event.respondWith((async () => {
+      try {
+        const formData = await event.request.formData();
+        const file = formData.get('receiptImage');
+        
+        if (file) {
+          const cache = await caches.open('shared-receipts');
+          await cache.put(
+            new Request('/shared-receipt.jpg'),
+            new Response(file, {
+              headers: {
+                'Content-Type': file.type,
+                'Content-Length': file.size
+              }
+            })
+          );
+        }
+      } catch (err) {
+        console.error('Error procesando imagen compartida', err);
+      }
+      return Response.redirect('/?shared=true', 303);
+    })());
+    return;
+  }
+
   if (event.request.mode === 'navigate') {
     // Para navegación (index.html), estrategia: Network First, fallback to Cache
     event.respondWith(

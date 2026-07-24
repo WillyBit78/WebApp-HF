@@ -74,8 +74,8 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 font-black text-slate-950 text-xl tracking-tighter">
-              HF
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 font-black text-slate-950 text-xl tracking-tighter overflow-hidden">
+              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain" />
             </div>
             <div>
               <span className="font-bold text-lg text-white tracking-tight flex items-center gap-1">

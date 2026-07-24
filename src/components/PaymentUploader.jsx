@@ -11,6 +11,32 @@ export const PaymentUploader = ({ onSuccess }) => {
   const [parsedData, setParsedData] = useState(null);
   const [step, setStep] = useState(1); // 1: upload/sample, 2: verify/edit, 3: success
 
+  React.useEffect(() => {
+    const checkSharedFile = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('shared') === 'true') {
+        try {
+          const cache = await caches.open('shared-receipts');
+          const response = await cache.match('/shared-receipt.jpg');
+          if (response) {
+            const blob = await response.blob();
+            const sharedFile = new File([blob], 'comprobante_compartido.jpg', { type: blob.type || 'image/jpeg' });
+            
+            // Clean up cache and URL
+            await cache.delete('/shared-receipt.jpg');
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            // Trigger file processing directly
+            handleFileChange({ target: { files: [sharedFile] } });
+          }
+        } catch (e) {
+          console.error("Error loading shared file:", e);
+        }
+      }
+    };
+    checkSharedFile();
+  }, []);
+
   // Simulated Mercado Pago Receipt presets for quick one-click testing
   const sampleReceipts = [
     {

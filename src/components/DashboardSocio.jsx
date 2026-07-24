@@ -16,7 +16,10 @@ import {
 
 export const DashboardSocio = () => {
   const { currentUser, events, notices, payments, clubSettings } = useApp();
-  const [showUploader, setShowUploader] = useState(false);
+  const [showUploader, setShowUploader] = useState(() => {
+    const isShared = new URLSearchParams(window.location.search).get('shared') === 'true';
+    return isShared;
+  });
 
   // Socio category events
   const myEvents = events.filter(e => e.categoria === currentUser.categoria || e.categoria === 'Todas');

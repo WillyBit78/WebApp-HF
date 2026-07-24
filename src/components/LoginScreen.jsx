@@ -47,9 +47,9 @@ export const LoginScreen = () => {
         <div className="flex flex-col items-center justify-center mb-8">
           <div 
             onClick={handleLogoClick}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/20 font-black text-slate-950 text-3xl tracking-tighter mb-4 cursor-pointer select-none active:scale-95 transition-transform"
+            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-xl shadow-amber-500/20 font-black text-slate-950 text-3xl tracking-tighter mb-4 cursor-pointer select-none active:scale-95 transition-transform overflow-hidden"
           >
-            HF
+            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
             HAEDO <span className="text-amber-400 font-extrabold">FUTSAL</span>
