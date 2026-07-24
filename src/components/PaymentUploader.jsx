@@ -220,16 +220,35 @@ export const PaymentUploader = ({ onSuccess }) => {
           textNorm = normalizeStr(result.data.text);
           console.log("Texto extraído normalizado:", textNorm);
 
+          const isFuzzyMatch = (target, text, maxTypos = 4) => {
+            if (!target || target.length < 10) return text.includes(target);
+            for (let i = 0; i <= text.length - target.length; i++) {
+              let typos = 0;
+              for (let j = 0; j < target.length; j++) {
+                if (text[i+j] !== target[j]) typos++;
+                if (typos > maxTypos) break;
+              }
+              if (typos <= maxTypos) return true;
+            }
+            return false;
+          };
+
           // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
           matchedTransfer = mercadoPagoTransfers?.find(t => {
             const numOpNorm = normalizeStr(t.numeroOperacion);
             const coelsaNorm = t.coelsaId ? normalizeStr(t.coelsaId) : null;
-            return textNorm.includes(numOpNorm) || (coelsaNorm && textNorm.includes(coelsaNorm));
+            
+            // El número de operación de MP es corto (11 números), exigimos coincidencia exacta o 1 typo
+            if (isFuzzyMatch(numOpNorm, textNorm, 1)) return true;
+            // El COELSA ID es largo (22 alfanuméricos), permitimos hasta 4 typos por errores de OCR
+            if (coelsaNorm && isFuzzyMatch(coelsaNorm, textNorm, 4)) return true;
+            
+            return false;
           });
 
           if (matchedTransfer) {
             const numOpNorm = normalizeStr(matchedTransfer.numeroOperacion);
-            const isOperacion = textNorm.includes(numOpNorm);
+            const isOperacion = isFuzzyMatch(numOpNorm, textNorm, 1);
             extractedNumeroOperacion = isOperacion ? matchedTransfer.numeroOperacion : matchedTransfer.coelsaId;
           }
         }

@@ -39,7 +39,7 @@ export async function fetchMercadoPagoTransfers(accessToken) {
       return {
         id: `mp-tx-${p.id}`,
         numeroOperacion: String(p.id),
-        coelsaId: p.point_of_interaction?.transaction_data?.bank_transfer_id || p.point_of_interaction?.transaction_data?.transaction_id || null,
+        coelsaId: p.point_of_interaction?.transaction_data?.e2e_id || p.point_of_interaction?.transaction_data?.transaction_id || p.point_of_interaction?.transaction_data?.bank_transfer_id?.toString() || null,
         emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
         billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : (p.point_of_interaction?.type || 'Billetera Virtual / Banco'),
         monto: p.transaction_amount || 0,
