@@ -251,9 +251,9 @@ export const PaymentUploader = ({ onSuccess }) => {
             // even if we matched via the COELSA ID.
             extractedNumeroOperacion = matchedTransfer.numeroOperacion;
             
-            // Check for double spend (duplicate upload)
+            // Check for double spend (duplicate upload) using String to prevent type mismatch
             const isDuplicate = payments.some(p => 
-               p.numeroOperacion === extractedNumeroOperacion && 
+               String(p.numeroOperacion) === String(extractedNumeroOperacion) && 
                (p.estado === 'aprobado' || p.estado === 'en_revision')
             );
 
@@ -263,6 +263,27 @@ export const PaymentUploader = ({ onSuccess }) => {
             } else {
                // Normal successful match
                autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
+            }
+          } else {
+            // Intentar extraer monto y nombres usando expresiones regulares (fallback para comprobantes externos a MP)
+            const montoMatch = textNorm.match(/\$ ?([\d.,]+)/);
+            const montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
+            
+            // Intentar buscar un COELSA ID en el texto aunque no esté en MP para evitar duplicados locales
+            const coelsaMatch = textNorm.match(/1[A-Z0-9]{20,21}/);
+            const numeroMatch = textNorm.match(/\b\d{10,12}\b/);
+            
+            if (coelsaMatch) extractedNumeroOperacion = coelsaMatch[0];
+            else if (numeroMatch) extractedNumeroOperacion = numeroMatch[0];
+            else extractedNumeroOperacion = `MANUAL-${Math.floor(Math.random() * 900000000)}`;
+            
+            // Re-chequear doble spend con el ID extraído (aunque no esté en MP)
+            const isDuplicate = payments.some(p => String(p.numeroOperacion) === String(extractedNumeroOperacion));
+            if (isDuplicate) {
+              finalStatus = 'rechazado';
+              autoObservaciones = `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`;
+            } else {
+              autoObservaciones = `Requiere revisión manual. No se encontró el N° de operación en MP.\nPosible Monto: ${montoExtraido}\nID Extraído: ${extractedNumeroOperacion}\nTexto leído: ${textNorm}`;
             }
           }
         }

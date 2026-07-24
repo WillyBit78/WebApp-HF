@@ -333,6 +333,19 @@ export const AppProvider = ({ children }) => {
     );
   };
 
+  const deletePayment = async (paymentId) => {
+    const targetPayment = payments.find(p => p.id === paymentId);
+    if (!targetPayment) return;
+    
+    setPayments(prev => prev.filter(p => p.id !== paymentId));
+    
+    if (isSupabaseConfigured) {
+      await supabase.from('payments').delete().eq('id', paymentId).catch(console.error);
+    }
+    
+    registrarLog('comprobante_eliminado', `Comprobante de ${targetPayment.socioNombre} eliminado por administrador`);
+  };
+
   const registrarPagoEfectivoCoach = async (socioId, monto = 15000, concepto = 'Cuota en efectivo') => {
     const socioTarget = users.find(u => u.id === socioId);
     if (!socioTarget) return false;
@@ -427,7 +440,7 @@ export const AppProvider = ({ children }) => {
       cuotasPorCategoria, updateCuotaCategoria,
       clubSettings, setClubSettings,
       roles: MOCK_ROLES,
-      uploadPaymentReceipt, updatePaymentStatus,
+      uploadPaymentReceipt, updatePaymentStatus, deletePayment,
       addOrUpdateUser, deleteUser,
       addEvent, addNotice,
       stats: {

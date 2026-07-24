@@ -29,6 +29,7 @@ export const DashboardContador = () => {
   const { 
     payments, 
     updatePaymentStatus, 
+    deletePayment,
     stats, 
     clubSettings,
     movimientosFinancieros,
@@ -588,6 +589,17 @@ export const DashboardContador = () => {
                       className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
                     >
                       <Eye className="w-3.5 h-3.5" /> Ver Captura
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        if (window.confirm('¿Estás seguro de eliminar este comprobante para siempre? Esta acción restará el dinero del balance si estaba aprobado.')) {
+                          deletePayment(p.id);
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-1.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Eliminar
                     </button>
 
                     {p.estado === 'en_revision' && (
