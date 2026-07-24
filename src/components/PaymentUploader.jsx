@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock } from 'lucide-react';
+import Tesseract from 'tesseract.js';
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configurar el worker de PDF.js usando CDN para evitar problemas de Vite
+pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const PaymentUploader = ({ onSuccess }) => {
   const { uploadPaymentReceipt, clubSettings, currentUser, mercadoPagoTransfers } = useApp();
@@ -54,19 +59,43 @@ export const PaymentUploader = ({ onSuccess }) => {
     }
   ];
 
+  const convertPdfToImage = async (fileBuffer) => {
+    try {
+      const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
+      const page = await pdf.getPage(1);
+      const viewport = page.getViewport({ scale: 2.0 }); // alta calidad
+      
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      
+      await page.render({
+        canvasContext: ctx,
+        viewport: viewport
+      }).promise;
+      
+      return canvas.toDataURL('image/jpeg', 0.8);
+    } catch (err) {
+      console.error("Error convirtiendo PDF a imagen:", err);
+      return null;
+    }
+  };
+
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
+    const selectedFile = e.target.files?.[0];
     if (selectedFile) {
       setFile(selectedFile);
+      
       if (selectedFile.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
+            const MAX_SIZE = 800;
             let width = img.width;
             let height = img.height;
-            const MAX_SIZE = 800;
 
             if (width > height && width > MAX_SIZE) {
               height *= MAX_SIZE / width;
@@ -88,6 +117,27 @@ export const PaymentUploader = ({ onSuccess }) => {
           img.src = event.target.result;
         };
         reader.readAsDataURL(selectedFile);
+      } else if (selectedFile.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          setParsing(true); // Mostrar loader mientras se convierte el PDF
+          const arrayBuffer = reader.result;
+          const imgDataUrl = await convertPdfToImage(arrayBuffer);
+          
+          if (imgDataUrl) {
+            setPreviewUrl(imgDataUrl);
+            processReceipt(imgDataUrl, null); // Pasamos la IMAGEN del PDF al OCR
+          } else {
+            // Si falla la conversión, caemos en revisión manual
+            const fallbackReader = new FileReader();
+            fallbackReader.onloadend = () => {
+              setPreviewUrl(fallbackReader.result);
+              processReceipt(fallbackReader.result, null);
+            };
+            fallbackReader.readAsDataURL(selectedFile);
+          }
+        };
+        reader.readAsArrayBuffer(selectedFile);
       } else {
         const reader = new FileReader();
         reader.onloadend = () => {
