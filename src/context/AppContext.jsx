@@ -236,10 +236,16 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteMovimientoFinanciero = async (movId) => {
+    const targetMovimiento = movimientosFinancieros.find(m => m.id === movId);
+    if (!targetMovimiento) return;
+
     setMovimientosFinancieros(prev => prev.filter(m => m.id !== movId));
+
     if (isSupabaseConfigured) {
       await supabase.from('movimientos').delete().eq('id', movId).catch(console.error);
     }
+    
+    registrarLog('movimiento_eliminado', `Movimiento eliminado por administrador`);
   };
 
   // Users / Socios
