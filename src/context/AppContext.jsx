@@ -291,7 +291,7 @@ export const AppProvider = ({ children }) => {
       monto: Number(receiptData.monto) || 15000,
       billeteraOrigen: receiptData.billeteraOrigen || 'Mercado Pago',
       emisorNombre: receiptData.emisorNombre || `${currentUser.nombre}`,
-      fechaTransferencia: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+      fechaTransferencia: receiptData.fechaTransferencia || new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
       comprobanteUrl: receiptData.comprobanteUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
       estado: receiptData.estado || 'en_revision',
       observaciones: receiptData.observaciones || 'Comprobante subido desde app.'

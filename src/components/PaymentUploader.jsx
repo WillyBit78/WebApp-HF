@@ -287,11 +287,11 @@ export const PaymentUploader = ({ onSuccess }) => {
             const montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
             
             // Intentar extraer Fecha/Hora del texto leído (Ej: 24/7/26 12:11)
-            const dateMatch = textNorm.match(/\b\d{1,2}\s*[/\\-]\s*\d{1,2}(?:\s*[/\\-]\s*\d{2,4})?\b/);
-            const timeMatch = textNorm.match(/\b\d{1,2}\s*:\s*\d{2}\b/);
+            const dateMatch = textNorm.match(/(?:^|\D)(\d{1,2}[/\\-]\d{1,2}(?:[/\\-]\d{2,4})?)(?:\D|$)/);
+            const timeMatch = textNorm.match(/(?:^|\D)(\d{1,2}:\d{2})(?:\D|$)/);
             
-            const fechaExtraida = dateMatch ? dateMatch[0] : null;
-            const horaExtraida = timeMatch ? timeMatch[0] : null;
+            const fechaExtraida = dateMatch ? dateMatch[1] : null;
+            const horaExtraida = timeMatch ? timeMatch[1] : null;
             
             // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
             let isDuplicate = false;
@@ -327,11 +327,30 @@ export const PaymentUploader = ({ onSuccess }) => {
         }
       }
 
+      // Función para parsear '24/7/26' a un string válido para la base de datos
+      const parseDateAR = (str) => {
+        if (!str) return null;
+        const parts = str.split(/[\/\-]/);
+        if (parts.length >= 2) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10) - 1;
+          let year = new Date().getFullYear();
+          if (parts.length === 3) {
+            year = parseInt(parts[2], 10);
+            if (year < 100) year += 2000;
+          }
+          const d = new Date(year, month, day);
+          if (!isNaN(d.getTime())) return d.toISOString();
+        }
+        return null;
+      };
+
       const parsedData = sampleOverride || {
         monto: clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: extractedNumeroOperacion,
         billeteraOrigen: matchedTransfer ? matchedTransfer.billeteraOrigen : 'Desconocida',
         emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${currentUser.nombre} ${currentUser.apellido}`,
+        fechaTransferencia: matchedTransfer ? matchedTransfer.fecha : parseDateAR(fechaExtraida),
         observaciones: 'Cuota procesada vía OCR'
       };
 
@@ -343,11 +362,10 @@ export const PaymentUploader = ({ onSuccess }) => {
            autoObservaciones = `Requiere revisión: El monto teórico ($${parsedData.monto}) no coincide con el registro de MP ($${matchedTransfer.monto}).`;
          }
       } else if (finalStatus !== 'aprobado') {
-         // En lugar de pasar todo el texto rústico del OCR que marea al usuario, damos un mensaje limpio
          if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            autoObservaciones = `Requiere revisión manual: No se detectó coincidencia exacta con Mercado Pago ni datos extraíbles.`;
+            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? '$' + montoExtraido : '❌'}`;
          } else {
-            autoObservaciones = `Requiere revisión: No se detectó un Nº de operación válido en la imagen.`;
+            autoObservaciones = `Requiere revisión: No se detectaron datos válidos en la imagen.`;
          }
       }
 
