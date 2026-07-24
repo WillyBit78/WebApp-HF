@@ -265,9 +265,8 @@ export const PaymentUploader = ({ onSuccess }) => {
           });
 
           if (matchedTransfer) {
-            // ALWAYS return the MercadoPago `numeroOperacion` (ID interno) so that the admin's auto-reconciliation works, 
-            // even if we matched via the COELSA ID.
-            extractedNumeroOperacion = matchedTransfer.numeroOperacion;
+            // El usuario prefiere el COELSA ID si existe (para transferencias externas), sino el ID interno de MP.
+            extractedNumeroOperacion = matchedTransfer.coelsaId ? matchedTransfer.coelsaId : matchedTransfer.numeroOperacion;
             
             // Check for double spend (duplicate upload) using String to prevent type mismatch
             const isDuplicate = payments.some(p => 
