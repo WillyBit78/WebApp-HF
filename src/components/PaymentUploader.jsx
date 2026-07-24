@@ -109,8 +109,25 @@ export const PaymentUploader = ({ onSuccess }) => {
             ctx.drawImage(img, 0, 0, width, height);
 
             const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+            
+            // Para el OCR, vamos a unir el 20% superior (donde suele estar la fecha) 
+            // y el 30% inferior (donde suele estar el ID y los detalles) para omitir el centro oscuro
+            const ocrCanvas = document.createElement('canvas');
+            const ocrCtx = ocrCanvas.getContext('2d');
+            const topHeight = height * 0.2;
+            const bottomHeight = height * 0.3;
+            ocrCanvas.width = width;
+            ocrCanvas.height = topHeight + bottomHeight;
+            
+            // Dibujar parte superior
+            ocrCtx.drawImage(canvas, 0, 0, width, topHeight, 0, 0, width, topHeight);
+            // Dibujar parte inferior
+            ocrCtx.drawImage(canvas, 0, height - bottomHeight, width, bottomHeight, 0, topHeight, width, bottomHeight);
+            
+            const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
+            
             setPreviewUrl(dataUrl);
-            processReceipt(dataUrl, null, dataUrl);
+            processReceipt(dataUrl, null, ocrDataUrl);
           };
           img.src = event.target.result;
         };
@@ -182,8 +199,8 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          // Usar la imagen completa (sin recortes para no perder fechas en el encabezado)
-          const targetImage = dataUrl;
+          // Usar la imagen recortada especial para el OCR (si existe)
+          const targetImage = ocrDataUrl || dataUrl;
           
           const worker = await Tesseract.createWorker('spa');
           await worker.setParameters({
