@@ -18,12 +18,21 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
-  const { currentUser } = useApp();
+  const { currentUser, loadingDb } = useApp();
   const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices, finance, users, settings
 
   const [modalUserOpen, setModalUserOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
   const [modalNoticeOpen, setModalNoticeOpen] = useState(false);
+
+  if (loadingDb) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500 mb-4"></div>
+        <p>Conectando con la base de datos...</p>
+      </div>
+    );
+  }
 
   if (!currentUser) {
     return <LoginScreen />;
