@@ -182,6 +182,9 @@ export const PaymentUploader = ({ onSuccess }) => {
       let extractedNumeroOperacion = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
       let matchedTransfer = null;
       let textNorm = '';
+      let fechaExtraida = null;
+      let horaExtraida = null;
+      let montoExtraido = null;
 
       if (sampleOverride) {
         // Lógica de simulación
@@ -286,12 +289,11 @@ export const PaymentUploader = ({ onSuccess }) => {
             const montoMatch = textNorm.match(/\$ ?([\d.,]+)/);
             const montoExtraido = montoMatch ? `$${montoMatch[1]}` : 'Desconocido';
             
-            // Intentar extraer Fecha/Hora del texto leído (Ej: 24/7/26 12:11)
             const dateMatch = textNorm.match(/(?:^|\D)(\d{1,2}[/\\-]\d{1,2}(?:[/\\-]\d{2,4})?)(?:\D|$)/);
             const timeMatch = textNorm.match(/(?:^|\D)(\d{1,2}:\d{2})(?:\D|$)/);
             
-            const fechaExtraida = dateMatch ? dateMatch[1] : null;
-            const horaExtraida = timeMatch ? timeMatch[1] : null;
+            fechaExtraida = dateMatch ? dateMatch[1] : null;
+            horaExtraida = timeMatch ? timeMatch[1] : null;
             
             // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
             let isDuplicate = false;
@@ -389,7 +391,7 @@ export const PaymentUploader = ({ onSuccess }) => {
     } catch (error) {
       console.error("Error en OCR:", error);
       setParsing(false);
-      alert("Hubo un problema al escanear la imagen. Intenta de nuevo.");
+      alert("Error crítico al procesar: " + error.message);
     }
   };
 
