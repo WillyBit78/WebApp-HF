@@ -75,7 +75,19 @@ export const PaymentUploader = ({ onSuccess }) => {
         viewport: viewport
       }).promise;
 
-      return canvas.toDataURL('image/jpeg', 1.0);
+      const fullDataUrl = canvas.toDataURL('image/jpeg', 1.0);
+      
+      const ocrCanvas = document.createElement('canvas');
+      const ocrCtx = ocrCanvas.getContext('2d');
+      const cropHeight = canvas.height * 0.7;
+      const cropY = canvas.height - cropHeight;
+      ocrCanvas.width = canvas.width;
+      ocrCanvas.height = cropHeight;
+      ocrCtx.drawImage(canvas, 0, cropY, canvas.width, cropHeight, 0, 0, canvas.width, cropHeight);
+      
+      const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
+
+      return { dataUrl: fullDataUrl, ocrDataUrl };
     } catch (err) {
       console.error("Error convirtiendo PDF a imagen:", err);
       return null;
@@ -97,21 +109,29 @@ export const PaymentUploader = ({ onSuccess }) => {
             let width = img.width;
             let height = img.height;
 
-            // En recibos largos, si limitamos por altura, el ancho (y el tamaño de la letra)
-            // se reduce drásticamente. Por eso solo limitamos por ancho.
             if (width > MAX_WIDTH) {
               height *= MAX_WIDTH / width;
               width = MAX_WIDTH;
             }
-
             canvas.width = width;
             canvas.height = height;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
+            // Generamos una segunda versión recortada (solo el 70% inferior) para el OCR.
+            const ocrCanvas = document.createElement('canvas');
+            const ocrCtx = ocrCanvas.getContext('2d');
+            const cropHeight = height * 0.7;
+            const cropY = height - cropHeight;
+            ocrCanvas.width = width;
+            ocrCanvas.height = cropHeight;
+            ocrCtx.drawImage(canvas, 0, cropY, width, cropHeight, 0, 0, width, cropHeight);
+            
+            const ocrDataUrl = ocrCanvas.toDataURL('image/jpeg', 1.0);
             const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+
             setPreviewUrl(dataUrl);
-            processReceipt(dataUrl, null);
+            processReceipt(dataUrl, null, ocrDataUrl);
           };
           img.src = event.target.result;
         };
@@ -119,15 +139,14 @@ export const PaymentUploader = ({ onSuccess }) => {
       } else if (selectedFile.type === 'application/pdf') {
         const reader = new FileReader();
         reader.onloadend = async () => {
-          setParsing(true); // Mostrar loader mientras se convierte el PDF
+          setParsing(true);
           const arrayBuffer = reader.result;
-          const imgDataUrl = await convertPdfToImage(arrayBuffer);
+          const result = await convertPdfToImage(arrayBuffer);
           
-          if (imgDataUrl) {
-            setPreviewUrl(imgDataUrl);
-            processReceipt(imgDataUrl, null); // Pasamos la IMAGEN del PDF al OCR
+          if (result && result.dataUrl) {
+            setPreviewUrl(result.dataUrl);
+            processReceipt(result.dataUrl, null, result.ocrDataUrl); // Pasamos imagen completa y recortada
           } else {
-            // Si falla la conversión, caemos en revisión manual
             const fallbackReader = new FileReader();
             fallbackReader.onloadend = () => {
               setPreviewUrl(fallbackReader.result);
@@ -154,7 +173,7 @@ export const PaymentUploader = ({ onSuccess }) => {
     processReceipt('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80', sample);
   };
 
-  const processReceipt = async (dataUrl, sampleOverride) => {
+  const processReceipt = async (dataUrl, sampleOverride, ocrDataUrl = null) => {
     setParsing(true);
     
     try {
@@ -181,7 +200,9 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          const result = await Tesseract.recognize(dataUrl, 'spa');
+          // Usar la imagen recortada si existe, sino la completa
+          const targetImage = ocrDataUrl || dataUrl;
+          const result = await Tesseract.recognize(targetImage, 'spa');
           
           // Normalizar el texto: quitar espacios, guiones, saltos, y tratar O/0 I/1 S/5 como iguales
           const normalizeStr = (str) => String(str).toUpperCase()
