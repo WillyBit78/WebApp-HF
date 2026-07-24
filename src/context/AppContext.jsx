@@ -346,7 +346,11 @@ export const AppProvider = ({ children }) => {
     setPayments(prev => prev.filter(p => p.id !== paymentId));
     
     if (isSupabaseConfigured) {
-      await supabase.from('payments').delete().eq('id', paymentId).catch(console.error);
+      const { error } = await supabase.from('payments').delete().eq('id', paymentId);
+      if (error) {
+        console.error('Supabase Delete Error:', error);
+        alert('Error al borrar de la base de datos: ' + JSON.stringify(error));
+      }
     }
     
     registrarLog('comprobante_eliminado', `Comprobante de ${targetPayment.socioNombre} eliminado por administrador`);
