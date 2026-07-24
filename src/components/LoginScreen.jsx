@@ -60,7 +60,7 @@ export const LoginScreen = () => {
               fontFamily: "'Caveat', cursive", 
               fontSize: '2.0rem',
               lineHeight: '1',
-              WebkitTextStroke: '0.5px rgba(255,255,255,0.7)'
+              textShadow: '0 0 8px rgba(255,255,255,1), 0 0 12px rgba(255,255,255,0.8), 0 0 16px rgba(255,255,255,0.6)'
             }}
           >
             más que un club
