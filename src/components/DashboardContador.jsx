@@ -62,7 +62,6 @@ export const DashboardContador = () => {
       prev.includes(id) ? prev.filter(pId => pId !== id) : [...prev, id]
     );
   };
-  const [isZoomed, setIsZoomed] = useState(false);
 
   // Filters for Movimientos
   const [filterCaja, setFilterCaja] = useState('todas');
