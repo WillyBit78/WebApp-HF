@@ -223,7 +223,7 @@ export const AppProvider = ({ children }) => {
       emisorNombre: receiptData.emisorNombre || `${currentUser.nombre}`,
       fechaTransferencia: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
       comprobanteUrl: receiptData.comprobanteUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
-      estado: 'en_revision',
+      estado: receiptData.estado || 'en_revision',
       observaciones: receiptData.observaciones || 'Comprobante subido desde app.'
     };
 
