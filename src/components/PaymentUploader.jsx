@@ -190,8 +190,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             throw new Error("Falta configurar la VITE_GEMINI_API_KEY en Vercel.");
           }
           const genAI = new GoogleGenerativeAI(apiKey);
-          // Gemini 1.5 Flash es rapidísimo y excelente para tareas visuales de este tipo
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
 
           // Convertir dataUrl base64 a formato InlineData para Gemini
           const base64Data = dataUrl.split(',')[1];
