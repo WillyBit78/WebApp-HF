@@ -122,7 +122,10 @@ export const PaymentUploader = ({ onSuccess }) => {
       let autoObservaciones = 'Comprobante subido desde app.';
       
       // Chequear contra transferencias de MP
-      const transferMatch = mercadoPagoTransfers?.find(t => t.numeroOperacion === parsedData.numeroOperacion);
+      const transferMatch = mercadoPagoTransfers?.find(t => 
+        t.numeroOperacion === parsedData.numeroOperacion || 
+        (t.coelsaId && t.coelsaId === parsedData.numeroOperacion)
+      );
       
       if (transferMatch) {
          if (Number(transferMatch.monto) === Number(parsedData.monto)) {
