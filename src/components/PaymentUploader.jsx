@@ -304,11 +304,21 @@ Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
                (p.estado === 'aprobado' || p.estado === 'en_revision')
             );
 
-            if (isDuplicate) {
+            if (isDuplicate || matchedTransfer.estado_conciliacion === 'conciliado') {
                finalStatus = 'rechazado';
-               autoObservaciones = `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`;
+               autoObservaciones = isDuplicate 
+                 ? `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`
+                 : `Requiere revisión: Esta transferencia de MP ya fue conciliada y utilizada por otro usuario.`;
             } else {
-               autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
+               // Checking monto just to be safe even if ID matched
+               const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
+               if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
+                 finalStatus = 'en_revision';
+                 autoObservaciones = `Requiere revisión: El monto depositado ($${matchedTransfer.monto}) no coincide con el valor de la cuota actual ($${requestedMonto}).`;
+               } else {
+                 finalStatus = 'aprobado';
+                 autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
+               }
             }
           } else {
             // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
@@ -322,19 +332,11 @@ Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
             }
 
             if (isDuplicate) {
-              finalStatus = 'rechazado';
-              autoObservaciones = `Requiere revisión: Comprobante duplicado. Ya existe un comprobante registrado con fecha ${fechaExtraida} y hora ${horaExtraida}.`;
-              extractedNumeroOperacion = `RECHAZADO-${Date.now()}`;
+               finalStatus = 'rechazado';
+               autoObservaciones = `Requiere revisión: Ya enviaste un comprobante con esta misma fecha y hora que está siendo procesado.`;
             } else {
-              // Asignar ID Secuencial
-              const countManuals = payments.filter(p => String(p.numeroOperacion).startsWith('MANUAL-')).length;
-              extractedNumeroOperacion = `MANUAL-${(countManuals + 1).toString().padStart(4, '0')}`;
-              
-              autoObservaciones = `Requiere revisión manual. No se encontró el N° de operación en MP.\nPosible Monto: ${montoExtraido}\nID Asignado: ${extractedNumeroOperacion}\nTexto leído: ${textNorm}`;
-              
-              if (fechaExtraida && horaExtraida) {
-                autoObservaciones += `\nFecha/Hora extraída: ${fechaExtraida} ${horaExtraida}`;
-              }
+               finalStatus = 'en_revision';
+               autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\nFECHA: ${fechaExtraida || 'No detectada'}\nHORA: ${horaExtraida || 'No detectada'}\nMONTO: ${montoExtraido}\nCOELSAID: ${rawCoelsa || 'No detectado'}\nN° de operacion: ${rawNumOp || 'No detectado'}`;
             }
           }
         }
@@ -367,29 +369,19 @@ Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
         observaciones: 'Cuota procesada vía OCR'
       };
 
-      if (matchedTransfer) {
-         if (Number(matchedTransfer.monto) === Number(parsedData.monto)) {
-           finalStatus = 'aprobado';
-           autoObservaciones = 'Validación automática exitosa (OCR).';
-         } else {
-           autoObservaciones = `Requiere revisión: El monto teórico ($${parsedData.monto}) no coincide con el registro de MP ($${matchedTransfer.monto}).`;
-         }
-      } else if (finalStatus !== 'aprobado') {
-         if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? montoExtraido : '❌'}\n[DEBUG OCR (${textNorm.length} chars)]: ${textNorm.substring(0, 150)}`;
-         } else {
-            autoObservaciones = `Requiere revisión: No se detectaron datos válidos en la imagen.`;
-         }
-      }
-
       setPaymentStatus(finalStatus);
 
-      uploadPaymentReceipt({
+      const paymentData = await uploadPaymentReceipt({
         ...parsedData,
         estado: finalStatus,
         observaciones: autoObservaciones,
         comprobanteUrl: dataUrl
       });
+      
+      // Conciliar transferencia si fue un éxito total
+      if (finalStatus === 'aprobado' && matchedTransfer && paymentData?.id) {
+         vincularTransferenciaMP(matchedTransfer.id, paymentData.id);
+      }
 
       setParsing(false);
       setStep(3);
