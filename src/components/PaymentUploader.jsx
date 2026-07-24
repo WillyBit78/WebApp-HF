@@ -233,8 +233,8 @@ export const PaymentUploader = ({ onSuccess }) => {
               if (datePart && timePart) {
                  const [day, month] = datePart.split('/');
                  const [hour, min] = timePart.split(':');
-                 const dayMonthRegex = new RegExp(`\\b${day}\\s*[/\\-]\\s*0?${month}\\b`);
-                 const timeRegex = new RegExp(`\\b${hour}\\s*:\\s*${min}\\b`);
+                 const dayMonthRegex = new RegExp(`(?:^|\\D)${day}\\s*[/\\-]\\s*0?${month}(?:\\D|$)`);
+                 const timeRegex = new RegExp(`(?:^|\\D)${hour}\\s*:\\s*${min}(?:\\D|$)`);
                  
                  // Si el texto incluye la misma fecha (día/mes) y la misma hora exacta (hora:min)
                  if (dayMonthRegex.test(textNorm) && timeRegex.test(textNorm)) {
@@ -344,7 +344,7 @@ export const PaymentUploader = ({ onSuccess }) => {
          }
       } else if (finalStatus !== 'aprobado') {
          if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? montoExtraido : '❌'}\n[DEBUG OCR]: ${textNorm.substring(0, 150)}`;
+            autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\n- Fecha: ${fechaExtraida ? fechaExtraida : '❌'}\n- Hora: ${horaExtraida ? horaExtraida : '❌'}\n- Monto: ${montoExtraido ? montoExtraido : '❌'}\n[DEBUG OCR (${textNorm.length} chars)]: ${textNorm.substring(0, 150)}`;
          } else {
             autoObservaciones = `Requiere revisión: No se detectaron datos válidos en la imagen.`;
          }
