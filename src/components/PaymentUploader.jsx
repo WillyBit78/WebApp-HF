@@ -127,19 +127,24 @@ export const PaymentUploader = ({ onSuccess }) => {
         }
       } else {
         // LÓGICA OCR REAL
-        const result = await Tesseract.recognize(dataUrl, 'spa');
-        const textUpper = result.data.text.toUpperCase();
-        console.log("Texto extraído por OCR:", textUpper);
+        if (dataUrl.includes('application/pdf')) {
+          finalStatus = 'en_revision';
+          autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
+        } else {
+          const result = await Tesseract.recognize(dataUrl, 'spa');
+          const textUpper = result.data.text.toUpperCase();
+          console.log("Texto extraído por OCR:", textUpper);
 
-        // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
-        matchedTransfer = mercadoPagoTransfers?.find(t => 
-          textUpper.includes(String(t.numeroOperacion).toUpperCase()) || 
-          (t.coelsaId && textUpper.includes(String(t.coelsaId).toUpperCase()))
-        );
+          // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
+          matchedTransfer = mercadoPagoTransfers?.find(t => 
+            textUpper.includes(String(t.numeroOperacion).toUpperCase()) || 
+            (t.coelsaId && textUpper.includes(String(t.coelsaId).toUpperCase()))
+          );
 
-        if (matchedTransfer) {
-          const isOperacion = textUpper.includes(String(matchedTransfer.numeroOperacion).toUpperCase());
-          extractedNumeroOperacion = isOperacion ? matchedTransfer.numeroOperacion : matchedTransfer.coelsaId;
+          if (matchedTransfer) {
+            const isOperacion = textUpper.includes(String(matchedTransfer.numeroOperacion).toUpperCase());
+            extractedNumeroOperacion = isOperacion ? matchedTransfer.numeroOperacion : matchedTransfer.coelsaId;
+          }
         }
       }
 
