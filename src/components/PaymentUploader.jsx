@@ -250,42 +250,50 @@ Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
             if (extractedCoelsa.length > 5 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
             if (extractedNumOp.length > 5 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
             
-            // Fallback súper flexible por Fecha y Hora (extraemos solo los números para ignorar formatos raros de navegadores)
+            // Fallback súper flexible por Fecha y Hora
             if (t.fecha && fechaExtraida && horaExtraida) {
-               const tNums = String(t.fecha).match(/\d+/g) || [];
+               const tStr = String(t.fecha);
                const gDateNums = String(fechaExtraida).match(/\d+/g) || [];
                
-               if (tNums.length >= 5 && gDateNums.length >= 2) {
-                 const tDay = parseInt(tNums[0]);
-                 const tMonth = parseInt(tNums[1]);
+               const tNums = tStr.match(/\d+/g) || [];
+               const smallNums = tNums.filter(n => n.length <= 2); // Excluir años
+               
+               if (smallNums.length >= 2 && gDateNums.length >= 2) {
+                 const p1 = parseInt(smallNums[0]);
+                 const p2 = parseInt(smallNums[1]);
                  const gDay = parseInt(gDateNums[0]);
                  const gMonth = parseInt(gDateNums[1]);
                  
-                 // Si coincide día y mes
-                 if (tDay === gDay && tMonth === gMonth) {
+                 // Permitir DD/MM o MM/DD (por si Vercel usa locale en-US)
+                 const isDateMatch = (p1 === gDay && p2 === gMonth) || (p1 === gMonth && p2 === gDay);
+                 
+                 if (isDateMatch) {
                    // Y el monto es idéntico
                    if (geminiResult.monto && Number(geminiResult.monto) === Number(t.monto)) {
                      
-                     // Extraemos hora de la base de datos (con lógica AM/PM)
-                     const tHourRaw = parseInt(tNums[3]);
-                     const tMin = parseInt(tNums[4]);
-                     let isPM = String(t.fecha).toLowerCase().includes('p');
-                     let tHour24 = tHourRaw;
-                     if (isPM && tHourRaw < 12) tHour24 += 12;
-                     if (!isPM && tHourRaw === 12) tHour24 = 0;
-                     
-                     // Extraemos hora de la imagen
-                     const gTimeNums = String(horaExtraida).match(/\d+/g) || [];
-                     if (gTimeNums.length >= 2) {
-                       const gHour = parseInt(gTimeNums[0]);
-                       const gMin = parseInt(gTimeNums[1]);
+                     // Extraer hora con regex para evitar desfasajes de arrays
+                     const timeMatch = tStr.match(/(\d{1,2}):(\d{2})/);
+                     if (timeMatch) {
+                       const tHourRaw = parseInt(timeMatch[1]);
+                       const tMin = parseInt(timeMatch[2]);
+                       let isPM = tStr.toLowerCase().includes('p');
+                       let tHour24 = tHourRaw;
+                       if (isPM && tHourRaw < 12) tHour24 += 12;
+                       if (!isPM && tHourRaw === 12) tHour24 = 0;
                        
-                       const tTotalMins = tHour24 * 60 + tMin;
-                       const gTotalMins = gHour * 60 + gMin;
-                       
-                       // 30 minutos de tolerancia (IA super flexible)
-                       if (Math.abs(tTotalMins - gTotalMins) <= 30) {
-                         return true;
+                       // Extraemos hora de la imagen
+                       const gTimeNums = String(horaExtraida).match(/\d+/g) || [];
+                       if (gTimeNums.length >= 2) {
+                         const gHour = parseInt(gTimeNums[0]);
+                         const gMin = parseInt(gTimeNums[1]);
+                         
+                         const tTotalMins = tHour24 * 60 + tMin;
+                         const gTotalMins = gHour * 60 + gMin;
+                         
+                         // 30 minutos de tolerancia (IA super flexible)
+                         if (Math.abs(tTotalMins - gTotalMins) <= 30) {
+                           return true;
+                         }
                        }
                      }
                    }
