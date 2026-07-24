@@ -74,20 +74,6 @@ export const PaymentUploader = ({ onSuccess }) => {
         canvasContext: ctx,
         viewport: viewport
       }).promise;
-      
-      const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const data = imgData.data;
-      for (let i = 0; i < data.length; i += 4) {
-         const r = data[i];
-         const g = data[i+1];
-         const b = data[i+2];
-         const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-         const color = gray < 210 ? 0 : 255;
-         data[i] = color;
-         data[i+1] = color;
-         data[i+2] = color;
-      }
-      ctx.putImageData(imgData, 0, 0);
 
       return canvas.toDataURL('image/jpeg', 1.0);
     } catch (err) {
@@ -107,16 +93,15 @@ export const PaymentUploader = ({ onSuccess }) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_SIZE = 2000;
+            const MAX_WIDTH = 1200; // Un buen ancho para mantener legibilidad sin exagerar
             let width = img.width;
             let height = img.height;
 
-            if (width > height && width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            } else if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
+            // En recibos largos, si limitamos por altura, el ancho (y el tamaño de la letra)
+            // se reduce drásticamente. Por eso solo limitamos por ancho.
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
             }
 
             canvas.width = width;
@@ -124,25 +109,6 @@ export const PaymentUploader = ({ onSuccess }) => {
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, width, height);
 
-            // Filtro de Binarización para ayudar al OCR (convierte texto gris a negro puro)
-            // Muchas billeteras (ej. Personal Pay) tienen texto gris claro en fondo blanco
-            // que Tesseract ignora por culpa del encabezado oscuro.
-            const imgData = ctx.getImageData(0, 0, width, height);
-            const data = imgData.data;
-            for (let i = 0; i < data.length; i += 4) {
-              const r = data[i];
-              const g = data[i+1];
-              const b = data[i+2];
-              // Escala de grises
-              const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-              // Threshold estricto: si es más oscuro que un gris muy claro, hacerlo negro.
-              const color = gray < 210 ? 0 : 255;
-              data[i] = color;     // R
-              data[i+1] = color;   // G
-              data[i+2] = color;   // B
-            }
-            ctx.putImageData(imgData, 0, 0);
-            
             const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
             setPreviewUrl(dataUrl);
             processReceipt(dataUrl, null);
