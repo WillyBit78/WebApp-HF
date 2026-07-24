@@ -34,7 +34,7 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
             onClick={() => setCurrentTab('payments')} 
             className={`flex flex-col items-center gap-1 transition-all ${currentTab === 'payments' ? 'text-amber-400 scale-110' : 'text-slate-500'}`}
           >
-            <div className="p-1.5 bg-amber-500 rounded-full text-slate-900 shadow-lg shadow-amber-500/30">
+            <div className="p-1.5 bg-red-600 rounded-full text-white shadow-lg shadow-amber-500/30">
               <CreditCard className="w-6 h-6" />
             </div>
             <span className="text-[10px] font-medium mt-1">Pagar</span>

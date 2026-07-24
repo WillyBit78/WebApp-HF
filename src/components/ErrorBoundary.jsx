@@ -37,7 +37,7 @@ export class ErrorBoundary extends React.Component {
 
             <button
               onClick={this.handleReset}
-              className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
             >
               <RefreshCw className="w-4 h-4 font-bold" />
               Restaurar Pantalla

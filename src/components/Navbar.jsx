@@ -74,12 +74,12 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 font-black text-slate-950 text-xl tracking-tighter overflow-hidden">
-              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain" />
+            <div className="w-12 h-12 flex items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div>
               <span className="font-bold text-lg text-white tracking-tight flex items-center gap-1">
-                HAEDO <span className="text-amber-400 font-extrabold">FUTSAL</span>
+                HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
               </span>
               <span className="text-[10px] block text-slate-400 font-medium tracking-wide">
                 GESTIÓN OFICIAL DE CLUB

@@ -31,16 +31,16 @@ export const PWAInstallBanner = () => {
   if (!deferredPrompt || dismissed) return null;
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 max-w-md mx-auto z-50 bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-amber-500/50 p-4 rounded-2xl shadow-2xl backdrop-blur-lg text-white animate-bounce-short">
+    <div className="fixed bottom-20 md:bottom-6 left-4 right-4 max-w-md mx-auto z-50 bg-gradient-to-r from-slate-900 via-slate-900 to-red-950/40 border border-red-500/50 p-4 rounded-2xl shadow-2xl backdrop-blur-lg text-white animate-bounce-short">
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center font-black text-slate-950 text-xl shadow-lg shadow-amber-500/30 shrink-0 overflow-hidden">
-            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain" />
+          <div className="w-12 h-12 flex items-center justify-center shrink-0 overflow-hidden">
+            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <div>
             <div className="font-extrabold text-sm flex items-center gap-1.5">
               <span>Haedo Futsal</span>
-              <span className="bg-amber-400 text-slate-950 text-[10px] font-black px-1.5 py-0.2 rounded uppercase">App Oficial</span>
+              <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.2 rounded uppercase shadow-sm">App Oficial</span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5">
               Instala la aplicación en tu celular con 1 solo clic.
