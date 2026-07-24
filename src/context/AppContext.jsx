@@ -38,11 +38,66 @@ export const AppProvider = ({ children }) => {
     cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
   });
 
-  // Load from Supabase on mount
+  // Load from Supabase on mount and setup Realtime subscriptions
   useEffect(() => {
+    let channel = null;
+
+    const handleRealtimeChange = (table, payload, setter, appendAtEnd = false) => {
+      const { eventType, new: newRow, old: oldRow } = payload;
+      if (eventType === 'INSERT') {
+        setter(prev => {
+          if (prev.some(item => item.id === newRow.id)) {
+            return prev.map(item => item.id === newRow.id ? newRow : item);
+          }
+          return appendAtEnd ? [...prev, newRow] : [newRow, ...prev];
+        });
+      } else if (eventType === 'UPDATE') {
+        setter(prev => prev.map(item => item.id === newRow.id ? { ...item, ...newRow } : item));
+      } else if (eventType === 'DELETE') {
+        setter(prev => prev.filter(item => item.id !== oldRow.id));
+      }
+    };
+
+    const setupRealtime = () => {
+      if (!isSupabaseConfigured || !supabase) return;
+      channel = supabase
+        .channel('app_realtime_changes')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'payments' },
+          (payload) => handleRealtimeChange('payments', payload, setPayments)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'users' },
+          (payload) => {
+            handleRealtimeChange('users', payload, setUsers, true);
+            if (payload.eventType === 'UPDATE' && payload.new) {
+              setCurrentUser(curr => curr && curr.id === payload.new.id ? { ...curr, ...payload.new } : curr);
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'logs' },
+          (payload) => handleRealtimeChange('logs', payload, setLogs)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'movimientos' },
+          (payload) => handleRealtimeChange('movimientos', payload, setMovimientosFinancieros)
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'notices' },
+          (payload) => handleRealtimeChange('notices', payload, setNotices)
+        )
+        .subscribe();
+    };
+
     const loadData = async () => {
       setLoadingDb(true);
-      if (isSupabaseConfigured) {
+      if (isSupabaseConfigured && supabase) {
         try {
           const [uRes, pRes, eRes, nRes, mRes, lRes] = await Promise.all([
             supabase.from('users').select('*').order('created_at', { ascending: true }),
@@ -58,13 +113,22 @@ export const AppProvider = ({ children }) => {
           if (nRes.data) setNotices(nRes.data);
           if (mRes.data) setMovimientosFinancieros(mRes.data);
           if (lRes.data) setLogs(lRes.data);
+
+          setupRealtime();
         } catch (error) {
           console.error("Error loading data from Supabase:", error);
         }
       }
       setLoadingDb(false);
     };
+
     loadData();
+
+    return () => {
+      if (channel && isSupabaseConfigured && supabase) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -230,14 +294,16 @@ export const AppProvider = ({ children }) => {
     setPayments(prev => [newPayment, ...prev]);
     
     // Optimistic user state update
-    const updatedUser = { ...currentUser, estadoCuota: 'pendiente' };
+    const newSocioStatus = newPayment.estado === 'aprobado' ? 'al_dia' : 'pendiente';
+    const updatedUser = { ...currentUser, estadoCuota: newSocioStatus };
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
 
     if (isSupabaseConfigured) {
+      // Usar Supabase Realtime para que los demás se enteren (lo hace solo con insertar)
       await Promise.all([
         supabase.from('payments').insert([newPayment]),
-        supabase.from('users').update({ estadoCuota: 'pendiente' }).eq('id', currentUser.id)
+        supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', currentUser.id)
       ]).catch(console.error);
     }
 

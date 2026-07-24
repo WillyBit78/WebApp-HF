@@ -8,7 +8,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const PaymentUploader = ({ onSuccess }) => {
-  const { uploadPaymentReceipt, clubSettings, currentUser, mercadoPagoTransfers } = useApp();
+  const { uploadPaymentReceipt, clubSettings, currentUser, mercadoPagoTransfers, payments } = useApp();
   
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -247,9 +247,23 @@ export const PaymentUploader = ({ onSuccess }) => {
           });
 
           if (matchedTransfer) {
-            const numOpNorm = normalizeStr(matchedTransfer.numeroOperacion);
-            const isOperacion = isFuzzyMatch(numOpNorm, textNorm, 1);
-            extractedNumeroOperacion = isOperacion ? matchedTransfer.numeroOperacion : matchedTransfer.coelsaId;
+            // ALWAYS return the MercadoPago `numeroOperacion` (ID interno) so that the admin's auto-reconciliation works, 
+            // even if we matched via the COELSA ID.
+            extractedNumeroOperacion = matchedTransfer.numeroOperacion;
+            
+            // Check for double spend (duplicate upload)
+            const isDuplicate = payments.some(p => 
+               p.numeroOperacion === extractedNumeroOperacion && 
+               (p.estado === 'aprobado' || p.estado === 'en_revision')
+            );
+
+            if (isDuplicate) {
+               finalStatus = 'rechazado';
+               autoObservaciones = `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`;
+            } else {
+               // Normal successful match
+               autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
+            }
           }
         }
       }
