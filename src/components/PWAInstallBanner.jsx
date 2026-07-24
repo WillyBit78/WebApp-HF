@@ -41,12 +41,12 @@ export const PWAInstallBanner = () => {
             <div className="font-extrabold text-sm flex items-center gap-1.5">
               <span>Haedo Futsal</span>
               <span 
-                className="text-blue-500 font-bold tracking-wider"
+                className="text-blue-900 font-bold tracking-wider"
                 style={{ 
                   fontFamily: "'Caveat', cursive", 
-                  fontSize: '1.2rem',
+                  fontSize: '0.96rem',
                   lineHeight: '1',
-                  textShadow: '0 0 2px rgba(255,255,255,0.8), 0 1px 1px rgba(255,255,255,0.9), 0 -1px 1px rgba(255,255,255,0.9), 1px 0 1px rgba(255,255,255,0.9), -1px 0 1px rgba(255,255,255,0.9)'
+                  textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
                 }}
               >
                 más que un club

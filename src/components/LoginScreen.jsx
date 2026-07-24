@@ -55,12 +55,12 @@ export const LoginScreen = () => {
             HAEDO <span className="text-red-500 font-extrabold">FUTSAL</span>
           </h1>
           <p 
-            className="text-blue-600 font-bold tracking-wider mt-0 w-full text-center" 
+            className="text-blue-900 font-bold tracking-wider mt-0 w-full text-center" 
             style={{ 
               fontFamily: "'Caveat', cursive", 
-              fontSize: '2.5rem',
+              fontSize: '2.0rem',
               lineHeight: '1',
-              textShadow: '0 0 4px rgba(255,255,255,0.8), 0 1px 2px rgba(255,255,255,0.9), 0 -1px 2px rgba(255,255,255,0.9), 1px 0 2px rgba(255,255,255,0.9), -1px 0 2px rgba(255,255,255,0.9)'
+              textShadow: '-1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff'
             }}
           >
             más que un club
@@ -113,7 +113,7 @@ export const LoginScreen = () => {
 
           <button
             type="submit"
-            className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-red-500/25 transition-all flex items-center justify-center gap-2 text-base"
+            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-base"
           >
             Ingresar al Sistema
           </button>
