@@ -202,7 +202,13 @@ export const PaymentUploader = ({ onSuccess }) => {
         } else {
           // Usar la imagen recortada si existe, sino la completa
           const targetImage = ocrDataUrl || dataUrl;
-          const result = await Tesseract.recognize(targetImage, 'spa');
+          
+          const worker = await Tesseract.createWorker('spa');
+          await worker.setParameters({
+            tessedit_pageseg_mode: Tesseract.PSM.SPARSE_TEXT,
+          });
+          const result = await worker.recognize(targetImage);
+          await worker.terminate();
           
           // Normalizar el texto: quitar espacios, guiones, saltos, y tratar O/0 I/1 S/5 como iguales
           const normalizeStr = (str) => String(str).toUpperCase()
@@ -247,7 +253,7 @@ export const PaymentUploader = ({ onSuccess }) => {
       } else if (finalStatus !== 'aprobado') {
          // Pasamos lo que leyó el OCR para debug
          if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            const snippet = textNorm.substring(0, 150);
+            const snippet = textNorm.substring(0, 500);
             autoObservaciones = `Requiere revisión: OCR no encontró coincidencia. Texto leído: ${snippet}...`;
          } else {
             autoObservaciones = `Requiere revisión: No se detectó un N° de operación válido en la imagen.`;
