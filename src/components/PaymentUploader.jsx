@@ -343,12 +343,11 @@ export const PaymentUploader = ({ onSuccess }) => {
            autoObservaciones = `Requiere revisión: El monto teórico ($${parsedData.monto}) no coincide con el registro de MP ($${matchedTransfer.monto}).`;
          }
       } else if (finalStatus !== 'aprobado') {
-         // Pasamos lo que leyó el OCR para debug
+         // En lugar de pasar todo el texto rústico del OCR que marea al usuario, damos un mensaje limpio
          if (dataUrl && !dataUrl.includes('application/pdf') && textNorm) {
-            const snippet = textNorm.substring(0, 500);
-            autoObservaciones = `Requiere revisión: OCR no encontró coincidencia. Texto leído: ${snippet}...`;
+            autoObservaciones = `Requiere revisión manual: No se detectó coincidencia exacta con Mercado Pago ni datos extraíbles.`;
          } else {
-            autoObservaciones = `Requiere revisión: No se detectó un N° de operación válido en la imagen.`;
+            autoObservaciones = `Requiere revisión: No se detectó un Nº de operación válido en la imagen.`;
          }
       }
 
