@@ -29,7 +29,7 @@ export const CalendarModule = ({ onOpenModalEvent }) => {
         {(activeRoleId === 'admin' || activeRoleId === 'coach') && (
           <button
             onClick={onOpenModalEvent}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-red-600/20"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-red-500/20"
           >
             <Plus className="w-4 h-4" /> Programar Partido / Práctica
           </button>
@@ -46,7 +46,7 @@ export const CalendarModule = ({ onOpenModalEvent }) => {
               onClick={() => setFilterCategory(cat)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 filterCategory === cat
-                  ? 'bg-red-600 text-white shadow-md shadow-red-600/10'
+                  ? 'bg-red-500 text-white shadow-md shadow-red-500/10'
                   : 'bg-slate-800 text-slate-400 hover:text-white'
               }`}
             >

@@ -148,7 +148,7 @@ export const DashboardContador = () => {
             onClick={() => setActiveTab('control_financiero')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'control_financiero'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
@@ -177,7 +177,7 @@ export const DashboardContador = () => {
             onClick={() => setActiveTab('auditoria')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
               activeTab === 'auditoria'
-                ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
@@ -221,7 +221,7 @@ export const DashboardContador = () => {
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setShowCuotasModal(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-red-600/20"
+                  className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-red-500/20"
                 >
                   <DollarSign className="w-4 h-4" /> Precios Cuotas por Categoría
                 </button>
@@ -530,7 +530,7 @@ export const DashboardContador = () => {
                   onClick={() => setFilterStatus(tab.id)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                     filterStatus === tab.id
-                      ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                      ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                       : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                   }`}
                 >
@@ -813,7 +813,7 @@ export const DashboardContador = () => {
 
             <button
               onClick={() => setShowCuotasModal(false)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-600/20 text-xs"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-500/20 text-xs"
             >
               Guardar Precios de Cuotas
             </button>

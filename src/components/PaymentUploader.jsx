@@ -320,7 +320,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-600/20"
+              className="flex-1 px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
             >
               <ShieldCheck className="w-4 h-4" />
               Confirmar y Notificar a Finanzas

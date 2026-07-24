@@ -74,7 +74,7 @@ export const DashboardSocio = () => {
 
             <button
               onClick={() => setShowUploader(!showUploader)}
-              className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-600/20 transition-all shrink-0"
+              className="px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all shrink-0"
             >
               <Upload className="w-4 h-4" />
               {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}

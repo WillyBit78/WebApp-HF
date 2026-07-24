@@ -161,7 +161,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
               onClick={() => setActiveSubTab(tab.id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 activeSubTab === tab.id
-                  ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
@@ -173,7 +173,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
         <div className="flex gap-2">
           <button
             onClick={onOpenModalUser}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-600/10"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/10"
           >
             <Plus className="w-4 h-4" /> Nuevo Socio
           </button>
@@ -416,7 +416,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
 
             <button
               type="submit"
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-600/20"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-500/20"
             >
               Guardar Cambios
             </button>

@@ -69,7 +69,7 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
           </button>
           <button
             onClick={onOpenModalEvent}
-            className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-600/20"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/20"
           >
             <Calendar className="w-4 h-4" /> Crear Partido / Práctica
           </button>
