@@ -45,6 +45,7 @@ export const DashboardContador = () => {
   const [showCuotasModal, setShowCuotasModal] = useState(false);
   const [filterStatus, setFilterStatus] = useState('en_revision');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+  const [isZoomed, setIsZoomed] = useState(false);
 
   // Filters for Movimientos
   const [filterCaja, setFilterCaja] = useState('todas');
@@ -745,19 +746,35 @@ export const DashboardContador = () => {
 
       {/* Image Modal Preview */}
       {selectedReceipt && (
-        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <h4 className="font-bold text-white text-sm">Vista Previa de Comprobante</h4>
-              <button onClick={() => setSelectedReceipt(null)} className="text-slate-400 hover:text-white">✕</button>
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <div className={`bg-slate-900 border border-slate-700 rounded-2xl ${isZoomed ? 'w-full max-w-4xl' : 'max-w-lg w-full'} p-4 space-y-3 my-auto transition-all`}>
+            <div className="flex justify-between items-center sticky top-0 bg-slate-900 z-10 py-2">
+              <h4 className="font-bold text-white text-sm">Vista Previa de Comprobante {isZoomed && '(Lupa Activa)'}</h4>
+              <div className="flex gap-4">
+                {!selectedReceipt.includes('application/pdf') && (
+                  <button onClick={() => setIsZoomed(!isZoomed)} className="text-emerald-400 hover:text-emerald-300 text-sm font-bold transition-colors">
+                    {isZoomed ? 'Alejar' : 'Acercar'}
+                  </button>
+                )}
+                <button onClick={() => { setSelectedReceipt(null); setIsZoomed(false); }} className="text-slate-400 hover:text-white">✕</button>
+              </div>
             </div>
             {selectedReceipt.includes('application/pdf') ? (
               <iframe src={selectedReceipt} className="w-full h-96 rounded-xl border border-slate-800" title="PDF Comprobante" />
             ) : (
-              <img src={selectedReceipt} alt="Comprobante" className="w-full h-80 object-contain rounded-xl border border-slate-800 bg-black/50" />
+              <div 
+                className={`w-full overflow-auto rounded-xl border border-slate-800 bg-black/50 flex justify-center items-center cursor-zoom-in ${isZoomed ? 'h-[80vh] cursor-zoom-out' : 'h-80'}`} 
+                onClick={() => setIsZoomed(!isZoomed)}
+              >
+                <img 
+                  src={selectedReceipt} 
+                  alt="Comprobante" 
+                  className={`${isZoomed ? 'max-w-none w-auto' : 'w-full h-full object-contain'} transition-all`} 
+                />
+              </div>
             )}
             <button 
-              onClick={() => setSelectedReceipt(null)}
+              onClick={() => { setSelectedReceipt(null); setIsZoomed(false); }}
               className="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-xl text-xs font-bold"
             >
               Cerrar

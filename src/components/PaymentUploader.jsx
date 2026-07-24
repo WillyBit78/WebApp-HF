@@ -93,7 +93,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           const img = new Image();
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX_SIZE = 800;
+            const MAX_SIZE = 2000;
             let width = img.width;
             let height = img.height;
 
