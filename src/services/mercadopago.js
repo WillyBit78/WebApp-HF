@@ -9,22 +9,27 @@ export async function fetchMercadoPagoTransfers(accessToken) {
   }
 
   try {
-    // Consulta a la API de Mercado Pago filtrando por transferencias de dinero recibidas
-    const response = await fetch('https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&limit=100', {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
+    // Consulta a la API de Mercado Pago buscando más historial (hasta 300 registros)
+    let allResults = [];
+    for (let offset = 0; offset < 300; offset += 100) {
+      const response = await fetch(`https://api.mercadopago.com/v1/payments/search?sort=date_created&criteria=desc&limit=100&offset=${offset}`, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`Error MP API (${response.status}): ${await response.text()}`);
       }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error MP API (${response.status}): ${await response.text()}`);
+      const data = await response.json();
+      if (data.results && data.results.length > 0) {
+        allResults = allResults.concat(data.results);
+      }
+      if (!data.results || data.results.length < 100) break; // ya no hay más
     }
-
-    const data = await response.json();
     
-    // Filtrar y transformar transferencias entrantes (Money Transfer / Bank Transfer / Deposit)
-    return (data.results || []).map(p => {
+    // Filtrar y transformar transferencias entrantes
+    return allResults.map(p => {
       const esTransferenciaPersonal = 
         p.operation_type === 'money_transfer' || 
         p.payment_type_id === 'bank_transfer' || 
