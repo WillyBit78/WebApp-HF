@@ -83,7 +83,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             
             const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
             setPreviewUrl(dataUrl);
-            simulateOCR(dataUrl, null);
+            processReceipt(dataUrl, null);
           };
           img.src = event.target.result;
         };
@@ -92,7 +92,7 @@ export const PaymentUploader = ({ onSuccess }) => {
         const reader = new FileReader();
         reader.onloadend = () => {
           setPreviewUrl(reader.result);
-          simulateOCR(reader.result, null);
+          processReceipt(reader.result, null);
         };
         reader.readAsDataURL(selectedFile);
       }
@@ -102,48 +102,68 @@ export const PaymentUploader = ({ onSuccess }) => {
   const handleSelectSample = (sample) => {
     setFile({ name: `${sample.billeteraOrigen}_Comprobante.jpg` });
     setPreviewUrl('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80');
-    simulateOCR('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80', sample);
+    processReceipt('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80', sample);
   };
 
-  const simulateOCR = (dataUrl, sampleOverride) => {
+  const processReceipt = async (dataUrl, sampleOverride) => {
     setParsing(true);
-    setTimeout(() => {
-      // 1. Extraer datos (simulado)
-      const parsedData = sampleOverride || {
-        monto: clubSettings.montoCuotaGeneral || 15000,
-        numeroOperacion: `${Math.floor(1000000000 + Math.random() * 9000000000)}`,
-        billeteraOrigen: 'Mercado Pago',
-        emisorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
-        observaciones: 'Cuota del mes transferida a CVU de Mercado Pago.'
-      };
-
-      // 2. Lógica de validación automática estricta e invisible
+    
+    try {
       let finalStatus = 'en_revision';
       let autoObservaciones = 'Comprobante subido desde app.';
-      
-      // Chequear contra transferencias de MP
-      const transferMatch = mercadoPagoTransfers?.find(t => 
-        t.numeroOperacion === parsedData.numeroOperacion || 
-        (t.coelsaId && t.coelsaId === parsedData.numeroOperacion)
-      );
-      
-      if (transferMatch) {
-         if (Number(transferMatch.monto) === Number(parsedData.monto)) {
-           finalStatus = 'aprobado';
-           autoObservaciones = 'Validación automática exitosa.';
-         } else {
-           autoObservaciones = `Requiere revisión: El monto detectado ($${parsedData.monto}) no coincide con el registro de MP ($${transferMatch.monto}).`;
-         }
-      } else if (sampleOverride && sampleOverride.numeroOperacion === '9841029481') {
-         finalStatus = 'aprobado'; 
-         autoObservaciones = 'Validación automática exitosa (Simulación).';
+      let extractedNumeroOperacion = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      let matchedTransfer = null;
+
+      if (sampleOverride) {
+        // Lógica de simulación
+        extractedNumeroOperacion = sampleOverride.numeroOperacion;
+        matchedTransfer = mercadoPagoTransfers?.find(t => 
+          t.numeroOperacion === sampleOverride.numeroOperacion || 
+          (t.coelsaId && t.coelsaId === sampleOverride.numeroOperacion)
+        );
+        if (sampleOverride.numeroOperacion === '9841029481') {
+           finalStatus = 'aprobado'; 
+           autoObservaciones = 'Validación automática exitosa (Simulación).';
+        }
       } else {
-         autoObservaciones = `Requiere revisión: El N° de operación ${parsedData.numeroOperacion} no fue encontrado en el sistema de Mercado Pago.`;
+        // LÓGICA OCR REAL
+        const result = await Tesseract.recognize(dataUrl, 'spa');
+        const textUpper = result.data.text.toUpperCase();
+        console.log("Texto extraído por OCR:", textUpper);
+
+        // Cruce: buscamos si algún N° de Operación o COELSA ID de MP existe en el texto leído
+        matchedTransfer = mercadoPagoTransfers?.find(t => 
+          textUpper.includes(String(t.numeroOperacion).toUpperCase()) || 
+          (t.coelsaId && textUpper.includes(String(t.coelsaId).toUpperCase()))
+        );
+
+        if (matchedTransfer) {
+          const isOperacion = textUpper.includes(String(matchedTransfer.numeroOperacion).toUpperCase());
+          extractedNumeroOperacion = isOperacion ? matchedTransfer.numeroOperacion : matchedTransfer.coelsaId;
+        }
+      }
+
+      const parsedData = sampleOverride || {
+        monto: clubSettings.montoCuotaGeneral || 15000,
+        numeroOperacion: extractedNumeroOperacion,
+        billeteraOrigen: matchedTransfer ? matchedTransfer.billeteraOrigen : 'Desconocida',
+        emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${currentUser.nombre} ${currentUser.apellido}`,
+        observaciones: 'Cuota procesada vía OCR'
+      };
+
+      if (matchedTransfer) {
+         if (Number(matchedTransfer.monto) === Number(parsedData.monto)) {
+           finalStatus = 'aprobado';
+           autoObservaciones = 'Validación automática exitosa (OCR).';
+         } else {
+           autoObservaciones = `Requiere revisión: El monto teórico ($${parsedData.monto}) no coincide con el registro de MP ($${matchedTransfer.monto}).`;
+         }
+      } else if (finalStatus !== 'aprobado') {
+         autoObservaciones = `Requiere revisión: No se detectó un N° de operación o COELSA ID válido en la imagen.`;
       }
 
       setPaymentStatus(finalStatus);
 
-      // 3. Subir el comprobante automáticamente
       uploadPaymentReceipt({
         ...parsedData,
         estado: finalStatus,
@@ -151,16 +171,19 @@ export const PaymentUploader = ({ onSuccess }) => {
         comprobanteUrl: dataUrl
       });
 
-      // 4. Ir a la pantalla de éxito
       setParsing(false);
       setStep(3);
 
       if (onSuccess) {
         setTimeout(() => {
           onSuccess();
-        }, 4000); // Dar unos segundos para que vea el cartel de Aceptado
+        }, 3000);
       }
-    }, 2000);
+    } catch (error) {
+      console.error("Error en OCR:", error);
+      setParsing(false);
+      alert("Hubo un problema al escanear la imagen. Intenta de nuevo.");
+    }
   };
 
   return (
