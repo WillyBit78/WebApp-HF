@@ -316,19 +316,25 @@ export const AppProvider = ({ children }) => {
     sincronizarMercadoPago();
   }, []);
 
-  const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState('en_revision');
+  const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState({ status: 'en_revision', ts: Date.now() });
   const [viewedNotifications, setViewedNotifications] = useState({
     aprobado: 0,
     en_revision: 0,
     rechazado: 0
   });
 
+  const openAuditoriaStatus = (status) => {
+    const cleanStatus = typeof status === 'object' ? status.status : status;
+    setAuditoriaFilterStatus({ status: cleanStatus, ts: Date.now() });
+  };
+
   const markNotificationsAsViewed = (status) => {
     if (!status) return;
-    const currentCount = payments.filter(p => p.estado === status).length;
+    const cleanStatus = typeof status === 'object' ? status.status : status;
+    const currentCount = payments.filter(p => p.estado === cleanStatus).length;
     setViewedNotifications(prev => ({
       ...prev,
-      [status]: currentCount
+      [cleanStatus]: currentCount
     }));
   };
 
@@ -636,7 +642,7 @@ export const AppProvider = ({ children }) => {
       currentUser, login, logout,
       users, payments, events, notices, movimientosFinancieros, logs, mercadoPagoTransfers,
       loadingDb,
-      auditoriaFilterStatus, setAuditoriaFilterStatus,
+      auditoriaFilterStatus, setAuditoriaFilterStatus, openAuditoriaStatus,
       viewedNotifications, markNotificationsAsViewed,
       addMovimientoFinanciero, deleteMovimientoFinanciero,
       vincularTransferenciaMP, sincronizarMercadoPago,

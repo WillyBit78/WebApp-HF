@@ -24,6 +24,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     logout, 
     payments = [], 
     setAuditoriaFilterStatus, 
+    openAuditoriaStatus,
     markNotificationsAsViewed, 
     viewedNotifications = {} 
   } = useApp();
@@ -54,9 +55,13 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   const unreadRechazados = Math.max(0, totalRechazados - (viewedNotifications?.rechazado || 0));
 
   const handleNotificationClick = (status) => {
-    if (setAuditoriaFilterStatus) setAuditoriaFilterStatus(status);
+    if (openAuditoriaStatus) {
+      openAuditoriaStatus(status);
+    } else if (setAuditoriaFilterStatus) {
+      setAuditoriaFilterStatus(status);
+    }
     if (markNotificationsAsViewed) markNotificationsAsViewed(status);
-    setCurrentTab('dashboard');
+    setCurrentTab('finance');
   };
 
   return (

@@ -52,7 +52,8 @@ export const DashboardContador = () => {
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const filterStatus = auditoriaFilterStatus || 'en_revision';
+  const filterStatus = typeof auditoriaFilterStatus === 'object' ? auditoriaFilterStatus.status : (auditoriaFilterStatus || 'en_revision');
+  
   const setFilterStatus = (status) => {
     if (setAuditoriaFilterStatus) setAuditoriaFilterStatus(status);
     if (markNotificationsAsViewed) markNotificationsAsViewed(status);
@@ -61,7 +62,8 @@ export const DashboardContador = () => {
   useEffect(() => {
     if (auditoriaFilterStatus) {
       setActiveTab('auditoria');
-      if (markNotificationsAsViewed) markNotificationsAsViewed(auditoriaFilterStatus);
+      const targetStatus = typeof auditoriaFilterStatus === 'object' ? auditoriaFilterStatus.status : auditoriaFilterStatus;
+      if (markNotificationsAsViewed) markNotificationsAsViewed(targetStatus);
     }
   }, [auditoriaFilterStatus]);
 
@@ -498,7 +500,19 @@ export const DashboardContador = () => {
             {/* MP Transfer List */}
             <div className="space-y-3 mt-4">
               {mercadoPagoTransfers.map((tx) => {
-                const isConciliado = tx.estado === 'conciliado';
+                const cleanTxNum = cleanStr(tx.numeroOperacion);
+                const cleanTxCoelsa = cleanStr(tx.coelsaId);
+
+                const matchedApprovedPayment = payments.find(p => 
+                  p.estado === 'aprobado' && (
+                    (cleanTxNum && cleanStr(p.numeroOperacion) === cleanTxNum) ||
+                    (cleanTxCoelsa && cleanStr(p.numeroOperacion) === cleanTxCoelsa) ||
+                    (p.observaciones && p.observaciones.includes(tx.numeroOperacion))
+                  )
+                );
+
+                const isConciliado = tx.estado === 'conciliado' || Boolean(matchedApprovedPayment);
+                const socioNombreConciliado = tx.socioNombre || matchedApprovedPayment?.socioNombre || 'Socio Acreditado';
                 const isScanning = scanningId === tx.id;
 
                 return (
@@ -526,7 +540,7 @@ export const DashboardContador = () => {
                         </div>
                         {isConciliado && (
                           <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-                            <CheckCheck className="w-3.5 h-3.5" /> Conciliado con socio: {tx.socioNombre}
+                            <CheckCheck className="w-3.5 h-3.5" /> Conciliado con socio: {socioNombreConciliado}
                           </div>
                         )}
                       </div>
