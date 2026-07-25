@@ -169,7 +169,19 @@ export const AppProvider = ({ children }) => {
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
           if (nRes.data) setNotices(nRes.data.map(normalizeKeys));
           if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
-          if (lRes.data && lRes.data.length > 0) setLogs(lRes.data.map(normalizeKeys));
+          if (lRes.data) {
+            const dbLogs = lRes.data.map(normalizeKeys);
+            setLogs(prev => {
+              const combined = [...dbLogs];
+              const dbIds = new Set(dbLogs.map(l => l.id));
+              for (const localLog of prev) {
+                if (!dbIds.has(localLog.id)) {
+                  combined.push(localLog);
+                }
+              }
+              return combined;
+            });
+          }
 
           setupRealtime();
         } catch (error) {
@@ -194,6 +206,24 @@ export const AppProvider = ({ children }) => {
     } else {
       localStorage.removeItem('hf_current_user');
     }
+  }, [currentUser]);
+
+  // Captura global de errores de cliente en cualquier dispositivo
+  useEffect(() => {
+    const handleGlobalError = (event) => {
+      const msg = event.message || (event.reason ? String(event.reason?.message || event.reason) : '');
+      if (msg && !msg.includes('ResizeObserver')) {
+        registrarLog('error_sistema', 'Error de cliente en dispositivo', msg);
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleGlobalError);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleGlobalError);
+    };
   }, [currentUser]);
 
   // Login / Logout

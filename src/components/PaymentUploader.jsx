@@ -8,7 +8,15 @@ import * as pdfjsLib from 'pdfjs-dist';
 pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
 
 export const PaymentUploader = ({ onSuccess }) => {
-  const { uploadPaymentReceipt, clubSettings, currentUser, mercadoPagoTransfers, payments } = useApp();
+  const { 
+    uploadPaymentReceipt, 
+    clubSettings, 
+    currentUser, 
+    mercadoPagoTransfers, 
+    payments, 
+    vincularTransferenciaMP, 
+    registrarLog 
+  } = useApp();
   
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -413,7 +421,9 @@ Buscá el Número de operación para numero_operacion.
       
       // Conciliar transferencia si fue un éxito total
       if (finalStatus === 'aprobado' && matchedTransfer && paymentData?.id) {
-         vincularTransferenciaMP(matchedTransfer.id, paymentData.id);
+         if (typeof vincularTransferenciaMP === 'function') {
+           vincularTransferenciaMP(matchedTransfer.id, paymentData.id);
+         }
       }
 
       setParsing(false);
@@ -426,6 +436,9 @@ Buscá el Número de operación para numero_operacion.
       }
     } catch (error) {
       console.error("Error en OCR:", error);
+      if (typeof registrarLog === 'function') {
+        registrarLog('error_critico_ocr', `Error procesando comprobante`, error.message);
+      }
       setParsing(false);
       alert("Error crítico al procesar: " + error.message);
     }
