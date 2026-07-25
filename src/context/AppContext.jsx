@@ -200,7 +200,14 @@ export const AppProvider = ({ children }) => {
           supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
           supabase.from('logs').select('*').order('created_at', { ascending: false })
         ]);
-        if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
+        if (uRes.data) {
+          const dbUsers = uRes.data.map(normalizeKeys);
+          setUsers(prev => {
+            const dbIds = new Set(dbUsers.map(u => u.id));
+            const localOnly = prev.filter(u => !dbIds.has(u.id));
+            return [...dbUsers, ...localOnly];
+          });
+        }
         if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
         if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
         if (lRes.data) {
@@ -240,6 +247,15 @@ export const AppProvider = ({ children }) => {
     }
   }, [currentUser]);
 
+  // Save users to localStorage as safety backup
+  useEffect(() => {
+    if (users && users.length > 0) {
+      try {
+        localStorage.setItem('hf_users_data', JSON.stringify(users));
+      } catch (e) {}
+    }
+  }, [users]);
+
   // Captura global de errores de cliente en cualquier dispositivo
   useEffect(() => {
     const handleGlobalError = (event) => {
@@ -258,15 +274,16 @@ export const AppProvider = ({ children }) => {
     };
   }, [currentUser]);
 
-  // Login / Logout
-  const login = (usuario, clave) => {
-    const userMatch = users.find(u => 
-      u.usuario?.toLowerCase() === usuario.toLowerCase() && 
-      u.clave === clave
+  // Auth actions
+  const login = (usuarioInput, claveInput) => {
+    const cleanUserStr = usuarioInput.trim().toUpperCase();
+    const targetUser = users.find(u => 
+      u.usuario && u.usuario.trim().toUpperCase() === cleanUserStr && String(u.clave) === String(claveInput)
     );
-    if (userMatch) {
-      setCurrentUser(userMatch);
-      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Usuario: ${userMatch.usuario} • Rol: ${userMatch.rol}`, userMatch);
+
+    if (targetUser) {
+      setCurrentUser(targetUser);
+      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
       return true;
     }
     return false;
@@ -477,14 +494,25 @@ export const AppProvider = ({ children }) => {
       }
       registrarLog('modificacion_usuario', `Usuario modificado (${userData.nombre})`, `Rol: ${userData.rol}`);
     } else {
+      const generatedId = `usr-${Date.now()}`;
+      const isSocio = userData.rol === 'socio';
       const newUser = {
-        id: `usr-${Date.now()}`,
-        numeroSocio: users.length + 201,
-        estadoCuota: 'al_dia',
-        montoCuota: 15000,
-        ...userData
+        id: generatedId,
+        numeroSocio: userData.numeroSocio || (users.length + 201),
+        estadoCuota: isSocio ? (userData.estadoCuota || 'al_dia') : 'al_dia',
+        montoCuota: isSocio ? (Number(userData.montoCuota) || 15000) : 0,
+        categoria: isSocio ? (userData.categoria || 'BAFI Femenino (1ra)') : 'Staff',
+        nombre: userData.nombre || '',
+        apellido: userData.apellido || '',
+        usuario: userData.usuario || `${(userData.nombre || 'U').charAt(0)}${(userData.apellido || 'User').replace(/\s+/g, '')}`.toUpperCase(),
+        clave: userData.clave || '1234',
+        rol: userData.rol || 'socio',
+        telefono: userData.telefono || '',
+        dni: userData.dni || ''
       };
+
       setUsers(prev => [...prev, newUser]);
+
       if (isSupabaseConfigured && supabase) {
         try {
           await supabase.from('users').insert([newUser]);
@@ -492,7 +520,7 @@ export const AppProvider = ({ children }) => {
           console.warn("Supabase insert error:", err);
         }
       }
-      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre})`, `Rol: ${newUser.rol}`);
+      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria}`);
     }
   };
 
