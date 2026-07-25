@@ -257,28 +257,41 @@ export const AppProvider = ({ children }) => {
       descripcion,
       detalles
     };
-    setLogs(prev => [newLog, ...prev]);
-    if (isSupabaseConfigured) {
-      await supabase.from('logs').insert([newLog]).catch(console.error);
+    setLogs(prev => {
+      if (prev.some(l => l.id === newLog.id)) return prev;
+      return [newLog, ...prev];
+    });
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('logs').insert([newLog]);
+      } catch (err) {
+        console.warn("Supabase log insert error:", err);
+      }
     }
   };
 
   // Mercado Pago
   const mpAccessToken = import.meta.env.VITE_MP_ACCESS_TOKEN || 'APP_USR-3322444120483456-072316-c328d2ad7cb6de93a33a94812589756e-43153257';
   const sincronizarMercadoPago = async () => {
-    if (!mpAccessToken) return;
+    if (!mpAccessToken) return [];
     try {
       const realTransfers = await fetchMercadoPagoTransfers(mpAccessToken);
       if (Array.isArray(realTransfers) && realTransfers.length > 0) {
+        let updatedList = [];
         setMercadoPagoTransfers(prev => {
           const prevArray = Array.isArray(prev) ? prev : [];
           const existingIds = new Set(prevArray.map(t => t.numeroOperacion));
           const newItems = realTransfers.filter(t => !existingIds.has(t.numeroOperacion));
-          return [...newItems, ...prevArray];
+          updatedList = [...newItems, ...prevArray];
+          return updatedList;
         });
+        return updatedList.length > 0 ? updatedList : realTransfers;
       }
+      return mercadoPagoTransfers;
     } catch (err) {
       console.warn('Sincronización MP:', err);
+      return mercadoPagoTransfers;
     }
   };
 
@@ -312,8 +325,12 @@ export const AppProvider = ({ children }) => {
     };
     setMovimientosFinancieros(prev => [newMov, ...prev]);
 
-    if (isSupabaseConfigured) {
-      await supabase.from('movimientos').insert([newMov]).catch(console.error);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('movimientos').insert([newMov]);
+      } catch (err) {
+        console.warn("Supabase insert error:", err);
+      }
     }
 
     registrarLog(
@@ -329,8 +346,12 @@ export const AppProvider = ({ children }) => {
 
     setMovimientosFinancieros(prev => prev.filter(m => m.id !== movId));
 
-    if (isSupabaseConfigured) {
-      await supabase.from('movimientos').delete().eq('id', movId).catch(console.error);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('movimientos').delete().eq('id', movId);
+      } catch (err) {
+        console.warn("Supabase delete error:", err);
+      }
     }
     
     registrarLog('movimiento_eliminado', `Movimiento eliminado por administrador`);
@@ -340,8 +361,12 @@ export const AppProvider = ({ children }) => {
   const addOrUpdateUser = async (userData) => {
     if (userData.id) {
       setUsers(prev => prev.map(u => u.id === userData.id ? { ...u, ...userData } : u));
-      if (isSupabaseConfigured) {
-        await supabase.from('users').update(userData).eq('id', userData.id).catch(console.error);
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.from('users').update(userData).eq('id', userData.id);
+        } catch (err) {
+          console.warn("Supabase update error:", err);
+        }
       }
       registrarLog('modificacion_usuario', `Usuario modificado (${userData.nombre})`, `Rol: ${userData.rol}`);
     } else {
@@ -353,8 +378,12 @@ export const AppProvider = ({ children }) => {
         ...userData
       };
       setUsers(prev => [...prev, newUser]);
-      if (isSupabaseConfigured) {
-        await supabase.from('users').insert([newUser]).catch(console.error);
+      if (isSupabaseConfigured && supabase) {
+        try {
+          await supabase.from('users').insert([newUser]);
+        } catch (err) {
+          console.warn("Supabase insert error:", err);
+        }
       }
       registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre})`, `Rol: ${newUser.rol}`);
     }
@@ -363,8 +392,12 @@ export const AppProvider = ({ children }) => {
   const deleteUser = async (userId) => {
     const target = users.find(u => u.id === userId);
     setUsers(prev => prev.filter(u => u.id !== userId));
-    if (isSupabaseConfigured) {
-      await supabase.from('users').delete().eq('id', userId).catch(console.error);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('users').delete().eq('id', userId);
+      } catch (err) {
+        console.warn("Supabase delete error:", err);
+      }
     }
     if (target) registrarLog('baja_usuario', `Baja de usuario (${target.nombre})`, `Rol: ${target.rol}`);
   };
@@ -393,21 +426,15 @@ export const AppProvider = ({ children }) => {
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
 
-    if (isSupabaseConfigured) {
-      // Usar Supabase Realtime para que los demás se enteren (lo hace solo con insertar)
-      await Promise.all([
-        supabase.from('payments').insert([newPayment]),
-        supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', currentUser.id)
-      ]).then((results) => {
-        const error = results[0]?.error || results[1]?.error;
-        if (error) {
-          console.error("Supabase insert error:", error);
-          alert("Error guardando en base de datos: " + (error.message || JSON.stringify(error)));
-        }
-      }).catch(err => {
-        console.error("Supabase request error:", err);
-        alert("Error de conexión con la base de datos: " + err.message);
-      });
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await Promise.all([
+          supabase.from('payments').insert([newPayment]),
+          supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', currentUser.id)
+        ]);
+      } catch (err) {
+        console.warn("Supabase payment insert error:", err);
+      }
     }
 
     registrarLog('comprobante_recibido', `Comprobante subido por ${currentUser.nombre}`);
@@ -423,11 +450,15 @@ export const AppProvider = ({ children }) => {
     setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, estado: newStatus, observaciones: obs || p.observaciones } : p));
     setUsers(userList => userList.map(u => u.id === targetPayment.socioId ? { ...u, estadoCuota: newSocioStatus } : u));
 
-    if (isSupabaseConfigured) {
-      await Promise.all([
-        supabase.from('payments').update({ estado: newStatus, observaciones: obs || targetPayment.observaciones }).eq('id', paymentId),
-        supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', targetPayment.socioId)
-      ]).catch(console.error);
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await Promise.all([
+          supabase.from('payments').update({ estado: newStatus, observaciones: obs || targetPayment.observaciones }).eq('id', paymentId),
+          supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', targetPayment.socioId)
+        ]);
+      } catch (err) {
+        console.warn("Supabase update payment status error:", err);
+      }
     }
 
     registrarLog(

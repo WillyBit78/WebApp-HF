@@ -15,6 +15,7 @@ export const PaymentUploader = ({ onSuccess }) => {
     mercadoPagoTransfers, 
     payments, 
     vincularTransferenciaMP, 
+    sincronizarMercadoPago,
     registrarLog 
   } = useApp();
   
@@ -275,8 +276,17 @@ Buscá el Número de operación para numero_operacion.
           const rawNumOp = String(geminiResult.numero_operacion || '');
           const extractedNumOp = extractBestIdToken(rawNumOp);
           
+          // Sincronizar transferencias frescas de Mercado Pago en tiempo real antes del cruce
+          let mpList = mercadoPagoTransfers || [];
+          if (typeof sincronizarMercadoPago === 'function') {
+            const freshMP = await sincronizarMercadoPago();
+            if (Array.isArray(freshMP) && freshMP.length > 0) {
+              mpList = freshMP;
+            }
+          }
+
           // Cruce robusto
-          matchedTransfer = mercadoPagoTransfers?.find(t => {
+          matchedTransfer = mpList?.find(t => {
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
             
