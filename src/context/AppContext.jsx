@@ -271,6 +271,23 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const clearLogs = async () => {
+    setLogs([]);
+    try {
+      localStorage.removeItem('hf_audit_logs');
+    } catch (e) {}
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await supabase.from('logs').delete().neq('id', 'clear_sentinel');
+      } catch (err) {
+        console.warn("Supabase clear logs error:", err);
+      }
+    }
+
+    registrarLog('limpieza_logs', 'Se purgaron todos los logs de auditoría anteriores');
+  };
+
   // Mercado Pago
   const mpAccessToken = import.meta.env.VITE_MP_ACCESS_TOKEN || 'APP_USR-3322444120483456-072316-c328d2ad7cb6de93a33a94812589756e-43153257';
   const sincronizarMercadoPago = async () => {
@@ -574,7 +591,7 @@ export const AppProvider = ({ children }) => {
       loadingDb, // Expose loading state
       addMovimientoFinanciero, deleteMovimientoFinanciero,
       vincularTransferenciaMP, sincronizarMercadoPago,
-      registrarLog, registrarPagoEfectivoCoach,
+      registrarLog, clearLogs, registrarPagoEfectivoCoach,
       cuotasPorCategoria, updateCuotaCategoria,
       clubSettings, setClubSettings,
       roles: MOCK_ROLES,

@@ -33,6 +33,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
     setClubSettings, 
     deleteUser,
     logs,
+    clearLogs,
     registrarPagoEfectivoCoach,
     currentUser
   } = useApp();
@@ -313,6 +314,18 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
                 <option value="ingreso_manual">Ingresos Manuales</option>
                 <option value="gasto_manual">Gastos Manuales</option>
               </select>
+
+              <button
+                onClick={() => {
+                  if (window.confirm("¿Estás seguro de vaciar todo el historial de auditoría? Esta acción purgará los registros anteriores y comenzará un historial limpio.")) {
+                    clearLogs();
+                  }
+                }}
+                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
+                title="Vaciar todo el historial de logs"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Vaciar Historial
+              </button>
             </div>
           </div>
 
