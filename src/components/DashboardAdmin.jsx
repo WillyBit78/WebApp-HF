@@ -183,86 +183,85 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
 
       {/* Tab 1: Resumen de Socios */}
       {activeSubTab === 'resumen' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <div className="flex items-center justify-between mb-4">
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
               <Users className="w-5 h-5 text-amber-400" />
-              Padrón General de Socios y Deportistas
+              Padrón de Socios y Staff
             </h3>
-            <span className="text-xs text-slate-400">Total: {users.length} miembros</span>
+
+            <button
+              onClick={onOpenModalUser}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
+            >
+              <Plus className="w-4 h-4" /> Nuevo Usuario
+            </button>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                 <tr>
-                  <th className="p-3 rounded-l-xl">N° Socio</th>
-                  <th className="p-3">Nombre y Apellido</th>
-                  <th className="p-3">Categoría</th>
-                  <th className="p-3">Rol</th>
+                  <th className="p-3 rounded-l-xl">Socio / Usuario</th>
+                  <th className="p-3">DNI / N° Socio</th>
+                  <th className="p-3">Categoría / Rol</th>
                   <th className="p-3">Estado Cuota</th>
-                  <th className="p-3 text-right rounded-r-xl">Acciones / Cobro Efectivo</th>
+                  <th className="p-3 text-right rounded-r-xl">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-200">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/50 transition-colors">
-                    <td className="p-3 font-mono font-bold text-amber-400">#{u.numeroSocio}</td>
-                    <td className="p-3">
-                      <div className="font-bold text-white">{u.nombre} {u.apellido}</div>
-                      <div className="text-[10px] text-slate-400">{u.telefono}</div>
+                  <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="p-3 font-semibold text-white flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-amber-400 font-bold text-xs border border-slate-700">
+                        {u.nombre.charAt(0)}
+                      </div>
+                      <div>
+                        <div>{u.nombre} {u.apellido}</div>
+                        <div className="text-[10px] text-slate-500 font-normal">{u.email || u.telefono || 'Sin datos de contacto'}</div>
+                      </div>
+                    </td>
+                    <td className="p-3 font-mono text-slate-300">
+                      <div>DNI: {u.dni}</div>
+                      <div className="text-[10px] text-amber-400 font-semibold">Socio #{u.numeroSocio}</div>
                     </td>
                     <td className="p-3">
-                      <span className="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[11px] font-medium text-slate-300">
-                        {u.categoria}
-                      </span>
-                    </td>
-                    <td className="p-3 capitalize">
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                        u.rol === 'admin' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                        u.rol === 'contador' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                        u.rol === 'coach' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                        'bg-slate-800 text-slate-300'
-                      }`}>
+                      <div className="font-semibold text-white">{u.categoria}</div>
+                      <span className="text-[10px] text-slate-400 capitalize bg-slate-800 px-2 py-0.5 rounded font-mono">
                         {u.rol}
                       </span>
                     </td>
                     <td className="p-3">
-                      {u.estadoCuota === 'al_dia' && (
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center w-fit gap-1">
-                          <CheckCircle className="w-3 h-3" /> Al día
-                        </span>
-                      )}
-                      {u.estadoCuota === 'pendiente' && (
-                        <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center w-fit gap-1">
-                          <Clock className="w-3 h-3" /> Revisión
-                        </span>
-                      )}
-                      {u.estadoCuota === 'moroso' && (
-                        <span className="bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center w-fit gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Moroso
-                        </span>
-                      )}
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                        u.estadoCuota === 'al_dia' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                        u.estadoCuota === 'pendiente' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                        'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                      }`}>
+                        {u.estadoCuota === 'al_dia' ? 'Al Día' : u.estadoCuota === 'pendiente' ? 'En Revisión' : 'Moroso'}
+                      </span>
                     </td>
-                    <td className="p-3 text-right flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setCashModalSocio(u);
-                          setCashMonto(u.montoCuota || 15000);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
-                        title="Cobrar Cuota en Efectivo"
-                      >
-                        <Banknote className="w-3.5 h-3.5" /> Cobrar Efectivo
-                      </button>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setCashModalSocio(u)}
+                          className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all"
+                          title="Cobrar cuota en efectivo por Coach/Admin"
+                        >
+                          <Banknote className="w-3.5 h-3.5" /> Efectivo
+                        </button>
 
-                      <button 
-                        onClick={() => deleteUser(u.id)}
-                        className="p-1.5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
-                        title="Eliminar socio"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`¿Estás seguro de dar de baja al socio ${u.nombre} ${u.apellido}?`)) {
+                              deleteUser(u.id);
+                            }
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+                          title="Eliminar usuario"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -272,59 +271,59 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
         </div>
       )}
 
-      {/* Tab 2: Logs & Auditoría de Eventos */}
+      {/* Tab 2: Logs & Auditoría */}
       {activeSubTab === 'logs' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <History className="w-5 h-5 text-amber-400" />
-                Registro de Logs & Auditoría de Eventos del Club
+              <h3 className="font-bold text-base text-white flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-amber-400" />
+                Historial Completo de Eventos y Auditoría
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Historial completo inalterable de altas/bajas, transferencias, pagos en efectivo y movimientos contables.
+                Registro inalterable de inicios de sesión, cobranzas, escaneos OCR y operaciones del sistema.
               </p>
             </div>
 
-            {/* Filtros de Logs */}
-            <div className="flex flex-wrap gap-2 text-xs w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-48">
-                <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5" />
-                <input
+            <div className="flex flex-wrap items-center gap-2 text-xs w-full md:w-auto">
+              <div className="relative flex-1 md:w-48">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
+                <input 
                   type="text"
-                  placeholder="Buscar evento, usuario..."
+                  placeholder="Buscar en logs..."
                   value={logSearch}
                   onChange={(e) => setLogSearch(e.target.value)}
-                  className="w-full bg-slate-800 border border-slate-700 text-slate-200 pl-8 pr-3 py-1.5 rounded-xl font-medium"
+                  className="w-full bg-slate-800 border border-slate-700 text-white pl-8 pr-3 py-1.5 rounded-xl font-medium"
                 />
               </div>
 
               <select
                 value={logFilterTipo}
                 onChange={(e) => setLogFilterTipo(e.target.value)}
-                className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl font-medium"
+                className="bg-slate-800 border border-slate-700 text-white px-3 py-1.5 rounded-xl font-medium"
               >
-                <option value="todos">Todos los Eventos</option>
+                <option value="todos">Todos los eventos</option>
                 <option value="alta_usuario">Altas de Usuario</option>
                 <option value="baja_usuario">Bajas de Usuario</option>
                 <option value="pago_efectivo_coach">Pagos en Efectivo (Coach)</option>
                 <option value="comprobante_recibido">Comprobantes Recibidos</option>
                 <option value="comprobante_aprobado">Comprobantes Aprobados</option>
                 <option value="comprobante_rechazado">Comprobantes Rechazados</option>
+                <option value="comprobante_rechazado_duplicado">Duplicados Rechazados</option>
+                <option value="error_sistema">Errores de Sistema</option>
                 <option value="ingreso_manual">Ingresos Manuales</option>
                 <option value="gasto_manual">Gastos Manuales</option>
               </select>
 
               <button
                 onClick={() => {
-                  if (window.confirm("¿Estás seguro de vaciar todo el historial de auditoría? Esta acción purgará los registros anteriores y comenzará un historial limpio.")) {
+                  if (window.confirm("¿Estás seguro de vaciar todo el historial de auditoría?")) {
                     clearLogs();
                   }
                 }}
                 className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
-                title="Vaciar todo el historial de logs"
               >
-                <Trash2 className="w-3.5 h-3.5" /> Vaciar Historial
+                <Trash2 className="w-3.5 h-3.5" /> Vaciar
               </button>
             </div>
           </div>
@@ -334,44 +333,29 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
               <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
                 <tr>
                   <th className="p-3 rounded-l-xl">Fecha y Hora</th>
-                  <th className="p-3">Usuario que ejecutó</th>
-                  <th className="p-3">Tipo de Evento</th>
+                  <th className="p-3">Usuario</th>
+                  <th className="p-3">Tipo</th>
                   <th className="p-3">Descripción</th>
-                  <th className="p-3 rounded-r-xl">Detalles & Responsable de Custodia</th>
+                  <th className="p-3 rounded-r-xl">Detalles</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 text-slate-200">
-                {filteredLogs.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-500">
-                      No hay eventos registrados en este filtro.
+                {filteredLogs.map((l) => (
+                  <tr key={l.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="p-3 text-slate-400 font-mono whitespace-nowrap">{l.fechaHora}</td>
+                    <td className="p-3 font-semibold">
+                      <div className="text-white">{l.usuarioNombre}</div>
+                      <div className="text-[10px] text-slate-400 capitalize">{l.usuarioRol}</div>
                     </td>
+                    <td className="p-3">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] uppercase shadow-sm ${getEventBadgeStyle(l.tipoEvento)}`}>
+                        {l.tipoEvento.replace(/_/g, ' ')}
+                      </span>
+                    </td>
+                    <td className="p-3 font-medium text-white">{l.descripcion}</td>
+                    <td className="p-3 text-slate-300 font-mono text-[11px]">{l.detalles}</td>
                   </tr>
-                ) : (
-                  filteredLogs.map((l) => (
-                    <tr key={l.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="p-3 text-slate-400 font-mono whitespace-nowrap">{l.fechaHora}</td>
-                      <td className="p-3 font-semibold">
-                        <div className="text-white">{l.usuarioNombre}</div>
-                        <div className="text-[10px] text-slate-400 capitalize">{l.usuarioRol}</div>
-                      </td>
-                      <td className="p-3">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          l.tipoEvento === 'pago_efectivo_coach' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                          l.tipoEvento === 'alta_usuario' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' :
-                          l.tipoEvento === 'baja_usuario' ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30' :
-                          l.tipoEvento.includes('aprobado') ? 'bg-emerald-500/20 text-emerald-300' :
-                          l.tipoEvento.includes('rechazado') ? 'bg-rose-500/20 text-rose-300' :
-                          'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        }`}>
-                          {l.tipoEvento.replace(/_/g, ' ')}
-                        </span>
-                      </td>
-                      <td className="p-3 font-medium text-white">{l.descripcion}</td>
-                      <td className="p-3 text-slate-300 font-mono text-[11px]">{l.detalles}</td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>

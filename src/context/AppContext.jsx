@@ -522,8 +522,12 @@ export const AppProvider = ({ children }) => {
 
     setPayments(prev => [newPayment, ...prev]);
     
-    // Optimistic user state update
-    const newSocioStatus = newPayment.estado === 'aprobado' ? 'al_dia' : 'pendiente';
+    // Check if socio already has an approved payment to protect AL DIA status
+    const hasApprovedAlready = payments.some(p => p.socioId === currentUser.id && p.estado === 'aprobado');
+    const newSocioStatus = hasApprovedAlready 
+      ? 'al_dia' 
+      : (newPayment.estado === 'aprobado' ? 'al_dia' : (newPayment.estado === 'en_revision' ? 'pendiente' : (currentUser.estadoCuota || 'moroso')));
+    
     const updatedUser = { ...currentUser, estadoCuota: newSocioStatus };
     setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
     setCurrentUser(updatedUser);
@@ -539,7 +543,15 @@ export const AppProvider = ({ children }) => {
       }
     }
 
-    registrarLog('comprobante_recibido', `Comprobante subido por ${currentUser.nombre}`);
+    if (newPayment.estado === 'rechazado') {
+      registrarLog(
+        'comprobante_rechazado_duplicado', 
+        `Comprobante rechazado por duplicado (${currentUser.nombre})`,
+        `N° Op: ${newPayment.numeroOperacion} - ${newPayment.observaciones}`
+      );
+    } else {
+      registrarLog('comprobante_recibido', `Comprobante subido por ${currentUser.nombre}`, `N° Op: ${newPayment.numeroOperacion}`);
+    }
     return newPayment;
   };
 

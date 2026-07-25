@@ -27,6 +27,14 @@ export const DashboardSocio = () => {
   // My payments history
   const myPayments = payments.filter(p => p.socioId === currentUser.id);
 
+  // Dynamic fee status calculation: if socio has ANY approved payment, they are AL DIA!
+  const hasApprovedPayment = myPayments.some(p => p.estado === 'aprobado');
+  const hasPendingRevision = myPayments.some(p => p.estado === 'en_revision');
+  
+  const effectiveFeeStatus = hasApprovedPayment 
+    ? 'al_dia' 
+    : (hasPendingRevision ? 'pendiente' : (currentUser.estadoCuota || 'moroso'));
+
   return (
     <div className="space-y-6">
       {/* Socio Personal Card */}
@@ -54,17 +62,17 @@ export const DashboardSocio = () => {
             <div>
               <div className="text-[10px] text-slate-400 font-semibold uppercase">Estado de Cuota Social</div>
               <div className="flex items-center gap-2 mt-1">
-                {currentUser.estadoCuota === 'al_dia' && (
+                {effectiveFeeStatus === 'al_dia' && (
                   <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA (Julio 2026)
                   </span>
                 )}
-                {currentUser.estadoCuota === 'pendiente' && (
+                {effectiveFeeStatus === 'pendiente' && (
                   <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
                     <Clock className="w-4 h-4 text-amber-400" /> REVISIÓN EN CURSO
                   </span>
                 )}
-                {currentUser.estadoCuota === 'moroso' && (
+                {effectiveFeeStatus === 'moroso' && (
                   <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 text-rose-400" /> PAGO PENDIENTE
                   </span>
@@ -136,7 +144,7 @@ export const DashboardSocio = () => {
               <p className="text-xs text-slate-500 py-4 text-center">No has registrado comprobantes aún.</p>
             ) : (
               myPayments.map(p => (
-                <div key={p.id} className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                <div key={p.id} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1.5">
                   <div className="flex justify-between font-bold text-white">
                     <span>{p.billeteraOrigen}</span>
                     <span className="text-emerald-400">${Number(p.monto).toLocaleString('es-AR')}</span>
@@ -144,14 +152,21 @@ export const DashboardSocio = () => {
                   <div className="text-[10px] text-slate-400 font-mono">N° Op: {p.numeroOperacion}</div>
                   <div className="flex justify-between items-center pt-1">
                     <span className="text-[10px] text-slate-500">{p.fechaTransferencia}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      p.estado === 'aprobado' ? 'bg-emerald-500/20 text-emerald-300' :
-                      p.estado === 'en_revision' ? 'bg-amber-500/20 text-amber-300' :
-                      'bg-rose-500/20 text-rose-300'
+                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full ${
+                      p.estado === 'aprobado' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                      p.estado === 'en_revision' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                      'bg-rose-500/20 text-rose-300 border border-rose-500/30'
                     }`}>
                       {p.estado}
                     </span>
                   </div>
+                  {p.observaciones && p.estado !== 'aprobado' && (
+                    <div className={`mt-2 p-2 rounded-lg text-[11px] font-medium leading-tight flex items-start gap-1.5 ${
+                      p.estado === 'rechazado' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
+                    }`}>
+                      <span>⚠️ Motivo: {p.observaciones}</span>
+                    </div>
+                  )}
                 </div>
               ))
             )}
