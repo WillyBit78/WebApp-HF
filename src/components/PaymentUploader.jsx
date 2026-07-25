@@ -201,14 +201,19 @@ export const PaymentUploader = ({ onSuccess }) => {
             }
           }];
 
-          const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código \`\`\`json ni nada más, solo el objeto JSON).
+          const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código, sin comentarios \`//\`, solo el objeto JSON).
 Si un campo no se encuentra en el comprobante o no estás seguro, asignale null. No inventes datos.
+La fecha debe tener formato DD/MM/YYYY (ej: "12/07/2026").
+La hora formato HH:MM (ej: "18:44").
+El monto debe ser un número entero o flotante sin símbolos.
+Buscá el "COELSA ID" o código largo para coelsa_id.
+Buscá el Número de operación para numero_operacion.
 {
-  "fecha": "DD/MM/YYYY", // Ej: "12/07/2026"
-  "hora": "HH:MM", // Ej: "18:44"
-  "monto": 15000, // Número entero o flotante sin formato
-  "coelsa_id": "texto o null", // Buscá el "COELSA ID", "Código de Autenticación" o un código alfanumérico largo (ej: 1LMP...).
-  "numero_operacion": "texto o null", // Buscá el "Número de operación", "Nº de transacción" que suele ser numérico.
+  "fecha": "DD/MM/YYYY",
+  "hora": "HH:MM",
+  "monto": 15000,
+  "coelsa_id": "texto o null",
+  "numero_operacion": "texto o null",
   "emisor": "Nombre Apellido"
 }`;
 
@@ -218,9 +223,18 @@ Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
             const response = await result.response;
             let text = response.text();
             
-            // Limpiar cualquier markdown residual
-            const cleanedText = text.replace(/```json/gi, '').replace(/```/g, '').trim();
-            geminiResult = JSON.parse(cleanedText);
+            // Limpiar cualquier markdown residual y comentarios generados por error
+            let cleanedText = text.replace(/```json/gi, '').replace(/```/g, '');
+            // Eliminar comentarios tipo // por si la IA los incluye
+            cleanedText = cleanedText.replace(/\/\/.*$/gm, '').trim();
+            // Buscar solo el bloque desde { hasta }
+            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+            
+            if (jsonMatch) {
+              geminiResult = JSON.parse(jsonMatch[0]);
+            } else {
+              geminiResult = JSON.parse(cleanedText);
+            }
             
             console.log("Resultado Gemini:", geminiResult);
           } catch (e) {
