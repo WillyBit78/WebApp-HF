@@ -25,6 +25,7 @@ export const AppProvider = ({ children }) => {
       return [];
     }
   });
+  const [loadingDb, setLoadingDb] = useState(true);
 
   useEffect(() => {
     if (logs && logs.length > 0) {
