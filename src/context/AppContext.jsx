@@ -59,6 +59,24 @@ export const AppProvider = ({ children }) => {
     return normalized;
   };
 
+  // Settings and Cuotas
+  const [cuotasPorCategoria, setCuotasPorCategoria] = useState({
+    'BAFI Femenino': 15000,
+    'EDEFI Mayores': 15000,
+    'EDEFI Baby': 15000,
+    'FUTSALA Promo': 15000,
+    'FUTSALA Masculino': 15000,
+    'BAFI Masculino': 15000
+  });
+
+  const [clubSettings, setClubSettings] = useState({
+    nombreClub: 'Haedo Futsal',
+    aliasMercadoPago: 'HAEDOFUTSAL.MP',
+    cuitClub: '30-71234567-8',
+    montoCuotaGeneral: 15000,
+    cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
+  });
+
   // Load from Supabase on mount and setup Realtime subscriptions
   useEffect(() => {
     let channel = null;

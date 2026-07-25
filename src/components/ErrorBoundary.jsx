@@ -35,6 +35,12 @@ export class ErrorBoundary extends React.Component {
               La aplicación detectó una inconsistencia de estado al cambiar de pantalla. Puedes restaurar la pantalla inmediatamente con 1 clic.
             </p>
 
+            {this.state.error && (
+              <div className="bg-slate-950 p-3 rounded-xl border border-rose-500/20 text-rose-300 font-mono text-[11px] text-left overflow-auto max-h-24">
+                {this.state.error.toString()}
+              </div>
+            )}
+
             <button
               onClick={this.handleReset}
               className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
