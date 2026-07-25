@@ -79,6 +79,33 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
     return true;
   });
 
+  const getEventBadgeStyle = (tipo) => {
+    switch (tipo) {
+      case 'comprobante_aprobado':
+      case 'comprobante_aprobado_auto':
+      case 'conciliacion_mp':
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-extrabold';
+      case 'comprobante_rechazado':
+      case 'comprobante_rechazado_duplicado':
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/40 font-extrabold';
+      case 'comprobante_recibido':
+      case 'comprobante_revision':
+        return 'bg-amber-500/20 text-amber-300 border border-amber-500/40 font-extrabold';
+      case 'pago_efectivo_coach':
+        return 'bg-sky-500/20 text-sky-300 border border-sky-500/40 font-extrabold';
+      case 'alta_usuario':
+      case 'modificacion_usuario':
+        return 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold';
+      case 'baja_usuario':
+      case 'error_sistema':
+        return 'bg-rose-950 text-rose-300 border border-rose-600 font-extrabold';
+      case 'limpieza_logs':
+        return 'bg-orange-500/20 text-orange-300 border border-orange-500/30 font-bold';
+      default:
+        return 'bg-slate-800 text-slate-300 border border-slate-700 font-medium';
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner Stats */}
