@@ -20,7 +20,8 @@ import {
   Filter,
   Search,
   History,
-  CheckCheck
+  CheckCheck,
+  ShieldAlert
 } from 'lucide-react';
 
 export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
