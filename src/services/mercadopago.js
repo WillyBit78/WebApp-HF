@@ -43,18 +43,22 @@ export async function fetchMercadoPagoTransfers(accessToken) {
       // Incluir si es transferencia explícita o ingreso de dinero
       const isTransfer = 
         opType === 'money_transfer' || 
+        opType === 'account_fund' ||
         typeId === 'bank_transfer' || 
         typeId === 'account_money' ||
-        desc.includes('transferencia') ||
-        desc.includes('dinero recibido') ||
+        typeId === 'cvu' ||
+        desc.includes('transfer') ||
+        desc.includes('dinero') ||
         desc.includes('cvu');
 
       return isTransfer;
     });
 
     return incomingTransfers.map(p => {
-      // Buscar el COELSA ID en todas las ubicaciones posibles donde Mercado Pago lo reporta
+      // Buscar el COELSA ID en todas las ubicaciones posibles donde Mercado Pago lo reporta (especialmente transaction_details)
       const rawCoelsa = 
+        p.transaction_details?.transaction_id ||
+        p.transaction_details?.bank_transfer_id?.toString() ||
         p.point_of_interaction?.transaction_data?.e2e_id ||
         p.point_of_interaction?.transaction_data?.bank_info?.origin?.id ||
         p.point_of_interaction?.transaction_data?.transaction_id ||

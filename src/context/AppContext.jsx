@@ -40,24 +40,37 @@ export const AppProvider = ({ children }) => {
     if (!obj || typeof obj !== 'object') return obj;
     const normalized = { ...obj };
 
-    if (obj.socioid && !obj.socioId) normalized.socioId = obj.socioid;
-    if (obj.socionombre && !obj.socioNombre) normalized.socioNombre = obj.socionombre;
-    if (obj.numerooperacion && !obj.numeroOperacion) normalized.numeroOperacion = obj.numerooperacion;
-    if (obj.billeteraorigen && !obj.billeteraOrigen) normalized.billeteraOrigen = obj.billeteraorigen;
-    if (obj.emisornombre && !obj.emisorNombre) normalized.emisorNombre = obj.emisornombre;
-    if (obj.fechatansferencia && !obj.fechaTransferencia) normalized.fechaTransferencia = obj.fechatansferencia;
-    if (obj.fechatransferancia && !obj.fechaTransferencia) normalized.fechaTransferencia = obj.fechatransferancia;
-    if (obj.comprobanteurl && !obj.comprobanteUrl) normalized.comprobanteUrl = obj.comprobanteurl;
-    if (obj.fechahora && !obj.fechaHora) normalized.fechaHora = obj.fechahora;
-    if (obj.usuarionombre && !obj.usuarioNombre) normalized.usuarioNombre = obj.usuarionombre;
-    if (obj.usuariorol && !obj.usuarioRol) normalized.usuarioRol = obj.usuariorol;
-    if (obj.tipoevento && !obj.tipoEvento) normalized.tipoEvento = obj.tipoevento;
-    if (obj.numerosocio && !obj.numeroSocio) normalized.numeroSocio = obj.numerosocio;
-    if (obj.estadocuota && !obj.estadoCuota) normalized.estadoCuota = obj.estadocuota;
-    if (obj.montocuota && !obj.montoCuota) normalized.montoCuota = obj.montocuota;
-    if (obj.creadopor && !obj.creadoPor) normalized.creadoPor = obj.creadopor;
+    for (const key of Object.keys(obj)) {
+      const lower = key.toLowerCase();
+      if (lower === 'socioid') normalized.socioId = obj[key];
+      if (lower === 'socionombre') normalized.socioNombre = obj[key];
+      if (lower === 'numerooperacion') normalized.numeroOperacion = obj[key];
+      if (lower === 'billeteraorigen') normalized.billeteraOrigen = obj[key];
+      if (lower === 'emisornombre') normalized.emisorNombre = obj[key];
+      if (lower.startsWith('fechatransfe') || lower.startsWith('fechatansfe')) normalized.fechaTransferencia = obj[key];
+      if (lower === 'comprobanteurl') normalized.comprobanteUrl = obj[key];
+      if (lower === 'fechahora') normalized.fechaHora = obj[key];
+      if (lower === 'usuarionombre') normalized.usuarioNombre = obj[key];
+      if (lower === 'usuariorol') normalized.usuarioRol = obj[key];
+      if (lower === 'tipoevento') normalized.tipoEvento = obj[key];
+      if (lower === 'numerosocio') normalized.numeroSocio = obj[key];
+      if (lower === 'estadocuota') normalized.estadoCuota = obj[key];
+      if (lower === 'montocuota') normalized.montoCuota = obj[key];
+      if (lower === 'creadopor') normalized.creadoPor = obj[key];
+      if (lower === 'coelsaid') normalized.coelsaId = obj[key];
+    }
 
     return normalized;
+  };
+
+  const mergeSafeRows = (oldItem, newItem) => {
+    const merged = { ...oldItem };
+    for (const key in newItem) {
+      if (newItem[key] !== undefined && newItem[key] !== null) {
+        merged[key] = newItem[key];
+      }
+    }
+    return merged;
   };
 
   // Settings and Cuotas
@@ -90,12 +103,12 @@ export const AppProvider = ({ children }) => {
       if (eventType === 'INSERT') {
         setter(prev => {
           if (prev.some(item => item.id === newRow.id)) {
-            return prev.map(item => item.id === newRow.id ? { ...item, ...newRow } : item);
+            return prev.map(item => item.id === newRow.id ? mergeSafeRows(item, newRow) : item);
           }
           return appendAtEnd ? [...prev, newRow] : [newRow, ...prev];
         });
       } else if (eventType === 'UPDATE') {
-        setter(prev => prev.map(item => item.id === newRow.id ? { ...item, ...newRow } : item));
+        setter(prev => prev.map(item => item.id === newRow.id ? mergeSafeRows(item, newRow) : item));
       } else if (eventType === 'DELETE') {
         setter(prev => prev.filter(item => item.id !== oldRow.id));
       }
