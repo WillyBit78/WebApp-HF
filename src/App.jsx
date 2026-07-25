@@ -69,6 +69,8 @@ function MainApp() {
         return <DashboardContador />;
       case 'users':
         return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'planteles':
+        return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
       case 'settings':
         return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'profile':

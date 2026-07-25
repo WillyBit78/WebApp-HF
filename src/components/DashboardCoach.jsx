@@ -26,7 +26,15 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
   const [cashMonto, setCashMonto] = useState(15000);
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo al DT');
 
-  const categories = ['Todas', 'Sub-13', 'Sub-15', 'Sub-17', 'Reserva', 'Primera', 'Femenino', 'Senior'];
+  const categories = [
+    'Todas', 
+    'BAFI Femenino', 
+    'EDEFI Mayores', 
+    'EDEFI Baby', 
+    'FUTSALA Promo', 
+    'FUTSALA Masculino', 
+    'BAFI Masculino'
+  ];
 
   const handleConfirmCashPayment = (e) => {
     e.preventDefault();
@@ -38,12 +46,12 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
 
   const filteredUsers = users.filter(u => {
     if (selectedCategory === 'Todas') return true;
-    return u.categoria === selectedCategory;
+    return u.categoria && u.categoria.includes(selectedCategory);
   });
 
   const filteredEvents = events.filter(e => {
     if (selectedCategory === 'Todas') return true;
-    return e.categoria === selectedCategory || e.categoria === 'Todas';
+    return e.categoria && (e.categoria.includes(selectedCategory) || e.categoria === 'Todas');
   });
 
   return (
@@ -138,14 +146,18 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
                     </td>
                     <td className="p-3 text-slate-300">{u.telefono}</td>
                     <td className="p-3">
-                      {u.estadoCuota === 'al_dia' ? (
-                        <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-                          <CheckCircle className="w-3 h-3" /> Al día
-                        </span>
+                      {u.rol === 'socio' ? (
+                        u.estadoCuota === 'al_dia' ? (
+                          <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <CheckCircle className="w-3 h-3" /> Al día
+                          </span>
+                        ) : (
+                          <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
+                            <Clock className="w-3 h-3" /> Pendiente
+                          </span>
+                        )
                       ) : (
-                        <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-                          <Clock className="w-3 h-3" /> Pendiente
-                        </span>
+                        <span className="text-slate-500 font-mono text-[10px]">Staff (Sin Cuota)</span>
                       )}
                     </td>
                     <td className="p-3 text-right flex items-center justify-end gap-2">

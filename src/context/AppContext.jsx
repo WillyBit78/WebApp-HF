@@ -287,7 +287,7 @@ export const AppProvider = ({ children }) => {
       id: `log-${timestampNow}`,
       created_at: isoNow,
       timestamp: timestampNow,
-      fechaHora: now.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+      fechaHora: now.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short', hour12: false }),
       usuarioNombre: userToRecord ? `${userToRecord.nombre} ${userToRecord.apellido}` : 'Sistema',
       usuarioRol: userToRecord ? userToRecord.rol : 'sistema',
       tipoEvento,

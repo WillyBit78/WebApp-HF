@@ -43,9 +43,32 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
   const [editingSettings, setEditingSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState(clubSettings);
 
-  // Filters for Audit Logs
-  const [logFilterTipo, setLogFilterTipo] = useState('todos');
+  // Multi-select Filters for Audit Logs
+  const [selectedEventTypes, setSelectedEventTypes] = useState([]); // [] means ALL
   const [logSearch, setLogSearch] = useState('');
+
+  const toggleEventTypeFilter = (type) => {
+    if (!type || type === 'todos') {
+      setSelectedEventTypes([]);
+      return;
+    }
+    setSelectedEventTypes(prev => {
+      if (prev.includes(type)) {
+        return prev.filter(t => t !== type);
+      } else {
+        return [...prev, type];
+      }
+    });
+  };
+
+  const eventTypeOptions = [
+    { id: 'comprobante_aprobado', label: 'Aprobados', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' },
+    { id: 'comprobante_rechazado_duplicado', label: 'Duplicados', color: 'bg-rose-500/20 text-rose-300 border-rose-500/40' },
+    { id: 'comprobante_recibido', label: 'Recibidos/Revisión', color: 'bg-amber-500/20 text-amber-300 border-amber-500/40' },
+    { id: 'pago_efectivo_coach', label: 'Pagos Efectivo', color: 'bg-sky-500/20 text-sky-300 border-sky-500/40' },
+    { id: 'alta_usuario', label: 'Altas / Modif.', color: 'bg-purple-500/20 text-purple-300 border-purple-500/40' },
+    { id: 'error_sistema', label: 'Errores Sistema', color: 'bg-rose-950 text-rose-300 border-rose-600' }
+  ];
 
   // Cash payment modal state for socio
   const [cashModalSocio, setCashModalSocio] = useState(null);
@@ -81,7 +104,9 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
 
   const filteredLogs = logs
     .filter(l => {
-      if (logFilterTipo !== 'todos' && l.tipoEvento !== logFilterTipo) return false;
+      if (selectedEventTypes.length > 0 && !selectedEventTypes.includes(l.tipoEvento)) {
+        return false;
+      }
       if (logSearch) {
         const q = logSearch.toLowerCase();
         return (
@@ -276,27 +301,33 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                        u.estadoCuota === 'al_dia' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                        u.estadoCuota === 'pendiente' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                        'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                      }`}>
-                        {u.estadoCuota === 'al_dia' ? 'Al Día' : u.estadoCuota === 'pendiente' ? 'En Revisión' : 'Moroso'}
-                      </span>
+                      {u.rol === 'socio' ? (
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
+                          u.estadoCuota === 'al_dia' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                          u.estadoCuota === 'pendiente' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
+                          'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                        }`}>
+                          {u.estadoCuota === 'al_dia' ? 'Al Día' : u.estadoCuota === 'pendiente' ? 'En Revisión' : 'Moroso'}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500 font-mono text-[10px]">Staff (Sin Cuota)</span>
+                      )}
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => setCashModalSocio(u)}
-                          className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all"
-                          title="Cobrar cuota en efectivo por Coach/Admin"
-                        >
-                          <Banknote className="w-3.5 h-3.5" /> Efectivo
-                        </button>
+                        {u.rol === 'socio' && (
+                          <button
+                            onClick={() => setCashModalSocio(u)}
+                            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all"
+                            title="Cobrar cuota en efectivo por Coach/Admin"
+                          >
+                            <Banknote className="w-3.5 h-3.5" /> Efectivo
+                          </button>
+                        )}
 
                         <button
                           onClick={() => {
-                            if (window.confirm(`¿Estás seguro de dar de baja al socio ${u.nombre} ${u.apellido}?`)) {
+                            if (window.confirm(`¿Estás seguro de dar de baja al usuario ${u.nombre} ${u.apellido}?`)) {
                               deleteUser(u.id);
                             }
                           }}
@@ -325,39 +356,21 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
                 Historial Completo de Eventos y Auditoría
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Registro inalterable de inicios de sesión, cobranzas, escaneos OCR y operaciones del sistema.
+                Registro inalterable de inicios de sesión, cobranzas, escaneos OCR y operaciones del sistema (Formato 24hs).
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2 text-xs w-full md:w-auto">
-              <div className="relative flex-1 md:w-48">
+              <div className="relative flex-1 md:w-64">
                 <Search className="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400" />
                 <input 
                   type="text"
-                  placeholder="Buscar en logs..."
+                  placeholder="Buscar usuario, evento, N° op..."
                   value={logSearch}
                   onChange={(e) => setLogSearch(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 text-white pl-8 pr-3 py-1.5 rounded-xl font-medium"
                 />
               </div>
-
-              <select
-                value={logFilterTipo}
-                onChange={(e) => setLogFilterTipo(e.target.value)}
-                className="bg-slate-800 border border-slate-700 text-white px-3 py-1.5 rounded-xl font-medium"
-              >
-                <option value="todos">Todos los eventos</option>
-                <option value="alta_usuario">Altas de Usuario</option>
-                <option value="baja_usuario">Bajas de Usuario</option>
-                <option value="pago_efectivo_coach">Pagos en Efectivo (Coach)</option>
-                <option value="comprobante_recibido">Comprobantes Recibidos</option>
-                <option value="comprobante_aprobado">Comprobantes Aprobados</option>
-                <option value="comprobante_rechazado">Comprobantes Rechazados</option>
-                <option value="comprobante_rechazado_duplicado">Duplicados Rechazados</option>
-                <option value="error_sistema">Errores de Sistema</option>
-                <option value="ingreso_manual">Ingresos Manuales</option>
-                <option value="gasto_manual">Gastos Manuales</option>
-              </select>
 
               <button
                 onClick={() => {
@@ -366,10 +379,47 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
                   }
                 }}
                 className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5"
+                title="Vaciar todo el historial de logs"
               >
                 <Trash2 className="w-3.5 h-3.5" /> Vaciar
               </button>
             </div>
+          </div>
+
+          {/* Multi-Select Event Filters */}
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800">
+            <span className="text-xs font-semibold text-slate-400 flex items-center gap-1 shrink-0">
+              <Filter className="w-3.5 h-3.5" /> Filtrar Eventos:
+            </span>
+            <button
+              onClick={() => toggleEventTypeFilter('todos')}
+              className={`px-3 py-1 rounded-full text-xs font-extrabold transition-all cursor-pointer ${
+                selectedEventTypes.length === 0
+                  ? 'bg-amber-400 text-slate-950 shadow-md'
+                  : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+              }`}
+            >
+              Todos los Eventos ({logs.length})
+            </button>
+
+            {eventTypeOptions.map(opt => {
+              const isSelected = selectedEventTypes.includes(opt.id);
+              const count = logs.filter(l => l.tipoEvento === opt.id).length;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => toggleEventTypeFilter(opt.id)}
+                  className={`px-3 py-1 rounded-full text-xs transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? `${opt.color} ring-1 ring-amber-400/50 shadow-md font-extrabold`
+                      : 'bg-slate-800/80 text-slate-400 hover:text-slate-200 border border-slate-700/80 font-medium'
+                  }`}
+                >
+                  <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-amber-400' : 'bg-slate-600'}`}></span>
+                  {opt.label} ({count})
+                </button>
+              );
+            })}
           </div>
 
           <div className="overflow-x-auto">

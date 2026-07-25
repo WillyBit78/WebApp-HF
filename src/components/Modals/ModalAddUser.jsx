@@ -57,11 +57,13 @@ export const ModalAddUser = ({ onClose }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const isSocioRole = formData.rol === 'socio';
     addOrUpdateUser({
       ...formData,
+      categoria: isSocioRole ? `${categoriaMadre} (${subCategoria})` : 'Staff',
+      montoCuota: isSocioRole ? (cuotasPorCategoria[categoriaMadre] || 15000) : 0,
       usuario: usuarioGenerado,
-      clave: '1234', // PIN por defecto
-      montoCuota: cuotasPorCategoria[categoriaMadre] || 15000
+      clave: '1234'
     });
     onClose();
   };
@@ -138,40 +140,48 @@ export const ModalAddUser = ({ onClose }) => {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 pt-1">
-            <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Categoría Madre</label>
-              <select
-                value={categoriaMadre}
-                onChange={(e) => handleMadreChange(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-amber-300 font-bold outline-none text-xs"
-              >
-                {Object.keys(CLUB_CATEGORIES).map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-            </div>
+          {formData.rol === 'socio' ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Categoría Madre</label>
+                  <select
+                    value={categoriaMadre}
+                    onChange={(e) => handleMadreChange(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-amber-300 font-bold outline-none text-xs"
+                  >
+                    {Object.keys(CLUB_CATEGORIES).map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <label className="block text-slate-400 mb-1 font-semibold">Sub-categoría (Plantel)</label>
-              <select
-                value={subCategoria}
-                onChange={(e) => handleSubChange(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-bold outline-none text-xs"
-              >
-                {CLUB_CATEGORIES[categoriaMadre].map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+                <div>
+                  <label className="block text-slate-400 mb-1 font-semibold">Sub-categoría (Plantel)</label>
+                  <select
+                    value={subCategoria}
+                    onChange={(e) => handleSubChange(e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-bold outline-none text-xs"
+                  >
+                    {CLUB_CATEGORIES[categoriaMadre].map(sub => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-            <span className="text-slate-400">Cuota Mensual correspondiente:</span>
-            <span className="text-emerald-400 font-extrabold text-sm">
-              ${(cuotasPorCategoria[categoriaMadre] || 15000).toLocaleString('es-AR')}
-            </span>
-          </div>
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
+                <span className="text-slate-400">Cuota Mensual correspondiente:</span>
+                <span className="text-emerald-400 font-extrabold text-sm">
+                  ${(cuotasPorCategoria[categoriaMadre] || 15000).toLocaleString('es-AR')}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 font-medium">
+              ℹ️ Los usuarios con rol <strong className="text-white capitalize">{formData.rol}</strong> pertenecen al Staff del Club y no poseen asignación de categoría ni pago de cuota social.
+            </div>
+          )}
 
           <div className="flex gap-2 pt-2">
             <button
