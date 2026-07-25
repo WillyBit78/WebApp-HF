@@ -280,9 +280,14 @@ export const AppProvider = ({ children }) => {
   // Audit Logs
   const registrarLog = async (tipoEvento, descripcion, detalles = '', userOverride = null) => {
     const userToRecord = userOverride || currentUser;
+    const now = new Date();
+    const timestampNow = now.getTime();
+    const isoNow = now.toISOString();
     const newLog = {
-      id: `log-${Date.now()}`,
-      fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+      id: `log-${timestampNow}`,
+      created_at: isoNow,
+      timestamp: timestampNow,
+      fechaHora: now.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
       usuarioNombre: userToRecord ? `${userToRecord.nombre} ${userToRecord.apellido}` : 'Sistema',
       usuarioRol: userToRecord ? userToRecord.rol : 'sistema',
       tipoEvento,

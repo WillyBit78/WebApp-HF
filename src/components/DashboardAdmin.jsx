@@ -66,18 +66,34 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
     setCashModalSocio(null);
   };
 
-  const filteredLogs = logs.filter(l => {
-    if (logFilterTipo !== 'todos' && l.tipoEvento !== logFilterTipo) return false;
-    if (logSearch) {
-      const q = logSearch.toLowerCase();
-      return (
-        l.usuarioNombre.toLowerCase().includes(q) ||
-        l.descripcion.toLowerCase().includes(q) ||
-        l.detalles.toLowerCase().includes(q)
-      );
+  const getLogTimestamp = (l) => {
+    if (l.timestamp) return Number(l.timestamp);
+    if (l.created_at) {
+      const t = new Date(l.created_at).getTime();
+      if (!isNaN(t)) return t;
     }
-    return true;
-  });
+    if (l.id) {
+      const match = String(l.id).match(/\d{10,}/);
+      if (match) return parseInt(match[0], 10);
+    }
+    return 0;
+  };
+
+  const filteredLogs = logs
+    .filter(l => {
+      if (logFilterTipo !== 'todos' && l.tipoEvento !== logFilterTipo) return false;
+      if (logSearch) {
+        const q = logSearch.toLowerCase();
+        return (
+          (l.usuarioNombre && l.usuarioNombre.toLowerCase().includes(q)) ||
+          (l.descripcion && l.descripcion.toLowerCase().includes(q)) ||
+          (l.detalles && l.detalles.toLowerCase().includes(q)) ||
+          (l.fechaHora && l.fechaHora.toLowerCase().includes(q))
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => getLogTimestamp(b) - getLogTimestamp(a));
 
   const getEventBadgeStyle = (tipo) => {
     switch (tipo) {
