@@ -316,8 +316,27 @@ export const AppProvider = ({ children }) => {
     sincronizarMercadoPago();
   }, []);
 
-  const vincularTransferenciaMP = (mpId, paymentIdOrUser) => {
-    const targetMp = mercadoPagoTransfers.find(t => t.id === mpId);
+  const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState('en_revision');
+  const [viewedNotifications, setViewedNotifications] = useState({
+    aprobado: 0,
+    en_revision: 0,
+    rechazado: 0
+  });
+
+  const markNotificationsAsViewed = (status) => {
+    if (!status) return;
+    const currentCount = payments.filter(p => p.estado === status).length;
+    setViewedNotifications(prev => ({
+      ...prev,
+      [status]: currentCount
+    }));
+  };
+
+  const vincularTransferenciaMP = (mpId, paymentIdOrUser, rawMpTx = null) => {
+    let targetMp = mercadoPagoTransfers.find(t => t.id === mpId || t.numeroOperacion === mpId || t.coelsaId === mpId);
+    if (!targetMp && rawMpTx) {
+      targetMp = rawMpTx;
+    }
     if (!targetMp) return false;
 
     let targetPayment = payments.find(p => p.id === paymentIdOrUser);
@@ -332,14 +351,18 @@ export const AppProvider = ({ children }) => {
 
     const socioNombre = targetPayment?.socioNombre || (socioTarget ? `${socioTarget.nombre} ${socioTarget.apellido}` : targetMp.emisorNombre);
 
-    setMercadoPagoTransfers(prev => prev.map(t => 
-      t.id === mpId ? { ...t, estado: 'conciliado', asociadoAPagoId: targetPayment?.id || paymentIdOrUser, socioNombre } : t
-    ));
+    setMercadoPagoTransfers(prev => {
+      const exists = prev.some(t => t.id === targetMp.id || t.numeroOperacion === targetMp.numeroOperacion);
+      if (exists) {
+        return prev.map(t => (t.id === targetMp.id || t.numeroOperacion === targetMp.numeroOperacion) ? { ...t, estado: 'conciliado', asociadoAPagoId: targetPayment?.id || paymentIdOrUser, socioNombre } : t);
+      } else {
+        return [{ ...targetMp, estado: 'conciliado', asociadoAPagoId: targetPayment?.id || paymentIdOrUser, socioNombre }, ...prev];
+      }
+    });
 
     if (targetPayment) {
-      updatePaymentStatus(targetPayment.id, 'aprobado', `Conciliado con MP N° ${targetMp.numeroOperacion}`);
+      updatePaymentStatus(targetPayment.id, 'aprobado', `Conciliado automáticamente con MP N° ${targetMp.numeroOperacion}`);
     } else if (socioTarget) {
-      // Marcar al socio al día si se vincula la transferencia directamente
       setUsers(userList => userList.map(u => u.id === socioTarget.id ? { ...u, estadoCuota: 'al_dia' } : u));
       if (isSupabaseConfigured && supabase) {
         try {
@@ -612,7 +635,9 @@ export const AppProvider = ({ children }) => {
     <AppContext.Provider value={{
       currentUser, login, logout,
       users, payments, events, notices, movimientosFinancieros, logs, mercadoPagoTransfers,
-      loadingDb, // Expose loading state
+      loadingDb,
+      auditoriaFilterStatus, setAuditoriaFilterStatus,
+      viewedNotifications, markNotificationsAsViewed,
       addMovimientoFinanciero, deleteMovimientoFinanciero,
       vincularTransferenciaMP, sincronizarMercadoPago,
       registrarLog, clearLogs, registrarPagoEfectivoCoach,

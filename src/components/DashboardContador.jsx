@@ -40,15 +40,30 @@ export const DashboardContador = () => {
     cuotasPorCategoria,
     updateCuotaCategoria,
     deletePayment,
-    updatePaymentStatus
+    updatePaymentStatus,
+    auditoriaFilterStatus,
+    setAuditoriaFilterStatus,
+    markNotificationsAsViewed
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
   const [showCuotasModal, setShowCuotasModal] = useState(false);
-  const [filterStatus, setFilterStatus] = useState('en_revision');
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
+
+  const filterStatus = auditoriaFilterStatus || 'en_revision';
+  const setFilterStatus = (status) => {
+    if (setAuditoriaFilterStatus) setAuditoriaFilterStatus(status);
+    if (markNotificationsAsViewed) markNotificationsAsViewed(status);
+  };
+
+  useEffect(() => {
+    if (auditoriaFilterStatus) {
+      setActiveTab('auditoria');
+      if (markNotificationsAsViewed) markNotificationsAsViewed(auditoriaFilterStatus);
+    }
+  }, [auditoriaFilterStatus]);
 
   const handleBulkDelete = () => {
     if (selectedPayments.length === 0) return;

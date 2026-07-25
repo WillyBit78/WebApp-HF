@@ -432,7 +432,7 @@ Buscá el Número de operación para numero_operacion.
       // Conciliar transferencia si fue un éxito total
       if (finalStatus === 'aprobado' && matchedTransfer && paymentData?.id) {
          if (typeof vincularTransferenciaMP === 'function') {
-           vincularTransferenciaMP(matchedTransfer.id, paymentData.id);
+           vincularTransferenciaMP(matchedTransfer.id, paymentData.id, matchedTransfer);
          }
       }
 

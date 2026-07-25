@@ -18,7 +18,16 @@ import {
 } from 'lucide-react';
 
 export const Navbar = ({ currentTab, setCurrentTab }) => {
-  const { roles, currentUser, stats, logout } = useApp();
+  const { 
+    currentUser, 
+    stats, 
+    logout, 
+    payments = [], 
+    setAuditoriaFilterStatus, 
+    markNotificationsAsViewed, 
+    viewedNotifications = {} 
+  } = useApp();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   
@@ -36,35 +45,19 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  const handleInstallClick = () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choiceResult) => {
-        if (choiceResult.outcome === 'accepted') {
-          console.log('El usuario instaló la PWA de Haedo Futsal');
-        }
-        setDeferredPrompt(null);
-      });
-    } else {
-      setShowInstallModal(true);
-    }
-  };
+  const totalAprobados = payments.filter(p => p.estado === 'aprobado').length;
+  const totalEnRevision = payments.filter(p => p.estado === 'en_revision').length;
+  const totalRechazados = payments.filter(p => p.estado === 'rechazado').length;
 
-  const getRoleIcon = (roleId) => {
-    switch(roleId) {
-      case 'admin': return <ShieldCheck className="w-4 h-4 text-emerald-400" />;
-      case 'contador': return <Wallet className="w-4 h-4 text-amber-400" />;
-      case 'coach': return <UserCheck className="w-4 h-4 text-blue-400" />;
-      case 'socio': return <Users className="w-4 h-4 text-purple-400" />;
-      default: return null;
-    }
-  };
+  const unreadAprobados = Math.max(0, totalAprobados - (viewedNotifications?.aprobado || 0));
+  const unreadEnRevision = Math.max(0, totalEnRevision - (viewedNotifications?.en_revision || 0));
+  const unreadRechazados = Math.max(0, totalRechazados - (viewedNotifications?.rechazado || 0));
 
-  const navItems = [
-    { id: 'dashboard', label: 'Panel Principal', icon: Trophy },
-    { id: 'calendar', label: 'Calendario & Partidos', icon: Calendar },
-    { id: 'notices', label: 'Comunicados', icon: Bell }
-  ];
+  const handleNotificationClick = (status) => {
+    if (setAuditoriaFilterStatus) setAuditoriaFilterStatus(status);
+    if (markNotificationsAsViewed) markNotificationsAsViewed(status);
+    setCurrentTab('dashboard');
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white">
@@ -95,27 +88,41 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             </div>
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentTab(item.id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                    isActive
-                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30 shadow-sm'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
+          {/* Center: Status Notification Badges */}
+          <div className="flex items-center gap-2">
+            {unreadEnRevision > 0 && (
+              <button
+                onClick={() => handleNotificationClick('en_revision')}
+                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                title="Ir a comprobantes en revisión"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                {unreadEnRevision} En Revisión
+              </button>
+            )}
+
+            {unreadAprobados > 0 && (
+              <button
+                onClick={() => handleNotificationClick('aprobado')}
+                className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                title="Ir a comprobantes aprobados"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                {unreadAprobados} Aprobado{unreadAprobados > 1 ? 's' : ''}
+              </button>
+            )}
+
+            {unreadRechazados > 0 && (
+              <button
+                onClick={() => handleNotificationClick('rechazado')}
+                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                title="Ir a comprobantes rechazados"
+              >
+                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                {unreadRechazados} Rechazado{unreadRechazados > 1 ? 's' : ''}
+              </button>
+            )}
+          </div>
 
           {/* Active User Badge & Stats */}
           <div className="hidden sm:flex items-center gap-3">
