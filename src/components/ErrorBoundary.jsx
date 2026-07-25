@@ -13,6 +13,19 @@ export class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary capturó un error:', error, errorInfo);
+    try {
+      const savedLogs = JSON.parse(localStorage.getItem('hf_audit_logs') || '[]');
+      const errorLog = {
+        id: `log-react-err-${Date.now()}`,
+        fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+        usuarioNombre: 'Sistema (ErrorBoundary)',
+        usuarioRol: 'sistema',
+        tipoEvento: 'error_sistema',
+        descripcion: 'Error crítico de renderizado React',
+        detalles: String(error?.message || error)
+      };
+      localStorage.setItem('hf_audit_logs', JSON.stringify([errorLog, ...savedLogs].slice(0, 200)));
+    } catch (e) {}
   }
 
   handleReset = () => {
