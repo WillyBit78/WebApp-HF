@@ -249,12 +249,23 @@ Buscá el Número de operación para numero_operacion.
 
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           
-          // Limpiamos los textos basura que Gemini a veces agrega (ej: "1LMP... - Id Bancario")
-          const rawCoelsa = String(geminiResult.coelsa_id || '').split(/[-\s]/)[0];
-          const extractedCoelsa = cleanStr(rawCoelsa);
+          // Extraer el mejor token alfanumérico descartando etiquetas comunes como "COELSA", "ID", "BANCARIO"
+          const extractBestIdToken = (str) => {
+            if (!str) return '';
+            const rawTokens = String(str).replace(/[^a-zA-Z0-9\s-]/g, ' ').split(/[\s-]+/);
+            const validTokens = rawTokens.filter(t => {
+              const u = t.toUpperCase();
+              return u !== 'COELSA' && u !== 'ID' && u !== 'BANCARIO' && u !== 'OPERACION' && u !== 'NUMERO' && u !== 'NO';
+            });
+            validTokens.sort((a, b) => b.length - a.length);
+            return validTokens[0] ? cleanStr(validTokens[0]) : cleanStr(str);
+          };
+
+          const rawCoelsa = String(geminiResult.coelsa_id || '');
+          const extractedCoelsa = extractBestIdToken(rawCoelsa);
           
-          const rawNumOp = String(geminiResult.numero_operacion || '').split(/[-\s]/)[0];
-          const extractedNumOp = cleanStr(rawNumOp);
+          const rawNumOp = String(geminiResult.numero_operacion || '');
+          const extractedNumOp = extractBestIdToken(rawNumOp);
           
           // Cruce robusto
           matchedTransfer = mercadoPagoTransfers?.find(t => {

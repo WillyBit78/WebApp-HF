@@ -17,37 +17,60 @@ export const AppProvider = ({ children }) => {
   const [notices, setNotices] = useState([]);
   const [movimientosFinancieros, setMovimientosFinancieros] = useState([]);
   const [mercadoPagoTransfers, setMercadoPagoTransfers] = useState([]);
-  const [logs, setLogs] = useState([]);
-  const [loadingDb, setLoadingDb] = useState(true);
-
-  // Settings and Cuotas
-  const [cuotasPorCategoria, setCuotasPorCategoria] = useState({
-    'BAFI Femenino': 15000,
-    'EDEFI Mayores': 15000,
-    'EDEFI Baby': 15000,
-    'FUTSALA Promo': 15000,
-    'FUTSALA Masculino': 15000,
-    'BAFI Masculino': 15000
+  const [logs, setLogs] = useState(() => {
+    try {
+      const saved = localStorage.getItem('hf_audit_logs');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
   });
 
-  const [clubSettings, setClubSettings] = useState({
-    nombreClub: 'Haedo Futsal',
-    aliasMercadoPago: 'HAEDOFUTSAL.MP',
-    cuitClub: '30-71234567-8',
-    montoCuotaGeneral: 15000,
-    cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
-  });
+  useEffect(() => {
+    if (logs && logs.length > 0) {
+      try {
+        localStorage.setItem('hf_audit_logs', JSON.stringify(logs.slice(0, 200)));
+      } catch (e) {}
+    }
+  }, [logs]);
+
+  // Helper para normalizar claves minúsculas que emite Supabase Realtime (WAL) a las propiedades camelCase de React
+  const normalizeKeys = (obj) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    const normalized = { ...obj };
+
+    if (obj.socioid && !obj.socioId) normalized.socioId = obj.socioid;
+    if (obj.socionombre && !obj.socioNombre) normalized.socioNombre = obj.socionombre;
+    if (obj.numerooperacion && !obj.numeroOperacion) normalized.numeroOperacion = obj.numerooperacion;
+    if (obj.billeteraorigen && !obj.billeteraOrigen) normalized.billeteraOrigen = obj.billeteraorigen;
+    if (obj.emisornombre && !obj.emisorNombre) normalized.emisorNombre = obj.emisornombre;
+    if (obj.fechatansferencia && !obj.fechaTransferencia) normalized.fechaTransferencia = obj.fechatansferencia;
+    if (obj.fechatransferancia && !obj.fechaTransferencia) normalized.fechaTransferencia = obj.fechatransferancia;
+    if (obj.comprobanteurl && !obj.comprobanteUrl) normalized.comprobanteUrl = obj.comprobanteurl;
+    if (obj.fechahora && !obj.fechaHora) normalized.fechaHora = obj.fechahora;
+    if (obj.usuarionombre && !obj.usuarioNombre) normalized.usuarioNombre = obj.usuarionombre;
+    if (obj.usuariorol && !obj.usuarioRol) normalized.usuarioRol = obj.usuariorol;
+    if (obj.tipoevento && !obj.tipoEvento) normalized.tipoEvento = obj.tipoevento;
+    if (obj.numerosocio && !obj.numeroSocio) normalized.numeroSocio = obj.numerosocio;
+    if (obj.estadocuota && !obj.estadoCuota) normalized.estadoCuota = obj.estadocuota;
+    if (obj.montocuota && !obj.montoCuota) normalized.montoCuota = obj.montocuota;
+    if (obj.creadopor && !obj.creadoPor) normalized.creadoPor = obj.creadopor;
+
+    return normalized;
+  };
 
   // Load from Supabase on mount and setup Realtime subscriptions
   useEffect(() => {
     let channel = null;
 
     const handleRealtimeChange = (table, payload, setter, appendAtEnd = false) => {
-      const { eventType, new: newRow, old: oldRow } = payload;
+      const { eventType, new: rawNew, old: rawOld } = payload;
+      const newRow = normalizeKeys(rawNew);
+      const oldRow = normalizeKeys(rawOld);
+
       if (eventType === 'INSERT') {
         setter(prev => {
           if (prev.some(item => item.id === newRow.id)) {
-            // MERGE instead of replace to preserve optimistic camelCase keys that Realtime WAL might lowercase
             return prev.map(item => item.id === newRow.id ? { ...item, ...newRow } : item);
           }
           return appendAtEnd ? [...prev, newRow] : [newRow, ...prev];
@@ -74,7 +97,8 @@ export const AppProvider = ({ children }) => {
           (payload) => {
             handleRealtimeChange('users', payload, setUsers, true);
             if (payload.eventType === 'UPDATE' && payload.new) {
-              setCurrentUser(curr => curr && curr.id === payload.new.id ? { ...curr, ...payload.new } : curr);
+              const norm = normalizeKeys(payload.new);
+              setCurrentUser(curr => curr && curr.id === norm.id ? { ...curr, ...norm } : curr);
             }
           }
         )
@@ -108,12 +132,12 @@ export const AppProvider = ({ children }) => {
             supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
             supabase.from('logs').select('*').order('created_at', { ascending: false })
           ]);
-          if (uRes.data) setUsers(uRes.data);
-          if (pRes.data) setPayments(pRes.data);
-          if (eRes.data) setEvents(eRes.data);
-          if (nRes.data) setNotices(nRes.data);
-          if (mRes.data) setMovimientosFinancieros(mRes.data);
-          if (lRes.data) setLogs(lRes.data);
+          if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
+          if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
+          if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
+          if (nRes.data) setNotices(nRes.data.map(normalizeKeys));
+          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
+          if (lRes.data && lRes.data.length > 0) setLogs(lRes.data.map(normalizeKeys));
 
           setupRealtime();
         } catch (error) {
@@ -148,7 +172,7 @@ export const AppProvider = ({ children }) => {
     );
     if (userMatch) {
       setCurrentUser(userMatch);
-      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Usuario: ${userMatch.usuario} • Rol: ${userMatch.rol}`);
+      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Usuario: ${userMatch.usuario} • Rol: ${userMatch.rol}`, userMatch);
       return true;
     }
     return false;
@@ -160,12 +184,13 @@ export const AppProvider = ({ children }) => {
   };
 
   // Audit Logs
-  const registrarLog = async (tipoEvento, descripcion, detalles = '') => {
+  const registrarLog = async (tipoEvento, descripcion, detalles = '', userOverride = null) => {
+    const userToRecord = userOverride || currentUser;
     const newLog = {
       id: `log-${Date.now()}`,
       fechaHora: new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-      usuarioNombre: currentUser ? `${currentUser.nombre} ${currentUser.apellido}` : 'Sistema',
-      usuarioRol: currentUser ? currentUser.rol : 'sistema',
+      usuarioNombre: userToRecord ? `${userToRecord.nombre} ${userToRecord.apellido}` : 'Sistema',
+      usuarioRol: userToRecord ? userToRecord.rol : 'sistema',
       tipoEvento,
       descripcion,
       detalles

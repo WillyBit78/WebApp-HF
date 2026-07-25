@@ -28,18 +28,47 @@ export async function fetchMercadoPagoTransfers(accessToken) {
       if (!data.results || data.results.length < 100) break; // ya no hay más
     }
     
-    // Filtrar y transformar transferencias entrantes
-    return allResults.map(p => {
-      const esTransferenciaPersonal = 
-        p.operation_type === 'money_transfer' || 
-        p.payment_type_id === 'bank_transfer' || 
-        p.payment_type_id === 'account_money' ||
-        p.description?.toLowerCase().includes('transferencia');
+    // Filtrar estrictamente solo transferencias ENTRANTES aprobadas (Money In / CVU / Alias)
+    const incomingTransfers = allResults.filter(p => {
+      if (p.status !== 'approved') return false;
+
+      const opType = (p.operation_type || '').toLowerCase();
+      const typeId = (p.payment_type_id || '').toLowerCase();
+      const desc = (p.description || p.reason || '').toLowerCase();
+
+      // Excluir compras con tarjetas, pagos en point, pagos de servicios o salidas
+      if (typeId === 'credit_card' || typeId === 'debit_card' || typeId === 'ticket') return false;
+      if (desc.includes('compra') || desc.includes('pago de servicio') || desc.includes('recarga')) return false;
+
+      // Incluir si es transferencia explícita o ingreso de dinero
+      const isTransfer = 
+        opType === 'money_transfer' || 
+        typeId === 'bank_transfer' || 
+        typeId === 'account_money' ||
+        desc.includes('transferencia') ||
+        desc.includes('dinero recibido') ||
+        desc.includes('cvu');
+
+      return isTransfer;
+    });
+
+    return incomingTransfers.map(p => {
+      // Buscar el COELSA ID en todas las ubicaciones posibles donde Mercado Pago lo reporta
+      const rawCoelsa = 
+        p.point_of_interaction?.transaction_data?.e2e_id ||
+        p.point_of_interaction?.transaction_data?.bank_info?.origin?.id ||
+        p.point_of_interaction?.transaction_data?.transaction_id ||
+        p.point_of_interaction?.transaction_data?.bank_transfer_id?.toString() ||
+        p.acquirer_reconciliation_id ||
+        p.additional_info?.nsu ||
+        p.metadata?.coelsa_id ||
+        p.metadata?.e2e_id ||
+        null;
 
       return {
         id: `mp-tx-${p.id}`,
         numeroOperacion: String(p.id),
-        coelsaId: p.point_of_interaction?.transaction_data?.e2e_id || p.point_of_interaction?.transaction_data?.transaction_id || p.point_of_interaction?.transaction_data?.bank_transfer_id?.toString() || null,
+        coelsaId: rawCoelsa ? String(rawCoelsa).trim() : null,
         emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
         billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : (p.point_of_interaction?.type || 'Billetera Virtual / Banco'),
         monto: p.transaction_amount || 0,
