@@ -55,6 +55,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   const unreadRechazados = Math.max(0, totalRechazados - (viewedNotifications?.rechazado || 0));
 
   const handleNotificationClick = (status) => {
+    if (currentUser?.rol !== 'admin' && currentUser?.rol !== 'contador') return;
     if (openAuditoriaStatus) {
       openAuditoriaStatus(status);
     } else if (setAuditoriaFilterStatus) {
@@ -93,41 +94,43 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             </div>
           </div>
 
-          {/* Center: Status Notification Badges */}
-          <div className="flex items-center gap-2">
-            {unreadEnRevision > 0 && (
-              <button
-                onClick={() => handleNotificationClick('en_revision')}
-                className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
-                title="Ir a comprobantes en revisión"
-              >
-                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-                {unreadEnRevision} En Revisión
-              </button>
-            )}
+          {/* Center: Status Notification Badges (Solo visibles para Admin y Contador) */}
+          {(currentUser?.rol === 'admin' || currentUser?.rol === 'contador') && (
+            <div className="flex items-center gap-2">
+              {unreadEnRevision > 0 && (
+                <button
+                  onClick={() => handleNotificationClick('en_revision')}
+                  className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                  title="Ir a comprobantes en revisión"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                  {unreadEnRevision} En Revisión
+                </button>
+              )}
 
-            {unreadAprobados > 0 && (
-              <button
-                onClick={() => handleNotificationClick('aprobado')}
-                className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
-                title="Ir a comprobantes aprobados"
-              >
-                <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                {unreadAprobados} Aprobado{unreadAprobados > 1 ? 's' : ''}
-              </button>
-            )}
+              {unreadAprobados > 0 && (
+                <button
+                  onClick={() => handleNotificationClick('aprobado')}
+                  className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                  title="Ir a comprobantes aprobados"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                  {unreadAprobados} Aprobado{unreadAprobados > 1 ? 's' : ''}
+                </button>
+              )}
 
-            {unreadRechazados > 0 && (
-              <button
-                onClick={() => handleNotificationClick('rechazado')}
-                className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
-                title="Ir a comprobantes rechazados"
-              >
-                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-                {unreadRechazados} Rechazado{unreadRechazados > 1 ? 's' : ''}
-              </button>
-            )}
-          </div>
+              {unreadRechazados > 0 && (
+                <button
+                  onClick={() => handleNotificationClick('rechazado')}
+                  className="bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 px-3 py-1.5 rounded-full text-xs font-extrabold flex items-center gap-1.5 animate-pulse shadow-md transition-all cursor-pointer"
+                  title="Ir a comprobantes rechazados"
+                >
+                  <span className="w-2 h-2 rounded-full bg-rose-400"></span>
+                  {unreadRechazados} Rechazado{unreadRechazados > 1 ? 's' : ''}
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Active User Badge & Stats */}
           <div className="hidden sm:flex items-center gap-3">

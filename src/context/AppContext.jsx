@@ -191,9 +191,41 @@ export const AppProvider = ({ children }) => {
       setLoadingDb(false);
     };
 
+    const refreshDataSilent = async () => {
+      if (!isSupabaseConfigured || !supabase) return;
+      try {
+        const [uRes, pRes, mRes, lRes] = await Promise.all([
+          supabase.from('users').select('*').order('created_at', { ascending: true }),
+          supabase.from('payments').select('*').order('created_at', { ascending: false }),
+          supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
+          supabase.from('logs').select('*').order('created_at', { ascending: false })
+        ]);
+        if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
+        if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
+        if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
+        if (lRes.data) {
+          const dbLogs = lRes.data.map(normalizeKeys);
+          setLogs(prev => {
+            const combined = [...dbLogs];
+            const dbIds = new Set(dbLogs.map(l => l.id));
+            for (const localLog of prev) {
+              if (!dbIds.has(localLog.id)) combined.push(localLog);
+            }
+            return combined;
+          });
+        }
+      } catch (e) {}
+    };
+
     loadData();
 
+    // Auto-sincronización en segundo plano cada 5 segundos para actualización instantánea sin F5
+    const syncInterval = setInterval(() => {
+      refreshDataSilent();
+    }, 5000);
+
     return () => {
+      clearInterval(syncInterval);
       if (channel && isSupabaseConfigured && supabase) {
         supabase.removeChannel(channel);
       }
