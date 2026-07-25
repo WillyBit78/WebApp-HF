@@ -316,15 +316,39 @@ export const AppProvider = ({ children }) => {
     sincronizarMercadoPago();
   }, []);
 
-  const vincularTransferenciaMP = (mpId, paymentId) => {
+  const vincularTransferenciaMP = (mpId, paymentIdOrUser) => {
     const targetMp = mercadoPagoTransfers.find(t => t.id === mpId);
-    const targetPayment = payments.find(p => p.id === paymentId);
-    if (!targetMp || !targetPayment) return false;
+    if (!targetMp) return false;
+
+    let targetPayment = payments.find(p => p.id === paymentIdOrUser);
+    let socioTarget = null;
+
+    if (!targetPayment) {
+      const cleanUserId = String(paymentIdOrUser).replace('pay-manual-', '');
+      socioTarget = users.find(u => u.id === cleanUserId || u.id === paymentIdOrUser);
+    } else {
+      socioTarget = users.find(u => u.id === targetPayment.socioId);
+    }
+
+    const socioNombre = targetPayment?.socioNombre || (socioTarget ? `${socioTarget.nombre} ${socioTarget.apellido}` : targetMp.emisorNombre);
 
     setMercadoPagoTransfers(prev => prev.map(t => 
-      t.id === mpId ? { ...t, estado: 'conciliado', asociadoAPagoId: paymentId, socioNombre: targetPayment.socioNombre } : t
+      t.id === mpId ? { ...t, estado: 'conciliado', asociadoAPagoId: targetPayment?.id || paymentIdOrUser, socioNombre } : t
     ));
-    updatePaymentStatus(paymentId, 'aprobado', `Conciliado automáticamente con MP N° ${targetMp.numeroOperacion}`);
+
+    if (targetPayment) {
+      updatePaymentStatus(targetPayment.id, 'aprobado', `Conciliado con MP N° ${targetMp.numeroOperacion}`);
+    } else if (socioTarget) {
+      // Marcar al socio al día si se vincula la transferencia directamente
+      setUsers(userList => userList.map(u => u.id === socioTarget.id ? { ...u, estadoCuota: 'al_dia' } : u));
+      if (isSupabaseConfigured && supabase) {
+        try {
+          supabase.from('users').update({ estadoCuota: 'al_dia' }).eq('id', socioTarget.id);
+        } catch (e) {}
+      }
+    }
+
+    registrarLog('conciliacion_mp', `Transferencia MP N° ${targetMp.numeroOperacion} vinculada a ${socioNombre}`);
     return true;
   };
 

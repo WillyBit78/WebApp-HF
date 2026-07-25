@@ -28,18 +28,19 @@ import {
 export const DashboardContador = () => {
   const { 
     payments, 
-    updatePaymentStatus, 
-    deletePayment,
+    users,
+    movimientosFinancieros, 
+    mercadoPagoTransfers, 
     stats, 
-    clubSettings,
-    movimientosFinancieros,
-    addMovimientoFinanciero,
+    clubSettings, 
+    addMovimientoFinanciero, 
     deleteMovimientoFinanciero,
-    mercadoPagoTransfers,
     vincularTransferenciaMP,
     sincronizarMercadoPago,
     cuotasPorCategoria,
-    updateCuotaCategoria
+    updateCuotaCategoria,
+    deletePayment,
+    updatePaymentStatus
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
@@ -71,6 +72,8 @@ export const DashboardContador = () => {
   // Scanner & Auto-match state
   const [scanningId, setScanningId] = useState(null);
   const [matchResult, setMatchResult] = useState(null);
+  const [selectedTxForManualLink, setSelectedTxForManualLink] = useState(null);
+  const [manualSearch, setManualSearch] = useState('');
 
   // Modal New Movimiento
   const [showModalMov, setShowModalMov] = useState(false);
@@ -101,34 +104,46 @@ export const DashboardContador = () => {
     setShowModalMov(false);
   };
 
+  const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
   // Auto-Match Scanner Simulator for Mercado Pago Transfer
   const handleAutoMatch = (mpTx) => {
     setScanningId(mpTx.id);
     setMatchResult(null);
 
     setTimeout(() => {
-      // Find pending receipt with matching N° de Operación or Monto & Socio Name
-      const match = payments.find(p => 
-        p.estado === 'en_revision' && (
-          p.numeroOperacion === mpTx.numeroOperacion || 
-          (Number(p.monto) === Number(mpTx.monto) && p.socioNombre.toLowerCase().includes(mpTx.emisorNombre.toLowerCase().split(' ')[0]))
-        )
-      );
+      const cleanMPNum = cleanStr(mpTx.numeroOperacion);
+      const cleanMPCoelsa = cleanStr(mpTx.coelsaId);
+
+      // Search across ALL payments (en_revision or aprobado)
+      const match = payments.find(p => {
+        const pNum = cleanStr(p.numeroOperacion);
+        if (cleanMPNum && pNum && (pNum === cleanMPNum || pNum.includes(cleanMPNum) || cleanMPNum.includes(pNum))) return true;
+        if (cleanMPCoelsa && pNum && (pNum === cleanMPCoelsa || pNum.includes(cleanMPCoelsa) || cleanMPCoelsa.includes(pNum))) return true;
+
+        if (Number(p.monto) === Number(mpTx.monto)) {
+          const emisorFirst = mpTx.emisorNombre.toLowerCase().split(' ')[0].replace(/[^a-z]/g, '');
+          const socioNorm = p.socioNombre.toLowerCase().replace(/[^a-z]/g, '');
+          if (emisorFirst.length >= 3 && socioNorm.includes(emisorFirst)) return true;
+        }
+        return false;
+      });
 
       if (match) {
         vincularTransferenciaMP(mpTx.id, match.id);
         setMatchResult({
           type: 'success',
-          message: `¡COINCIDENCIA EXACTA! Transferencia N° ${mpTx.numeroOperacion} conciliada con comprobante de ${match.socioNombre}. Cuota acreditada a Caja Cuotas en tiempo real.`
+          message: `¡COINCIDENCIA EXACTA! Transferencia N° ${mpTx.numeroOperacion} conciliada con comprobante de ${match.socioNombre}. Cuota acreditada en tiempo real.`
         });
       } else {
         setMatchResult({
           type: 'warning',
-          message: `No se encontró un comprobante pendiente con N° de Operación ${mpTx.numeroOperacion}. Se puede vincular manualmente.`
+          message: `No se encontró coincidencia automática para N° ${mpTx.numeroOperacion}. Se abrió la ventana de vinculación manual.`
         });
+        setSelectedTxForManualLink(mpTx);
       }
       setScanningId(null);
-    }, 1200);
+    }, 600);
   };
 
   const filteredPayments = payments.filter(p => {
@@ -513,14 +528,23 @@ export const DashboardContador = () => {
                       </div>
 
                       {!isConciliado && (
-                        <button
-                          disabled={isScanning}
-                          onClick={() => handleAutoMatch(tx)}
-                          className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 disabled:opacity-50"
-                        >
-                          <Zap className={`w-4 h-4 ${isScanning ? 'animate-bounce' : ''}`} />
-                          {isScanning ? 'Comparando...' : 'Comparar & Conciliar'}
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            disabled={isScanning}
+                            onClick={() => handleAutoMatch(tx)}
+                            className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 disabled:opacity-50"
+                          >
+                            <Zap className={`w-3.5 h-3.5 ${isScanning ? 'animate-bounce' : ''}`} />
+                            {isScanning ? 'Comparando...' : 'Comparar & Conciliar'}
+                          </button>
+                          <button
+                            onClick={() => setSelectedTxForManualLink(tx)}
+                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 border border-slate-700 transition-all"
+                            title="Vincular manualmente seleccionando a un socio"
+                          >
+                            <Link className="w-3.5 h-3.5 text-amber-400" /> Manual
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -882,6 +906,92 @@ export const DashboardContador = () => {
             >
               Guardar Precios de Cuotas
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Vinculación Manual de Transferencia MP */}
+      {selectedTxForManualLink && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base flex items-center gap-2">
+                <Link className="w-5 h-5 text-amber-400" />
+                Vincular Transferencia Manualmente
+              </h3>
+              <button onClick={() => setSelectedTxForManualLink(null)} className="text-slate-400 hover:text-white font-bold">✕</button>
+            </div>
+
+            <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs space-y-1">
+              <div className="text-slate-400 font-semibold uppercase text-[10px]">Datos de Mercado Pago:</div>
+              <div className="font-extrabold text-white text-sm">{selectedTxForManualLink.emisorNombre}</div>
+              <div className="text-emerald-400 font-bold text-sm">${Number(selectedTxForManualLink.monto).toLocaleString('es-AR')}</div>
+              <div className="text-slate-400 text-[11px] font-mono">
+                N° Op: {selectedTxForManualLink.numeroOperacion} • COELSA: {selectedTxForManualLink.coelsaId || 'N/D'}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-slate-400 text-xs font-semibold mb-1.5">Buscar Socio para Vincular:</label>
+              <div className="relative mb-3">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Filtrar por nombre, apellido, N° socio..."
+                  value={manualSearch}
+                  onChange={(e) => setManualSearch(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl pl-9 pr-3 py-2 text-xs font-medium"
+                />
+              </div>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 pr-1">
+                {users.filter(u => {
+                  if (!manualSearch) return true;
+                  const query = manualSearch.toLowerCase();
+                  return `${u.nombre} ${u.apellido}`.toLowerCase().includes(query) || String(u.numeroSocio).includes(query);
+                }).map(u => {
+                  const userPayment = payments.find(p => p.socioId === u.id && p.estado === 'en_revision');
+                  return (
+                    <div 
+                      key={u.id}
+                      className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 p-3 rounded-xl flex items-center justify-between gap-3 text-xs transition-all"
+                    >
+                      <div>
+                        <div className="font-bold text-white text-sm">{u.nombre} {u.apellido}</div>
+                        <div className="text-slate-400 text-[11px]">
+                          N° Socio: #{u.numeroSocio} • Estado: <span className={u.estadoCuota === 'al_dia' ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>{(u.estadoCuota || '').replace('_', ' ').toUpperCase()}</span>
+                        </div>
+                        {userPayment && (
+                          <div className="text-[10px] text-sky-400 font-mono mt-0.5">
+                            Comprobante pendiente: N° {userPayment.numeroOperacion} (${userPayment.monto})
+                          </div>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          const paymentIdToLink = userPayment ? userPayment.id : `pay-manual-${u.id}-${Date.now()}`;
+                          vincularTransferenciaMP(selectedTxForManualLink.id, paymentIdToLink);
+                          setSelectedTxForManualLink(null);
+                        }}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs shrink-0 shadow-lg shadow-emerald-500/20"
+                      >
+                        Vincular & Aprobar
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800 flex justify-end">
+              <button
+                onClick={() => setSelectedTxForManualLink(null)}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                Cerrar
+              </button>
+            </div>
           </div>
         </div>
       )}

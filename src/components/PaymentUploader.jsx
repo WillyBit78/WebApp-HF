@@ -492,38 +492,46 @@ Buscá el Número de operación para numero_operacion.
             <span className="font-bold text-base text-slate-200">Subir Comprobante</span>
             <span className="text-xs text-slate-500 mt-2 text-center max-w-[200px]">Selecciona la imagen o captura en tu dispositivo</span>
           </label>
-
-          <div className="pt-2">
-            <div className="text-xs font-semibold text-slate-400 mb-2 flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-red-400" />
-              <span>Pruebas rápidas (Simulación):</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {sampleReceipts.map((sample, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => handleSelectSample(sample)}
-                  className="text-left p-3 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-red-500/40 text-xs transition-all flex items-center justify-between"
-                >
-                  <div className="font-medium text-white">{sample.name}</div>
-                  <ArrowRight className="w-4 h-4 text-red-400" />
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
       {parsing && (
-        <div className="py-12 text-center space-y-4">
-          <div className="w-14 h-14 border-4 border-slate-700 border-t-red-500 rounded-full animate-spin mx-auto"></div>
-          <div className="text-base font-bold text-white flex items-center justify-center gap-2">
-            <Sparkles className="w-5 h-5 animate-bounce text-red-400" />
-            Analizando comprobante...
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl space-y-5 flex flex-col items-center">
+            
+            {/* Ring giratorio con el escudo del club en el centro */}
+            <div className="relative w-24 h-24 flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-4 border-slate-800 border-t-red-500 border-r-amber-400 animate-spin"></div>
+              <div className="w-16 h-16 rounded-full bg-slate-950 p-2 border border-slate-700 shadow-inner flex items-center justify-center z-10">
+                <img 
+                  src="/escudo.png" 
+                  alt="Haedo Futsal" 
+                  className="w-12 h-12 object-contain drop-shadow"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="hidden w-12 h-12 rounded-full bg-red-600 text-white font-black items-center justify-center text-xs">
+                  HF
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="text-xl font-extrabold text-white flex items-center justify-center gap-2">
+                <Sparkles className="w-5 h-5 text-red-500 animate-pulse" />
+                Analizando Comprobante
+              </h4>
+              <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                Verificando la validez del comprobante y conciliando tu cuota social...
+              </p>
+            </div>
+
+            <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-gradient-to-r from-red-500 via-amber-400 to-red-500 h-full w-full animate-pulse"></div>
+            </div>
           </div>
-          <p className="text-xs text-slate-400 max-w-xs mx-auto">
-            Estamos verificando automáticamente los datos contra nuestra cuenta de Mercado Pago.
-          </p>
         </div>
       )}
 
