@@ -9,10 +9,19 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('hf_current_user');
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        if (saved.length > 30000) {
+          console.warn("Oversized legacy user session detected, purging localStorage.");
+          localStorage.removeItem('hf_current_user');
+          return null;
+        }
+        return JSON.parse(saved);
+      }
     } catch (e) {
+      try { localStorage.removeItem('hf_current_user'); } catch (err) {}
       return null;
     }
+    return null;
   });
 
   const [users, setUsers] = useState([]);
@@ -24,10 +33,18 @@ export const AppProvider = ({ children }) => {
   const [logs, setLogs] = useState(() => {
     try {
       const saved = localStorage.getItem('hf_audit_logs');
-      return saved ? JSON.parse(saved) : [];
+      if (saved) {
+        if (saved.length > 50000) {
+          localStorage.removeItem('hf_audit_logs');
+          return [];
+        }
+        return JSON.parse(saved);
+      }
     } catch (e) {
+      try { localStorage.removeItem('hf_audit_logs'); } catch (err) {}
       return [];
     }
+    return [];
   });
   const [loadingDb, setLoadingDb] = useState(true);
 
