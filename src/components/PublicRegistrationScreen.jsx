@@ -301,6 +301,7 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
 
     const newSocioObj = {
       nombre: formData.nombres,
+      nombres: formData.nombres,
       apellido: formData.apellido,
       dni: dniInput,
       fechaNacimiento: formData.fechaNacimiento,
@@ -315,7 +316,7 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
       categoria: catString,
       disciplinas: selectedDiscIds,
       montoCuota: cuotaFinal,
-      estadoCuota: 'al_dia'
+      estadoCuota: 'pendiente'
     };
 
     addOrUpdateUser(newSocioObj);

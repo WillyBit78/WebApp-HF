@@ -290,10 +290,10 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
                   <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
                     <td className="p-3 font-semibold text-white flex items-center gap-2.5">
                       <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-amber-400 font-bold text-xs border border-slate-700">
-                        {u.nombre.charAt(0)}
+                        {(u.nombre || u.nombres || 'S').charAt(0)}
                       </div>
                       <div>
-                        <div>{u.nombre} {u.apellido}</div>
+                        <div>{u.nombre || u.nombres || 'Socio'} {u.apellido || ''}</div>
                         <div className="text-[10px] text-slate-500 font-normal">{u.email || u.telefono || 'Sin datos de contacto'}</div>
                       </div>
                     </td>

@@ -496,19 +496,28 @@ export const AppProvider = ({ children }) => {
     } else {
       const generatedId = `usr-${Date.now()}`;
       const isSocio = userData.rol === 'socio';
+      const cleanNombre = userData.nombre || userData.nombres || '';
+      const cleanApellido = userData.apellido || '';
+      
       const newUser = {
         id: generatedId,
         numeroSocio: userData.numeroSocio || (users.length + 201),
-        estadoCuota: isSocio ? (userData.estadoCuota || 'al_dia') : 'al_dia',
+        estadoCuota: isSocio ? 'pendiente' : 'al_dia', // Todos los socios nuevos arrancan PENDIENTES del mes en curso
         montoCuota: isSocio ? (Number(userData.montoCuota) || 15000) : 0,
         categoria: isSocio ? (userData.categoria || 'BAFI Femenino (1ra)') : 'Staff',
-        nombre: userData.nombre || '',
-        apellido: userData.apellido || '',
-        usuario: userData.usuario || `${(userData.nombre || 'U').charAt(0)}${(userData.apellido || 'User').replace(/\s+/g, '')}`.toUpperCase(),
+        nombre: cleanNombre,
+        apellido: cleanApellido,
+        nombres: cleanNombre,
+        usuario: userData.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}`.toUpperCase(),
         clave: userData.clave || '1234',
         rol: userData.rol || 'socio',
         telefono: userData.telefono || '',
-        dni: userData.dni || ''
+        dni: userData.dni || '',
+        ...userData, // Preserva fotoRostro, fechaNacimiento, hinchaDe, nombreContacto, telefonoContacto, disciplinas
+        id: generatedId,
+        nombre: cleanNombre,
+        apellido: cleanApellido,
+        estadoCuota: isSocio ? 'pendiente' : 'al_dia'
       };
 
       setUsers(prev => [...prev, newUser]);

@@ -136,7 +136,7 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
                 {filteredUsers.map(u => (
                   <tr key={u.id} className="hover:bg-slate-800/50">
                     <td className="p-3">
-                      <div className="font-bold text-white">{u.nombre} {u.apellido}</div>
+                      <div className="font-bold text-white">{u.nombre || u.nombres || 'Socio'} {u.apellido || ''}</div>
                       <div className="text-[10px] text-slate-400">N° Socio: #{u.numeroSocio}</div>
                     </td>
                     <td className="p-3">
