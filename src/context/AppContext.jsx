@@ -6,62 +6,17 @@ import { MOCK_ROLES } from '../mockData/initialData';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('hf_current_user');
-      if (saved) {
-        if (saved.length > 30000) {
-          console.warn("Oversized legacy user session detected, purging localStorage.");
-          localStorage.removeItem('hf_current_user');
-          return null;
-        }
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      try { localStorage.removeItem('hf_current_user'); } catch (err) {}
-      return null;
-    }
-    return null;
-  });
-
+  const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [events, setEvents] = useState([]);
   const [notices, setNotices] = useState([]);
   const [movimientosFinancieros, setMovimientosFinancieros] = useState([]);
   const [mercadoPagoTransfers, setMercadoPagoTransfers] = useState([]);
-  const [logs, setLogs] = useState(() => {
-    try {
-      const saved = localStorage.getItem('hf_audit_logs');
-      if (saved) {
-        if (saved.length > 50000) {
-          localStorage.removeItem('hf_audit_logs');
-          return [];
-        }
-        return JSON.parse(saved);
-      }
-    } catch (e) {
-      try { localStorage.removeItem('hf_audit_logs'); } catch (err) {}
-      return [];
-    }
-    return [];
-  });
+  const [logs, setLogs] = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
 
-  useEffect(() => {
-    if (logs && logs.length > 0) {
-      try {
-        const cleanLogs = logs.slice(0, 50).map(l => {
-          if (!l || typeof l !== 'object') return l;
-          const { fotoRostro, ...rest } = l;
-          return rest;
-        });
-        localStorage.setItem('hf_audit_logs', JSON.stringify(cleanLogs));
-      } catch (e) {
-        console.warn("Could not save logs to localStorage:", e);
-      }
-    }
-  }, [logs]);
+  // Logs are persisted ONLY in Supabase, no localStorage
 
   // Helper para normalizar claves minúsculas que emite Supabase Realtime (WAL) a las propiedades camelCase de React
   const normalizeKeys = (obj) => {
@@ -267,48 +222,7 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
-  const sanitizeUserForStorage = (user) => {
-    if (!user || typeof user !== 'object') return user;
-    // Omit huge Base64 selfie strings from 5MB localStorage to avoid quota errors
-    if (user.fotoRostro && user.fotoRostro.length > 500) {
-      const { fotoRostro, ...rest } = user;
-      return rest;
-    }
-    return user;
-  };
-
-  useEffect(() => {
-    if (currentUser) {
-      try {
-        const cleanUser = sanitizeUserForStorage(currentUser);
-        localStorage.setItem('hf_current_user', JSON.stringify(cleanUser));
-      } catch (e) {
-        console.warn("localStorage quota exceeded for current_user, cleaning legacy cache:", e);
-        try {
-          localStorage.removeItem('hf_users_data');
-          localStorage.removeItem('hf_audit_logs');
-          const cleanUser = sanitizeUserForStorage(currentUser);
-          localStorage.setItem('hf_current_user', JSON.stringify(cleanUser));
-        } catch (err2) {}
-      }
-    } else {
-      try {
-        localStorage.removeItem('hf_current_user');
-      } catch (e) {}
-    }
-  }, [currentUser]);
-
-  // Save users to localStorage as safety backup
-  useEffect(() => {
-    if (users && users.length > 0) {
-      try {
-        const cleanUsers = users.map(u => sanitizeUserForStorage(u));
-        localStorage.setItem('hf_users_data', JSON.stringify(cleanUsers));
-      } catch (e) {
-        console.warn("localStorage quota exceeded for users_data:", e);
-      }
-    }
-  }, [users]);
+  // All data persisted ONLY in Supabase, no localStorage writes
 
   // Captura global de errores de cliente en cualquier dispositivo
   useEffect(() => {
@@ -381,9 +295,6 @@ export const AppProvider = ({ children }) => {
 
   const clearLogs = async () => {
     setLogs([]);
-    try {
-      localStorage.removeItem('hf_audit_logs');
-    } catch (e) {}
 
     if (isSupabaseConfigured && supabase) {
       try {
