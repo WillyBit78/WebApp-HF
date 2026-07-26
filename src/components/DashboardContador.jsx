@@ -22,7 +22,8 @@ import {
   CheckCheck,
   Link,
   ShieldCheck,
-  Search
+  Search,
+  Share2
 } from 'lucide-react';
 
 export const DashboardContador = ({ onOpenModalUser }) => {
@@ -237,6 +238,22 @@ export const DashboardContador = ({ onOpenModalUser }) => {
                 {pendientesRevCount}
               </span>
             )}
+          </button>
+
+          <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
+
+          <button
+            onClick={onOpenModalUser}
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Alta Socio
+          </button>
+          
+          <button
+            onClick={handleCopyLink}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+          >
+            <Share2 className="w-4 h-4 text-emerald-400" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link'}
           </button>
         </div>
       </div>
