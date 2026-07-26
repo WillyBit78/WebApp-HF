@@ -520,12 +520,30 @@ export const AppProvider = ({ children }) => {
 
       if (isSupabaseConfigured && supabase) {
         try {
-          await supabase.from('users').insert([newUser]);
+          const { error } = await supabase.from('users').insert([newUser]);
+          if (error) {
+            console.warn("Supabase insert error, attempting clean schema fallback:", error);
+            const cleanDbPayload = {
+              id: newUser.id,
+              nombre: newUser.nombre,
+              apellido: newUser.apellido,
+              usuario: newUser.usuario,
+              clave: newUser.clave,
+              rol: newUser.rol,
+              telefono: newUser.telefono || '',
+              dni: newUser.dni || '',
+              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
+              montoCuota: newUser.montoCuota || 0,
+              estadoCuota: newUser.estadoCuota || 'pendiente',
+              numeroSocio: newUser.numeroSocio || 201
+            };
+            await supabase.from('users').insert([cleanDbPayload]);
+          }
         } catch (err) {
-          console.warn("Supabase insert error:", err);
+          console.warn("Supabase insert fallback error:", err);
         }
       }
-      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria}`);
+      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria}`, newUser);
     }
   };
 
