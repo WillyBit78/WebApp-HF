@@ -673,7 +673,6 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
                     >
                       <div className="flex justify-between items-start">
                         <span className="font-extrabold text-white text-sm">{disc.nombre}</span>
-                        <span className="text-emerald-400 font-black text-xs font-mono">${disc.monto.toLocaleString('es-AR')}</span>
                       </div>
                       <div className="text-[10px] text-slate-400 font-medium">{disc.etiquetaModalidad}</div>
                     </div>
@@ -738,19 +737,6 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               })}
             </div>
 
-            {/* RESUMEN DE CUOTA ÚNICA */}
-            <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-950 p-4 rounded-2xl border border-emerald-500/30 flex justify-between items-center">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 block">Cuota Mensual Total:</span>
-                <span className="text-[11px] text-emerald-400 font-medium">
-                  {selectedDiscIds.length > 1 ? '¡Promoción 2 Disciplinas! Se cobra solo 1 cuota' : 'Cuota social mensual correspondiente'}
-                </span>
-              </div>
-              <span className="text-2xl font-black text-emerald-400 font-mono">
-                ${calcularCuotaMensual().toLocaleString('es-AR')}
-              </span>
-            </div>
-
             <div className="flex gap-3 pt-2">
               <button
                 type="button"
@@ -799,11 +785,6 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
                   <span className="text-xs text-slate-400 font-medium">CLAVE DE SEGURIDAD:</span>
                   <span className="text-base font-bold text-white tracking-widest font-mono">{createdCredentials.clave}</span>
                 </div>
-
-                <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
-                  <span className="text-slate-400 font-medium">CUOTA SOCIAL ASIGNADA:</span>
-                  <span className="text-emerald-400 font-extrabold font-mono text-sm">${createdCredentials.cuota.toLocaleString('es-AR')}</span>
-                </div>
               </div>
             </div>
 
@@ -811,12 +792,14 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               <button
                 type="button"
                 onClick={() => {
+                  window.location.hash = '';
                   login(createdCredentials.usuario, createdCredentials.clave);
+                  if (onBackToLogin) onBackToLogin();
                   if (onCloseModal) onCloseModal();
                 }}
-                className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-400/20"
+                className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-400/20 cursor-pointer"
               >
-                <ExternalLink className="w-4 h-4" /> Ingresar a Mi Perfil e Instalar App
+                <ExternalLink className="w-4 h-4" /> Ingresar a Mi Perfil
               </button>
 
               <button
