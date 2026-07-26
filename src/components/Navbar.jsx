@@ -81,12 +81,12 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                 HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
               </span>
               <span 
-                className="text-white font-bold tracking-wider -mt-0.5 block"
+                className="text-white font-medium tracking-wider -mt-0.5 block"
                 style={{ 
                   fontFamily: "'Caveat', cursive", 
                   fontSize: '1.05rem',
                   lineHeight: '1',
-                  textShadow: '0 0 1px #0f4c81, 0 1px 2px #0f4c81, 0 0 3px rgba(15,76,129,0.8)'
+                  textShadow: '0 0 8px #1d4ed8, 0 0 14px rgba(59, 130, 246, 0.8), 0 0 20px rgba(37, 99, 235, 0.6)'
                 }}
               >
                 más que un club

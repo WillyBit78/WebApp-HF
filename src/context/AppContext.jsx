@@ -7,8 +7,12 @@ const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
-    const saved = localStorage.getItem('hf_current_user');
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = localStorage.getItem('hf_current_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
   });
 
   const [users, setUsers] = useState([]);
@@ -30,8 +34,15 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (logs && logs.length > 0) {
       try {
-        localStorage.setItem('hf_audit_logs', JSON.stringify(logs.slice(0, 200)));
-      } catch (e) {}
+        const cleanLogs = logs.slice(0, 50).map(l => {
+          if (!l || typeof l !== 'object') return l;
+          const { fotoRostro, ...rest } = l;
+          return rest;
+        });
+        localStorage.setItem('hf_audit_logs', JSON.stringify(cleanLogs));
+      } catch (e) {
+        console.warn("Could not save logs to localStorage:", e);
+      }
     }
   }, [logs]);
 

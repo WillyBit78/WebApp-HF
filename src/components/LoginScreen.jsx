@@ -55,12 +55,12 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
           </h1>
           <p 
-            className="text-white font-bold tracking-wider"
+            className="text-white font-medium tracking-wider"
             style={{ 
               fontFamily: "'Caveat', cursive", 
               fontSize: '2.0rem',
               lineHeight: '1',
-              textShadow: '0 0 1px #0f4c81, 0 1px 2px #0f4c81, 0 0 4px rgba(15,76,129,0.8)'
+              textShadow: '0 0 8px #1d4ed8, 0 0 16px rgba(59, 130, 246, 0.8), 0 0 24px rgba(37, 99, 235, 0.6)'
             }}
           >
             más que un club
