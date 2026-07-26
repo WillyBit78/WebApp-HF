@@ -75,8 +75,6 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
           >
             <Plus className="w-4 h-4" /> Link / Registro de Socio
           </button>
-            <Plus className="w-4 h-4" /> Alta de Socio / Jugador
-          </button>
           <button
             onClick={onOpenModalEvent}
             className="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/20"
