@@ -255,7 +255,13 @@ export const AppProvider = ({ children }) => {
         const cleanUser = sanitizeUserForStorage(currentUser);
         localStorage.setItem('hf_current_user', JSON.stringify(cleanUser));
       } catch (e) {
-        console.warn("localStorage quota exceeded for current_user:", e);
+        console.warn("localStorage quota exceeded for current_user, cleaning legacy cache:", e);
+        try {
+          localStorage.removeItem('hf_users_data');
+          localStorage.removeItem('hf_audit_logs');
+          const cleanUser = sanitizeUserForStorage(currentUser);
+          localStorage.setItem('hf_current_user', JSON.stringify(cleanUser));
+        } catch (err2) {}
       }
     } else {
       try {
