@@ -239,11 +239,28 @@ export const AppProvider = ({ children }) => {
     };
   }, []);
 
+  const sanitizeUserForStorage = (user) => {
+    if (!user || typeof user !== 'object') return user;
+    // Omit huge Base64 selfie strings from 5MB localStorage to avoid quota errors
+    if (user.fotoRostro && user.fotoRostro.length > 500) {
+      const { fotoRostro, ...rest } = user;
+      return rest;
+    }
+    return user;
+  };
+
   useEffect(() => {
     if (currentUser) {
-      localStorage.setItem('hf_current_user', JSON.stringify(currentUser));
+      try {
+        const cleanUser = sanitizeUserForStorage(currentUser);
+        localStorage.setItem('hf_current_user', JSON.stringify(cleanUser));
+      } catch (e) {
+        console.warn("localStorage quota exceeded for current_user:", e);
+      }
     } else {
-      localStorage.removeItem('hf_current_user');
+      try {
+        localStorage.removeItem('hf_current_user');
+      } catch (e) {}
     }
   }, [currentUser]);
 
@@ -251,8 +268,11 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     if (users && users.length > 0) {
       try {
-        localStorage.setItem('hf_users_data', JSON.stringify(users));
-      } catch (e) {}
+        const cleanUsers = users.map(u => sanitizeUserForStorage(u));
+        localStorage.setItem('hf_users_data', JSON.stringify(cleanUsers));
+      } catch (e) {
+        console.warn("localStorage quota exceeded for users_data:", e);
+      }
     }
   }, [users]);
 
