@@ -29,23 +29,31 @@ export class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
+    try {
+      localStorage.clear();
+      sessionStorage.clear();
+    } catch (e) {}
     this.setState({ hasError: false, error: null });
-    window.location.reload();
+    window.location.href = window.location.origin + window.location.pathname;
   };
 
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
+        <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">
           <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full text-center space-y-4 shadow-2xl">
-            <div className="w-12 h-12 bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-6 h-6" />
+            <div className="w-20 h-20 mx-auto flex items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
+            </div>
+
+            <div className="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-5 h-5" />
             </div>
 
             <h2 className="text-xl font-extrabold text-white">Ocurrió un inconveniente temporal</h2>
             
             <p className="text-xs text-slate-400">
-              La aplicación detectó una inconsistencia de estado al cambiar de pantalla. Puedes restaurar la pantalla inmediatamente con 1 clic.
+              La aplicación detectó una inconsistencia de estado en la memoria del navegador. Puedes restaurar la pantalla inmediatamente con 1 clic.
             </p>
 
             {this.state.error && (
@@ -56,7 +64,7 @@ export class ErrorBoundary extends React.Component {
 
             <button
               onClick={this.handleReset}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20"
+              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all cursor-pointer"
             >
               <RefreshCw className="w-4 h-4 font-bold" />
               Restaurar Pantalla
