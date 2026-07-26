@@ -71,8 +71,10 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
         <div className="flex flex-wrap gap-2">
           <button
             onClick={onOpenModalUser}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-blue-500/20"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
+            <Plus className="w-4 h-4" /> Link / Registro de Socio
+          </button>
             <Plus className="w-4 h-4" /> Alta de Socio / Jugador
           </button>
           <button

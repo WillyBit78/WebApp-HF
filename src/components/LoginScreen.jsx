@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Trophy, KeyRound, User, AlertCircle } from 'lucide-react';
 
-export const LoginScreen = () => {
+export const LoginScreen = ({ onOpenPublicRegister }) => {
   const { login } = useApp();
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
@@ -113,10 +113,20 @@ export const LoginScreen = () => {
 
           <button
             type="submit"
-            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-base"
+            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
           >
             Ingresar al Sistema
           </button>
+
+          <div className="pt-2 border-t border-slate-800/80 text-center">
+            <button
+              type="button"
+              onClick={onOpenPublicRegister}
+              className="w-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+            >
+              👥 ¿Sos Socio Nuevo? Inscribite acá
+            </button>
+          </div>
         </form>
       </div>
     </div>

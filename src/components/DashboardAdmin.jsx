@@ -24,7 +24,7 @@ import {
   ShieldAlert
 } from 'lucide-react';
 
-export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
+export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalEvent }) => {
   const { 
     stats, 
     users, 
@@ -240,12 +240,19 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalEvent }) => {
           ))}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={onOpenModalUser}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/10"
+            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
           >
-            <Plus className="w-4 h-4" /> Nuevo Socio
+            <Plus className="w-4 h-4" /> Link / Registro de Socio
+          </button>
+          
+          <button
+            onClick={onOpenModalStaff}
+            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" /> Alta Staff / Usuario
           </button>
         </div>
       </div>

@@ -14,6 +14,7 @@ import { LoginScreen } from './components/LoginScreen';
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
 import { ModalAddNotice } from './components/Modals/ModalAddNotice';
+import { PublicRegistrationScreen } from './components/PublicRegistrationScreen';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -22,8 +23,17 @@ function MainApp() {
   const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices, finance, users, settings
 
   const [modalUserOpen, setModalUserOpen] = useState(false);
+  const [modalStaffOpen, setModalStaffOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
   const [modalNoticeOpen, setModalNoticeOpen] = useState(false);
+
+  const [hash, setHash] = useState(window.location.hash);
+
+  useEffect(() => {
+    const handleHashChange = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   if (loadingDb) {
     return (
@@ -41,16 +51,21 @@ function MainApp() {
     );
   }
 
+  // Si no está logueado o ingresó al link público #registro
+  if (hash === '#registro') {
+    return <PublicRegistrationScreen onBackToLogin={() => { window.location.hash = ''; setHash(''); }} />;
+  }
+
   if (!currentUser) {
-    return <LoginScreen />;
+    return <LoginScreen onOpenPublicRegister={() => { window.location.hash = '#registro'; setHash('#registro'); }} />;
   }
 
   const activeRoleId = currentUser.rol || 'socio';
 
   const renderDashboardByRole = () => {
     switch (activeRoleId) {
-      case 'admin': return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
-      case 'contador': return <DashboardContador />;
+      case 'admin': return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'contador': return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'coach': return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
       case 'socio': return <DashboardSocio />;
       default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} />;
@@ -66,9 +81,9 @@ function MainApp() {
       case 'notices':
         return <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />;
       case 'finance':
-        return <DashboardContador />;
+        return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
-        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'planteles':
         return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
       case 'settings':
@@ -92,10 +107,10 @@ function MainApp() {
           {renderContent()}
         </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-          <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+        <footer className="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
+          <div className="flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto px-4 gap-2">
             <div>
-              <strong className="text-slate-300">Haedo Futsal</strong> © {new Date().getFullYear()} • Sistema Oficial de Gestión de Club
+              © 2026 Club Social y Deportivo Haedo Futsal • Sistema de Gestión Integral
             </div>
             <div className="text-[11px] text-slate-600">
               Desarrollado para PC y Celular • Integra Supabase + Vercel + GitHub
@@ -106,7 +121,13 @@ function MainApp() {
         <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
       </div>
 
-      {modalUserOpen && <ModalAddUser onClose={() => setModalUserOpen(false)} />}
+      {modalUserOpen && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+          <PublicRegistrationScreen isModal={true} onCloseModal={() => setModalUserOpen(false)} />
+        </div>
+      )}
+
+      {modalStaffOpen && <ModalAddUser onClose={() => setModalStaffOpen(false)} />}
       {modalEventOpen && <ModalAddEvent onClose={() => setModalEventOpen(false)} />}
       {modalNoticeOpen && <ModalAddNotice onClose={() => setModalNoticeOpen(false)} />}
       

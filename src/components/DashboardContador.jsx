@@ -25,7 +25,7 @@ import {
   Search
 } from 'lucide-react';
 
-export const DashboardContador = () => {
+export const DashboardContador = ({ onOpenModalUser }) => {
   const { 
     payments, 
     users,
