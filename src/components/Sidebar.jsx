@@ -43,12 +43,12 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
           <span className="font-bold text-white leading-none">HAEDO</span>
           <span className="text-[10px] font-normal text-red-500 tracking-widest uppercase">Futsal</span>
           <span 
-            className="text-blue-900 font-bold tracking-wider"
+            className="text-white font-bold tracking-wider"
             style={{ 
               fontFamily: "'Caveat', cursive", 
               fontSize: '1.12rem',
               lineHeight: '1',
-              textShadow: '0 0 8px rgba(255,255,255,1), 0 0 12px rgba(255,255,255,0.8), 0 0 16px rgba(255,255,255,0.6)'
+              textShadow: '0 0 1px #0f4c81, 0 1px 2px #0f4c81, 0 0 3px rgba(15,76,129,0.8)'
             }}
           >
             más que un club

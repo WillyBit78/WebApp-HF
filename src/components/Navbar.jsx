@@ -71,22 +71,22 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[5.5rem]">
-          {/* Brand Logo */}
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
-            <div className="w-[72px] h-[72px] flex items-center justify-center overflow-hidden">
+          {/* Brand Logo - Visible solo en vista mobile (en PC queda en la barra lateral) */}
+          <div className="flex md:hidden items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
+            <div className="w-[60px] h-[60px] flex items-center justify-center overflow-hidden">
               <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div>
-              <span className="font-bold text-lg text-white tracking-tight flex items-center gap-1">
+              <span className="font-bold text-base text-white tracking-tight flex items-center gap-1">
                 HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
               </span>
               <span 
-                className="text-blue-900 font-bold tracking-wider -mt-1 block"
+                className="text-white font-bold tracking-wider -mt-0.5 block"
                 style={{ 
                   fontFamily: "'Caveat', cursive", 
-                  fontSize: '1.12rem',
+                  fontSize: '1.05rem',
                   lineHeight: '1',
-                  textShadow: '0 0 8px rgba(255,255,255,1), 0 0 12px rgba(255,255,255,0.8), 0 0 16px rgba(255,255,255,0.6)'
+                  textShadow: '0 0 1px #0f4c81, 0 1px 2px #0f4c81, 0 0 3px rgba(15,76,129,0.8)'
                 }}
               >
                 más que un club
