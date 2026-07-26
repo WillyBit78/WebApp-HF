@@ -333,7 +333,8 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
 
   const copyAppShareLink = () => {
     const url = window.location.origin + window.location.pathname + '#registro';
-    navigator.clipboard.writeText(url);
+    const shareText = `Haedo Futsal App\nInscribite en la App Oficial del Club!\n${url}`;
+    navigator.clipboard.writeText(shareText);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
   };
