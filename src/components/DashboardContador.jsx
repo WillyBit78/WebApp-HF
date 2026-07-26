@@ -48,6 +48,15 @@ export const DashboardContador = ({ onOpenModalUser }) => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    const url = window.location.origin + window.location.pathname + '#registro';
+    const shareText = `Haedo Futsal App\nInscribite en la App Oficial del Club!\n${url}`;
+    navigator.clipboard.writeText(shareText);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
   const [showCuotasModal, setShowCuotasModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedPayments, setSelectedPayments] = useState([]);
