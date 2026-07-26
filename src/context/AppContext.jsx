@@ -520,27 +520,25 @@ export const AppProvider = ({ children }) => {
 
       if (isSupabaseConfigured && supabase) {
         try {
-          const { error } = await supabase.from('users').insert([newUser]);
+          const dbUserPayload = {
+            id: newUser.id,
+            numeroSocio: newUser.numeroSocio || (users.length + 201),
+            nombre: newUser.nombre,
+            apellido: newUser.apellido,
+            usuario: newUser.usuario,
+            clave: newUser.clave,
+            rol: newUser.rol || 'socio',
+            categoria: newUser.categoria || 'BAFI Femenino (1ra)',
+            estadoCuota: newUser.estadoCuota || 'pendiente',
+            montoCuota: Number(newUser.montoCuota) || 0
+          };
+
+          const { error } = await supabase.from('users').insert([dbUserPayload]);
           if (error) {
-            console.warn("Supabase insert error, attempting clean schema fallback:", error);
-            const cleanDbPayload = {
-              id: newUser.id,
-              nombre: newUser.nombre,
-              apellido: newUser.apellido,
-              usuario: newUser.usuario,
-              clave: newUser.clave,
-              rol: newUser.rol,
-              telefono: newUser.telefono || '',
-              dni: newUser.dni || '',
-              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
-              montoCuota: newUser.montoCuota || 0,
-              estadoCuota: newUser.estadoCuota || 'pendiente',
-              numeroSocio: newUser.numeroSocio || 201
-            };
-            await supabase.from('users').insert([cleanDbPayload]);
+            console.error("Supabase user insert error:", error);
           }
         } catch (err) {
-          console.warn("Supabase insert fallback error:", err);
+          console.warn("Supabase user insert catch error:", err);
         }
       }
       registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria}`, newUser);
