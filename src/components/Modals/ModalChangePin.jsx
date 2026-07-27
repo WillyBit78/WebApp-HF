@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useApp } from '../../context/AppContext';
 import { Key, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
 
@@ -55,8 +56,8 @@ export const ModalChangePin = ({ onClose }) => {
     }, 1200);
   };
 
-  return (
-    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto" style={{ zIndex: 99999 }}>
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl text-slate-200 my-auto relative">
         
         {/* Header */}
@@ -165,4 +166,6 @@ export const ModalChangePin = ({ onClose }) => {
       </div>
     </div>
   );
+
+  return ReactDOM.createPortal(modalContent, document.body);
 };
