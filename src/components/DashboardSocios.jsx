@@ -95,7 +95,7 @@ export function matchSocioToHierarchy(socio) {
   return { discId: 'otras', catName: 'Otras Categorías', subName: 'General' };
 }
 
-export const DashboardSocios = ({ onOpenModalUser }) => {
+export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff = () => {} }) => {
   const { users, openFichaSocio, deleteUser, registrarPagoEfectivoCoach, currentUser } = useApp();
 
   const [searchTerm, setSearchTerm] = useState('');

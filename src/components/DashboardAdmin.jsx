@@ -338,7 +338,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
 
       {/* Tab 1: Resumen de Socios */}
       {activeSubTab === 'resumen' && (
-        <DashboardSocios onOpenModalUser={onOpenModalUser} />
+        <DashboardSocios onOpenModalUser={onOpenModalUser} onOpenModalStaff={onOpenModalStaff} />
       )}
 
       {/* Tab 2: Logs & Auditoría */}

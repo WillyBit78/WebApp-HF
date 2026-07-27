@@ -75,7 +75,7 @@ function MainApp() {
       case 'contador': return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'coach': return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'socio': return <DashboardSocio />;
-      default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} />;
+      default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
     }
   };
 
@@ -94,7 +94,7 @@ function MainApp() {
       case 'planteles':
         return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'settings':
-        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'profile':
       case 'payments':
         return <DashboardSocio />;
