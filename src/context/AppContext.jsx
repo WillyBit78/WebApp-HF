@@ -833,20 +833,26 @@ export const AppProvider = ({ children }) => {
     }
 
     // Call Vercel Serverless Function to send Push Notifications
+    // Uses a 5-second timeout so the UI is NEVER left hanging.
     try {
+      const pushController = new AbortController();
+      const pushTimeout = setTimeout(() => pushController.abort(), 5000);
       const pushRes = await fetch('/api/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNotice)
+        body: JSON.stringify(newNotice),
+        signal: pushController.signal
       });
+      clearTimeout(pushTimeout);
       if (pushRes.ok) {
         const pushResult = await pushRes.json();
         return { success: true, notice: newNotice, pushResult };
       }
     } catch (err) {
-      console.warn('Push error:', err);
+      // Silently ignore: push is optional (AbortError = timeout, TypeError = endpoint not found)
     }
     return { success: true, notice: newNotice, pushResult: null };
+
   };
 
   const deleteNotice = async (noticeId) => {

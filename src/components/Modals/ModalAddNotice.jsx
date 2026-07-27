@@ -58,17 +58,21 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
     setSending(true);
     setSendResult(null);
 
-    const res = await addNotice({
-      ...formData,
-      categoriaDestino: formData.destinatarioValor
-    });
-
-    setSending(false);
-    setSendResult(res);
-
-    setTimeout(() => {
-      onClose();
-    }, 2200);
+    try {
+      const res = await addNotice({
+        ...formData,
+        categoriaDestino: formData.destinatarioValor
+      });
+      setSendResult(res);
+      setTimeout(() => {
+        onClose();
+      }, 2200);
+    } catch (err) {
+      console.error('Error sending notice:', err);
+      setSendResult({ success: false });
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
