@@ -138,6 +138,19 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
 
           {/* Active User Badge & Stats */}
           <div className="hidden sm:flex items-center gap-3">
+            <button 
+              onClick={() => setCurrentTab('notices')}
+              className={`p-2 rounded-xl transition-all border flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+                currentTab === 'notices'
+                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                  : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white'
+              }`}
+              title="Ver Comunicados y Avisos"
+            >
+              <Bell className="w-4 h-4 text-purple-400" />
+              <span>Avisos</span>
+            </button>
+
             {stats.pagosPendientesRev.length > 0 && (currentUser?.rol === 'admin' || currentUser?.rol === 'contador') && (
               <div 
                 onClick={() => setCurrentTab('dashboard')}

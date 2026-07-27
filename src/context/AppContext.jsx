@@ -251,6 +251,55 @@ export const AppProvider = ({ children }) => {
     };
   }, [currentUser]);
 
+  // Base64 helper for VAPID Key
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  // Register push subscription in Supabase for Push Notifications
+  const registerPushSubscription = async (user) => {
+    if (!user || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+
+    try {
+      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BNrO1BAPOhrooMRFovIRtRVXGwd9dxgT1ZWyzEVkPIauISEjh-EZl0MwUwaF1Wn7HJ1lOojM7CKt3he8jXvH-MQ';
+      const registration = await navigator.serviceWorker.ready;
+      
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: convertedKey
+        });
+      }
+
+      if (subscription && isSupabaseConfigured && supabase) {
+        const subData = {
+          id: `sub-${user.id}`,
+          user_id: user.id,
+          usuario: user.usuario,
+          rol: user.rol,
+          categoria: user.categoria || 'General',
+          estado_cuota: user.estadoCuota || 'al_dia',
+          subscription: JSON.stringify(subscription)
+        };
+        await supabase.from('push_subscriptions').upsert(subData).catch(() => {});
+      }
+    } catch (err) {
+      console.warn('Push subscription notice:', err);
+    }
+  };
+
   // Auth actions
   const login = (usuarioInput, claveInput) => {
     const cleanUserStr = usuarioInput.trim().toUpperCase();
@@ -262,6 +311,7 @@ export const AppProvider = ({ children }) => {
     if (targetUser) {
       setCurrentUser(targetUser);
       registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
+      registerPushSubscription(targetUser);
       return true;
     }
     return false;
@@ -672,18 +722,79 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Notices
+  // Notices System with Targeting and Real Push Notifications
+  const [readNoticeIds, setReadNoticeIds] = useState([]);
+
   const addNotice = async (noticeData) => {
     const newNotice = {
       id: `not-${Date.now()}`,
-      autor: `${currentUser.nombre} (${currentUser.rol.toUpperCase()})`,
+      autor: `${currentUser?.nombre || 'Admin'} (${(currentUser?.rol || 'admin').toUpperCase()})`,
       fecha: new Date().toISOString().split('T')[0],
+      destinatarioTipo: noticeData.destinatarioTipo || 'todos',
+      destinatarioValor: noticeData.destinatarioValor || 'Todos',
+      filtroEstadoCuenta: noticeData.filtroEstadoCuenta || 'todos',
+      urgente: Boolean(noticeData.urgente),
+      fechaProgramada: noticeData.fechaProgramada || null,
       ...noticeData
     };
+
     setNotices(prev => [newNotice, ...prev]);
-    if (isSupabaseConfigured) {
+
+    if (isSupabaseConfigured && supabase) {
       await supabase.from('notices').insert([newNotice]).catch(console.error);
     }
+
+    if (registrarLog) {
+      registrarLog(
+        'notificacion_masiva',
+        `Nuevo Comunicado: ${newNotice.titulo}`,
+        `Destino: ${newNotice.destinatarioValor} (${newNotice.destinatarioTipo}) | Urgente: ${newNotice.urgente ? 'Sí' : 'No'}`,
+        newNotice
+      );
+    }
+
+    // Call Vercel Serverless Function to send Push Notifications
+    try {
+      fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newNotice)
+      }).catch(err => console.warn('Push error:', err));
+    } catch (e) {}
+  };
+
+  const deleteNotice = async (noticeId) => {
+    setNotices(prev => prev.filter(n => n.id !== noticeId));
+    if (isSupabaseConfigured && supabase) {
+      await supabase.from('notices').delete().eq('id', noticeId).catch(console.error);
+    }
+  };
+
+  const getNoticesForUser = (user) => {
+    const targetUser = user || currentUser;
+    if (!targetUser) return notices;
+    if (targetUser.rol === 'admin' || targetUser.rol === 'contador' || targetUser.rol === 'coach') return notices;
+
+    const userCat = (targetUser.categoria || '').toLowerCase();
+    const userFeeStatus = targetUser.estadoCuota || 'al_dia';
+
+    return notices.filter(n => {
+      // Fee status filter check
+      if (n.filtroEstadoCuenta === 'al_dia' && userFeeStatus !== 'al_dia') return false;
+      if (n.filtroEstadoCuenta === 'pendiente' && userFeeStatus === 'al_dia') return false;
+
+      // Targeting check
+      if (!n.destinatarioTipo || n.destinatarioTipo === 'todos' || n.destinatarioValor === 'Todos' || n.categoriaDestino === 'Todos') {
+        return true;
+      }
+
+      const destVal = (n.destinatarioValor || n.categoriaDestino || '').toLowerCase();
+      return userCat.includes(destVal) || destVal.includes(userCat);
+    });
+  };
+
+  const markNoticeAsRead = (noticeId) => {
+    setReadNoticeIds(prev => prev.includes(noticeId) ? prev : [...prev, noticeId]);
   };
 
   const updateCuotaCategoria = (catName, nuevoMonto) => {
@@ -743,7 +854,7 @@ export const AppProvider = ({ children }) => {
       roles: MOCK_ROLES,
       uploadPaymentReceipt, updatePaymentStatus, deletePayment,
       addOrUpdateUser, deleteUser,
-      addEvent, addNotice,
+      addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead,
       stats: {
         totalRecaudado, pagosPendientesRev, sociosAlDiaCount, sociosPendientesCount, sociosMorososCount,
         totalSocios: users.length, ingresosCuotasTotal, gastosCuotasMov, saldoCajaCuotas,
