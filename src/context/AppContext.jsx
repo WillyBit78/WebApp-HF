@@ -23,6 +23,12 @@ export const AppProvider = ({ children }) => {
     if (!obj || typeof obj !== 'object') return obj;
     const normalized = { ...obj };
 
+    // Auto-migrate legacy ADMIN user to WILLY
+    if (normalized.id === 'usr-1' || (normalized.usuario && normalized.usuario.trim().toUpperCase() === 'ADMIN')) {
+      normalized.usuario = 'WILLY';
+      normalized.nombre = 'Willy';
+    }
+
     for (const key of Object.keys(obj)) {
       const lower = key.toLowerCase();
       if (lower === 'socioid') normalized.socioId = obj[key];
@@ -247,14 +253,29 @@ export const AppProvider = ({ children }) => {
 
   // Auth actions
   const login = (usuarioInput, claveInput) => {
-    const cleanUserStr = usuarioInput.trim().toUpperCase();
+    let cleanUserStr = usuarioInput.trim().toUpperCase();
+    if (cleanUserStr === 'ADMIN') cleanUserStr = 'WILLY';
+
     const targetUser = users.find(u => 
-      u.usuario && u.usuario.trim().toUpperCase() === cleanUserStr && String(u.clave) === String(claveInput)
+      u.usuario && (
+        u.usuario.trim().toUpperCase() === cleanUserStr || 
+        (cleanUserStr === 'WILLY' && (u.id === 'usr-1' || u.usuario.toUpperCase() === 'ADMIN'))
+      ) && String(u.clave) === String(claveInput)
     );
 
     if (targetUser) {
-      setCurrentUser(targetUser);
-      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
+      const updatedUser = {
+        ...targetUser,
+        usuario: 'WILLY',
+        nombre: 'Willy'
+      };
+      setCurrentUser(updatedUser);
+      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${updatedUser.rol.toUpperCase()}`, updatedUser);
+      
+      // Update in Supabase if it was still ADMIN
+      if (isSupabaseConfigured && supabase && (targetUser.usuario === 'ADMIN' || targetUser.nombre === 'Admin')) {
+        supabase.from('users').update({ usuario: 'WILLY', nombre: 'Willy' }).eq('id', targetUser.id).then();
+      }
       return true;
     }
     return false;
