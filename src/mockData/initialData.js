@@ -64,7 +64,7 @@ export const MOCK_USERS = [
     rol: 'socio',
     categoria: 'BAFI Femenino (1ra)',
     numeroSocio: 201,
-    estadoCuota: 'al_dia',
+    estadoCuota: 'moroso',
     montoCuota: 15000
   }
 ];

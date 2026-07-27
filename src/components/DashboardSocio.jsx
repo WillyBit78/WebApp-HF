@@ -37,58 +37,67 @@ export const DashboardSocio = () => {
 
   return (
     <div className="space-y-6">
-      {/* Socio Personal Card */}
-      <div className="bg-gradient-to-r from-slate-900 via-purple-950/20 to-slate-900 border border-purple-500/20 p-6 rounded-2xl shadow-xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 font-black text-2xl shadow-lg">
-              {currentUser.nombre.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl font-extrabold text-white">{currentUser.nombre} {currentUser.apellido}</h2>
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-bold">
-                  {currentUser.categoria}
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-1">
-                Socio N°: <strong className="text-amber-400 font-mono">#{currentUser.numeroSocio}</strong>
-              </p>
-            </div>
-          </div>
-
-          {/* Fee Status Badge */}
-          <div className="bg-slate-950/80 p-4 rounded-xl border border-slate-800 flex items-center gap-4">
-            <div>
-              <div className="text-[10px] text-slate-400 font-semibold uppercase">Estado de Cuota Social</div>
-              <div className="flex items-center gap-2 mt-1">
-                {effectiveFeeStatus === 'al_dia' && (
-                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA (Julio 2026)
-                  </span>
-                )}
-                {effectiveFeeStatus === 'pendiente' && (
-                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                    <Clock className="w-4 h-4 text-amber-400" /> REVISIÓN EN CURSO
-                  </span>
-                )}
-                {effectiveFeeStatus === 'moroso' && (
-                  <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-rose-400" /> PAGO PENDIENTE
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowUploader(!showUploader)}
-              className="px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-xs flex items-center gap-2 shadow-lg shadow-red-500/20 transition-all shrink-0"
-            >
-              <Upload className="w-4 h-4" />
-              {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
-            </button>
-          </div>
+      {/* Socio Personal Card - Centered & Responsive */}
+      <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-amber-950/20 border border-slate-800 p-6 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center space-y-4">
+        
+        {/* Avatar / Foto */}
+        <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-amber-500/20 border-2 border-amber-500/40 p-1 flex items-center justify-center text-amber-400 font-black text-3xl shadow-xl overflow-hidden">
+          {currentUser.fotoUrl || currentUser.foto ? (
+            <img src={currentUser.fotoUrl || currentUser.foto} alt={currentUser.nombre} className="w-full h-full object-cover rounded-xl" />
+          ) : (
+            currentUser.nombre.charAt(0).toUpperCase()
+          )}
         </div>
+
+        {/* Nombre, Disciplina, Usuario */}
+        <div className="space-y-1 max-w-md w-full">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            {currentUser.nombre} {currentUser.apellido}
+          </h2>
+
+          <div className="flex items-center justify-center gap-2 pt-1">
+            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-extrabold tracking-wide">
+              {currentUser.categoria || 'Sin Categoría'}
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-400 pt-1 font-mono">
+            Usuario: <strong className="text-amber-400">@{currentUser.usuario || 'socio'}</strong>
+          </p>
+        </div>
+
+        {/* Fee Status Badge & Subir Comprobante Button */}
+        <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-lg shadow-inner">
+          <div className="text-center sm:text-left space-y-1">
+            <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Cuota Social - Junio 2026</div>
+            <div className="flex items-center justify-center sm:justify-start gap-2">
+              {effectiveFeeStatus === 'al_dia' && (
+                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA (Junio 2026)
+                </span>
+              )}
+              {effectiveFeeStatus === 'pendiente' && (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 animate-pulse">
+                  <Clock className="w-4 h-4 text-amber-400" /> REVISIÓN EN CURSO
+                </span>
+              )}
+              {effectiveFeeStatus === 'moroso' && (
+                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-400" /> JUNIO 2026 - PAGO PENDIENTE
+                </span>
+              )}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowUploader(!showUploader)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all shrink-0 cursor-pointer"
+          >
+            <Upload className="w-4 h-4" />
+            {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
+          </button>
+        </div>
+
       </div>
 
       {/* Payment Receipt Uploader Inline */}

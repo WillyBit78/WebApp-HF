@@ -309,25 +309,26 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
       </div>
 
       {/* Filter and Search Toolbar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
-        <div className="relative w-full sm:w-80">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
+        <div className="relative w-full md:w-80 shrink-0">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
-            placeholder="Buscar por nombre, DNI, N° socio..."
+            placeholder="Buscar por nombre, usuario, DNI..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-3 py-2 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+        {/* Responsive Wrapping Filter Buttons (NO horizontal scrollbar) */}
+        <div className="flex flex-wrap items-center gap-2 w-full">
           <span className="text-xs font-semibold text-slate-400 shrink-0 flex items-center gap-1">
             <Filter className="w-3.5 h-3.5" /> Filtrar:
           </span>
           <button
             onClick={() => setSelectedDiscFilter('todas')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               selectedDiscFilter === 'todas'
                 ? 'bg-amber-500 text-slate-950 shadow-md'
                 : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
@@ -339,7 +340,7 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
             <button
               key={d.id}
               onClick={() => setSelectedDiscFilter(d.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 selectedDiscFilter === d.id
                   ? 'bg-amber-500 text-slate-950 shadow-md'
                   : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
@@ -492,11 +493,11 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
                                         <table className="w-full text-left text-xs">
                                           <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
                                             <tr>
-                                              <th className="p-2.5 rounded-l-lg">Socio / Nombre</th>
-                                              <th className="p-2.5">DNI / N° Socio</th>
-                                              <th className="p-2.5">Teléfono / WA</th>
-                                              <th className="p-2.5">Estado Cuota</th>
-                                              <th className="p-2.5">Cuota Mensual</th>
+                                              <th className="p-2.5 rounded-l-lg">Foto</th>
+                                              <th className="p-2.5">Nombre y Apellido</th>
+                                              <th className="p-2.5">Usuario</th>
+                                              <th className="p-2.5">Teléfono</th>
+                                              <th className="p-2.5">Estado Cuenta</th>
                                               <th className="p-2.5 text-right rounded-r-lg">Acciones</th>
                                             </tr>
                                           </thead>
@@ -504,37 +505,43 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
                                             {subSocios.map(socio => (
                                               <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
                                                 
-                                                {/* Socio Nombre - CLICKABLE TO OPEN FICHA */}
+                                                {/* Foto Socio */}
                                                 <td className="p-2.5">
-                                                  <div className="flex items-center gap-2.5">
-                                                    <div className="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden">
-                                                      {socio.fotoUrl || socio.foto ? (
-                                                        <img src={socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
-                                                      ) : (
-                                                        (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
-                                                      )}
-                                                    </div>
-
-                                                    <button
-                                                      onClick={() => openFichaSocio(socio)}
-                                                      className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors flex items-center gap-1 cursor-pointer"
-                                                      title="Haz clic para ver Ficha Personal completa"
-                                                    >
-                                                      {socio.nombre || socio.nombres} {socio.apellido}
-                                                    </button>
+                                                  <div 
+                                                    onClick={() => openFichaSocio(socio)}
+                                                    className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
+                                                    title="Ver Ficha Personal"
+                                                  >
+                                                    {socio.fotoUrl || socio.foto ? (
+                                                      <img src={socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                      (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
+                                                    )}
                                                   </div>
                                                 </td>
 
-                                                <td className="p-2.5 font-mono text-slate-300">
-                                                  <div>DNI: {socio.dni || 'S/N'}</div>
-                                                  <div className="text-[10px] text-amber-400 font-bold">N° Socio: #{socio.numeroSocio}</div>
+                                                {/* Nombre y Apellido - CLICKABLE TO OPEN FICHA */}
+                                                <td className="p-2.5">
+                                                  <button
+                                                    onClick={() => openFichaSocio(socio)}
+                                                    className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs"
+                                                    title="Haz clic para ver Ficha Personal completa"
+                                                  >
+                                                    {socio.nombre || socio.nombres} {socio.apellido}
+                                                  </button>
                                                 </td>
 
-                                                <td className="p-2.5 text-slate-300">
-                                                  {socio.telefono || 'Sin teléfono'}
+                                                {/* Usuario */}
+                                                <td className="p-2.5 font-mono text-slate-300 text-xs">
+                                                  @{socio.usuario || 'N/A'}
                                                 </td>
 
-                                                {/* Account Status Badge */}
+                                                {/* Teléfono */}
+                                                <td className="p-2.5 text-slate-300 text-xs">
+                                                  {socio.telefono || 'Sin registrar'}
+                                                </td>
+
+                                                {/* Estado Cuenta */}
                                                 <td className="p-2.5">
                                                   <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
                                                     socio.estadoCuota === 'al_dia'
@@ -543,32 +550,20 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
                                                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
                                                       : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
                                                   }`}>
-                                                    {socio.estadoCuota === 'al_dia' ? 'Al Día' : socio.estadoCuota === 'pendiente' ? 'En Revisión' : 'Moroso'}
+                                                    {socio.estadoCuota === 'al_dia' ? 'Al Día' : socio.estadoCuota === 'pendiente' ? 'En Revisión' : 'Sin Pagar'}
                                                   </span>
                                                 </td>
 
-                                                <td className="p-2.5 font-extrabold text-emerald-400">
-                                                  ${(socio.montoCuota || 15000).toLocaleString('es-AR')}
-                                                </td>
-
-                                                {/* Actions */}
+                                                {/* Acciones: Boton Efectivo y Boton Eliminar */}
                                                 <td className="p-2.5 text-right">
                                                   <div className="flex items-center justify-end gap-1.5">
-                                                    <button
-                                                      onClick={() => openFichaSocio(socio)}
-                                                      className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
-                                                      title="Ver Ficha Personal del Socio"
-                                                    >
-                                                      <Eye className="w-3.5 h-3.5 text-amber-400" /> Ficha
-                                                    </button>
-
                                                     {canManage && (
                                                       <button
                                                         onClick={() => {
                                                           setCashModalSocio(socio);
                                                           setCashMonto(socio.montoCuota || 15000);
                                                         }}
-                                                        className="px-2 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+                                                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
                                                         title="Cobrar cuota en efectivo"
                                                       >
                                                         <Banknote className="w-3.5 h-3.5" /> Efectivo

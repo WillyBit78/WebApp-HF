@@ -14,8 +14,10 @@ import {
   Trophy,
   Download,
   Smartphone,
-  LogOut
+  LogOut,
+  Key
 } from 'lucide-react';
+import { ModalChangePin } from './Modals/ModalChangePin';
 
 export const Navbar = ({ currentTab, setCurrentTab }) => {
   const { 
@@ -31,6 +33,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
+  const [showPinModal, setShowPinModal] = useState(false);
   
   // PWA Installation prompt state
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -157,22 +160,41 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
                   {currentUser?.rol}
                 </div>
               </div>
-              <button 
-                onClick={logout}
-                className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors"
-                title="Cerrar Sesión"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
+              
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={() => setShowPinModal(true)}
+                  className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
+                  title="Cambiar PIN (4 dígitos)"
+                >
+                  <Key className="w-4 h-4" />
+                </button>
+
+                <button 
+                  onClick={logout}
+                  className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-700/50 rounded-lg transition-colors cursor-pointer"
+                  title="Cerrar Sesión"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
 
-          {/* Mobile Logout Button */}
-          <div className="sm:hidden flex items-center">
+          {/* Mobile Buttons */}
+          <div className="sm:hidden flex items-center gap-1">
+            <button 
+              onClick={() => setShowPinModal(true)}
+              className="p-2 text-amber-400 hover:text-amber-300 hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
+              title="Cambiar PIN (4 dígitos)"
+            >
+              <Key className="w-5 h-5" />
+            </button>
+
             <button 
               onClick={logout}
-              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/60 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
               title="Cerrar Sesión"
             >
               <LogOut className="w-5 h-5" />
@@ -180,6 +202,11 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal Cambiar PIN */}
+      {showPinModal && (
+        <ModalChangePin onClose={() => setShowPinModal(false)} />
+      )}
 
             {/* Mobile PWA Installation Guide Modal */}
       {showInstallModal && (
