@@ -783,45 +783,63 @@ export const AppProvider = ({ children }) => {
 
     setNotices(prev => [newNotice, ...prev]);
 
-    if (isSupabaseConfigured && supabase) {
-      // Map to the exact column names the notices table has in Supabase
-      const supabasePayload = {
-        id: newNotice.id,
-        titulo: newNotice.titulo,
-        contenido: newNotice.contenido,
-        autor: newNotice.autor,
-        fecha: newNotice.fecha,
-        urgente: newNotice.urgente,
-        destinatario_tipo: newNotice.destinatarioTipo,
-        destinatario_valor: newNotice.destinatarioValor,
-        filtro_estado_cuenta: newNotice.filtroEstadoCuenta,
-        fecha_programada: newNotice.fechaProgramada || null,
-        categoria_destino: newNotice.destinatarioValor
-      };
+    // ─── BACKGROUND TASKS (fire & forget — UI never blocked) ───────────────
+    // Everything below runs asynchronously WITHOUT blocking the return value.
+    // The notice is already in local state and will be broadcast to all devices.
+    (async () => {
+      try {
+        if (isSupabaseConfigured && supabase) {
+          // 1. Save to Supabase DB for persistence (best effort, 4s timeout)
+          const supabasePayload = {
+            id: newNotice.id,
+            titulo: newNotice.titulo,
+            contenido: newNotice.contenido,
+            autor: newNotice.autor,
+            fecha: newNotice.fecha,
+            urgente: newNotice.urgente,
+            destinatario_tipo: newNotice.destinatarioTipo,
+            destinatario_valor: newNotice.destinatarioValor,
+            filtro_estado_cuenta: newNotice.filtroEstadoCuenta,
+            fecha_programada: newNotice.fechaProgramada || null,
+            categoria_destino: newNotice.destinatarioValor
+          };
+          const insertPromise = supabase.from('notices').insert([supabasePayload]);
+          const insertTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
+          await Promise.race([insertPromise, insertTimeout]).catch(() => {
+            // Fallback with minimal fields
+            supabase.from('notices').insert([{
+              id: newNotice.id,
+              titulo: newNotice.titulo,
+              contenido: newNotice.contenido,
+              autor: newNotice.autor,
+              urgente: newNotice.urgente
+            }]).catch(() => {});
+          });
 
-      const { error: insertErr } = await supabase.from('notices').insert([supabasePayload]);
-      if (insertErr) {
-        // Fallback: try inserting with minimal fields in case table has old schema
-        await supabase.from('notices').insert([{
-          id: newNotice.id,
-          titulo: newNotice.titulo,
-          contenido: newNotice.contenido,
-          autor: newNotice.autor,
-          urgente: newNotice.urgente
-        }]).catch(() => {});
-      }
+          // 2. Broadcast to ALL connected devices instantly (no DB dependency)
+          if (broadcastChannelRef.current) {
+            broadcastChannelRef.current.send({
+              type: 'broadcast',
+              event: 'notice_created',
+              payload: newNotice
+            }).catch(() => {});
+          }
+        }
 
-      // ✅ BROADCAST: Send notice to ALL connected devices instantly
-      // This works regardless of whether the DB insert succeeded.
-      // Every device subscribed to 'haedo-notices-broadcast' will receive it.
-      if (broadcastChannelRef.current) {
-        broadcastChannelRef.current.send({
-          type: 'broadcast',
-          event: 'notice_created',
-          payload: newNotice
-        }).catch(() => {});
+        // 3. Push notification to celulares (5s timeout, completely optional)
+        const pushController = new AbortController();
+        const pushTimeout = setTimeout(() => pushController.abort(), 5000);
+        fetch('/api/send-push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newNotice),
+          signal: pushController.signal
+        }).then(() => clearTimeout(pushTimeout)).catch(() => clearTimeout(pushTimeout));
+
+      } catch (_) {
+        // Background errors never affect the UI
       }
-    }
+    })();
 
     if (registrarLog) {
       registrarLog(
@@ -832,26 +850,9 @@ export const AppProvider = ({ children }) => {
       );
     }
 
-    // Call Vercel Serverless Function to send Push Notifications
-    // Uses a 5-second timeout so the UI is NEVER left hanging.
-    try {
-      const pushController = new AbortController();
-      const pushTimeout = setTimeout(() => pushController.abort(), 5000);
-      const pushRes = await fetch('/api/send-push', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNotice),
-        signal: pushController.signal
-      });
-      clearTimeout(pushTimeout);
-      if (pushRes.ok) {
-        const pushResult = await pushRes.json();
-        return { success: true, notice: newNotice, pushResult };
-      }
-    } catch (err) {
-      // Silently ignore: push is optional (AbortError = timeout, TypeError = endpoint not found)
-    }
+    // Return immediately — UI never waits for network
     return { success: true, notice: newNotice, pushResult: null };
+
 
   };
 
