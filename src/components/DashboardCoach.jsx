@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
+import { DashboardSocios } from './DashboardSocios';
 import { 
   UserCheck, 
   Plus, 
@@ -127,96 +128,8 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Roster Table (ABM Socios) */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-400" />
-              Plantel de Jugadores ({filteredUsers.length})
-            </h3>
-            <span className="text-xs text-slate-400">Categoría: {selectedCategory}</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px]">
-                <tr>
-                  <th className="p-3 rounded-l-xl">Jugador / Socio</th>
-                  <th className="p-3">Categoría</th>
-                  <th className="p-3">Teléfono</th>
-                  <th className="p-3">Estado Cuota</th>
-                  <th className="p-3 text-right rounded-r-xl">Cobro Efectivo / Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-200">
-                {filteredUsers.map(u => (
-                  <tr key={u.id} className="hover:bg-slate-800/50">
-                    <td className="p-3">
-                      <button
-                        onClick={() => openFichaSocio(u)}
-                        className="font-bold text-white hover:text-amber-400 hover:underline transition-colors text-left cursor-pointer"
-                        title="Ver Ficha Personal del Socio"
-                      >
-                        {u.nombre || u.nombres || 'Socio'} {u.apellido || ''}
-                      </button>
-                      <div className="text-[10px] text-slate-400">N° Socio: #{u.numeroSocio}</div>
-                    </td>
-                    <td className="p-3">
-                      <span className="bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-bold text-amber-300">
-                        {u.categoria}
-                      </span>
-                    </td>
-                    <td className="p-3 text-slate-300">{u.telefono}</td>
-                    <td className="p-3">
-                      {u.rol === 'socio' ? (
-                        u.estadoCuota === 'al_dia' ? (
-                          <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-                            <CheckCircle className="w-3 h-3" /> Al día
-                          </span>
-                        ) : (
-                          <span className="bg-amber-500/20 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit">
-                            <Clock className="w-3 h-3" /> Pendiente
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-slate-500 font-mono text-[10px]">Staff (Sin Cuota)</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-right flex items-center justify-end gap-2">
-                      {u.rol === 'socio' && (
-                        <button
-                          onClick={() => {
-                            setCashModalSocio(u);
-                            setCashMonto(u.montoCuota || 15000);
-                          }}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
-                          title="Cobrar Cuota en Efectivo"
-                        >
-                          <Banknote className="w-3.5 h-3.5" /> Cobrar Efectivo
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`¿Estás seguro de dar de baja al socio ${u.nombre} ${u.apellido}? Esta acción no se puede deshacer.`)) {
-                            deleteUser(u.id);
-                          }
-                        }}
-                        className="p-1.5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg cursor-pointer"
-                        title="Baja de jugador (pide confirmación)"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
+      {/* Dashboard de Socios Jerárquico */}
+      <DashboardSocios onOpenModalUser={onOpenModalUser} />
 
       {/* Modal Cobro en Efectivo por Coach */}
       {cashModalSocio && (

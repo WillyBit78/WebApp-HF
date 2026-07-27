@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import { DashboardSocios } from './DashboardSocios';
 import { 
   Users, 
   Wallet, 
@@ -360,104 +361,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
 
       {/* Tab 1: Resumen de Socios */}
       {activeSubTab === 'resumen' && (
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Users className="w-5 h-5 text-amber-400" />
-              Padrón de Socios y Staff
-            </h3>
-
-            <button
-              onClick={onOpenModalUser}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all"
-            >
-              <Plus className="w-4 h-4" /> Nuevo Usuario
-            </button>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
-                <tr>
-                  <th className="p-3 rounded-l-xl">Socio / Usuario</th>
-                  <th className="p-3">DNI / N° Socio</th>
-                  <th className="p-3">Categoría / Rol</th>
-                  <th className="p-3">Estado Cuota</th>
-                  <th className="p-3 text-right rounded-r-xl">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 text-slate-200">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="p-3 font-semibold text-white flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-amber-400 font-bold text-xs border border-slate-700">
-                        {(u.nombre || u.nombres || 'S').charAt(0)}
-                      </div>
-                      <div>
-                        <button
-                          onClick={() => openFichaSocio(u)}
-                          className="font-bold text-white hover:text-amber-400 hover:underline transition-colors text-left cursor-pointer"
-                          title="Ver Ficha Personal del Socio"
-                        >
-                          {u.nombre || u.nombres || 'Socio'} {u.apellido || ''}
-                        </button>
-                        <div className="text-[10px] text-slate-500 font-normal">{u.email || u.telefono || 'Sin datos de contacto'}</div>
-                      </div>
-                    </td>
-                    <td className="p-3 font-mono text-slate-300">
-                      <div>DNI: {u.dni}</div>
-                      <div className="text-[10px] text-amber-400 font-semibold">Socio #{u.numeroSocio}</div>
-                    </td>
-                    <td className="p-3">
-                      <div className="font-semibold text-white">{u.categoria}</div>
-                      <span className="text-[10px] text-slate-400 capitalize bg-slate-800 px-2 py-0.5 rounded font-mono">
-                        {u.rol}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      {u.rol === 'socio' ? (
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase ${
-                          u.estadoCuota === 'al_dia' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                          u.estadoCuota === 'pendiente' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' :
-                          'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                        }`}>
-                          {u.estadoCuota === 'al_dia' ? 'Al Día' : u.estadoCuota === 'pendiente' ? 'En Revisión' : 'Moroso'}
-                        </span>
-                      ) : (
-                        <span className="text-slate-500 font-mono text-[10px]">Staff (Sin Cuota)</span>
-                      )}
-                    </td>
-                    <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {u.rol === 'socio' && (
-                          <button
-                            onClick={() => setCashModalSocio(u)}
-                            className="bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 px-2.5 py-1 rounded-lg font-bold text-[11px] flex items-center gap-1 transition-all"
-                            title="Cobrar cuota en efectivo por Coach/Admin"
-                          >
-                            <Banknote className="w-3.5 h-3.5" /> Efectivo
-                          </button>
-                        )}
-
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`¿Estás seguro de dar de baja al usuario ${u.nombre} ${u.apellido}?`)) {
-                              deleteUser(u.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
-                          title="Eliminar usuario"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DashboardSocios onOpenModalUser={onOpenModalUser} />
       )}
 
       {/* Tab 2: Logs & Auditoría */}
