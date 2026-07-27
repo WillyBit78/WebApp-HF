@@ -1,5 +1,5 @@
-// Service Worker v5 - Network Only para HTML/JS/CSS, sin cachés problemáticos
-const CACHE_NAME = 'haedo-futsal-v5-clean';
+// Service Worker v6 - Network Only para HTML/JS/CSS, sin cachés problemáticos
+const CACHE_NAME = 'haedo-futsal-v6-clean-logo';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting(); // Fuerza a que el SW v5 tome el control inmediatamente

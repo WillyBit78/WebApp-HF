@@ -46,7 +46,7 @@ export const PWAInstallBanner = () => {
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-[60px] h-[60px] flex items-center justify-center shrink-0 overflow-hidden rounded-xl border border-amber-400/30 bg-slate-950">
-            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
+            <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
           </div>
           <div>
             <div className="font-extrabold text-sm flex items-center gap-1.5">

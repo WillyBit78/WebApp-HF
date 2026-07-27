@@ -74,7 +74,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
           {/* Brand Logo - Visible solo en vista mobile (en PC queda en la barra lateral) */}
           <div className="flex md:hidden items-center gap-3 cursor-pointer" onClick={() => setCurrentTab('dashboard')}>
             <div className="w-[60px] h-[60px] flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
+              <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div>
               <span className="font-bold text-base text-white tracking-tight flex items-center gap-1">

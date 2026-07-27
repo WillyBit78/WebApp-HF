@@ -360,7 +360,7 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
 
           <div className="w-20 h-20 mx-auto relative group">
             <div className="absolute inset-0 bg-brand-500/20 rounded-full blur-xl animate-pulse"></div>
-            <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-xl relative z-10" />
+            <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-xl relative z-10" />
           </div>
 
           <div className="inline-flex items-center gap-1.5 bg-brand-500/10 border border-brand-500/30 text-brand-400 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">

@@ -2,20 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { PNG } from 'pngjs';
+import jpeg from 'jpeg-js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const uploadedDir = 'C:/Users/Willy/.gemini/antigravity/brain/085609c8-04a3-412e-ab7c-68be0ca5c467/.user_uploaded/';
-const srcPngPath = path.join(uploadedDir, 'media__1785102889676.png');
-const logoPath = path.join(__dirname, '../public/logo.png');
+const srcJpgPath = path.join(uploadedDir, 'media__1785044938675.jpg');
 
-const inputBuffer = fs.readFileSync(srcPngPath);
-const png = PNG.sync.read(inputBuffer);
-
-const width = png.width;
-const height = png.height;
-const data = png.data;
+console.log(`Reading pristine high-res 3D shield: ${srcJpgPath}`);
+const rawJpg = jpeg.decode(fs.readFileSync(srcJpgPath), { useTArray: true });
+const width = rawJpg.width;
+const height = rawJpg.height;
+const data = rawJpg.data;
 
 function getIdx(x, y) {
   return (y * width + x) * 4;
@@ -25,11 +24,9 @@ function getIdx(x, y) {
 const visited = new Uint8Array(width * height);
 const queue = [];
 
-function isOuterBackground(r, g, b, a) {
-  if (a < 10) return true;
-  // Black background
-  if (r < 40 && g < 40 && b < 40) return true;
-  return false;
+function isOuterBackground(r, g, b) {
+  // Black/dark background in the JPG outside the shield
+  return (r < 45 && g < 45 && b < 45);
 }
 
 function checkAndEnqueue(x, y) {
@@ -41,9 +38,8 @@ function checkAndEnqueue(x, y) {
   const r = data[idx];
   const g = data[idx + 1];
   const b = data[idx + 2];
-  const a = data[idx + 3];
 
-  if (isOuterBackground(r, g, b, a)) {
+  if (isOuterBackground(r, g, b)) {
     visited[pos] = 1;
     queue.push([x, y]);
   }
@@ -62,9 +58,6 @@ for (let y = 0; y < height; y++) {
 let head = 0;
 while (head < queue.length) {
   const [x, y] = queue[head++];
-  const idx = getIdx(x, y);
-  data[idx + 3] = 0; // Make background transparent
-
   checkAndEnqueue(x + 1, y);
   checkAndEnqueue(x - 1, y);
   checkAndEnqueue(x, y + 1);
@@ -75,8 +68,8 @@ while (head < queue.length) {
 let minX = width, minY = height, maxX = 0, maxY = 0;
 for (let y = 0; y < height; y++) {
   for (let x = 0; x < width; x++) {
-    const idx = getIdx(x, y);
-    if (data[idx + 3] > 0) {
+    const pos = y * width + x;
+    if (!visited[pos]) {
       if (x < minX) minX = x;
       if (x > maxX) maxX = x;
       if (y < minY) minY = y;
@@ -85,7 +78,9 @@ for (let y = 0; y < height; y++) {
   }
 }
 
-const pad = 10;
+console.log(`Shield bounding box: (${minX}, ${minY}) to (${maxX}, ${maxY}) [${maxX - minX + 1}x${maxY - minY + 1}]`);
+
+const pad = 15;
 const cropMinX = Math.max(0, minX - pad);
 const cropMinY = Math.max(0, minY - pad);
 const cropMaxX = Math.min(width - 1, maxX + pad);
@@ -95,7 +90,7 @@ const cropW = cropMaxX - cropMinX + 1;
 const cropH = cropMaxY - cropMinY + 1;
 
 // Create new cropped canvas with subtle outer shadow built-in
-const shadowPad = 15;
+const shadowPad = 20;
 const finalW = cropW + shadowPad * 2;
 const finalH = cropH + shadowPad * 2;
 
@@ -111,13 +106,11 @@ for (let y = 0; y < cropH; y++) {
   for (let x = 0; x < cropW; x++) {
     const srcX = cropMinX + x;
     const srcY = cropMinY + y;
-    const srcIdx = getIdx(srcX, srcY);
-    const srcAlpha = data[srcIdx + 3];
+    const pos = srcY * width + srcX;
 
-    if (srcAlpha > 50) {
-      // Cast soft shadow offset (down 4px, right 2px)
-      const shadowX = x + shadowPad + 2;
-      const shadowY = y + shadowPad + 5;
+    if (!visited[pos]) {
+      const shadowX = x + shadowPad + 3;
+      const shadowY = y + shadowPad + 6;
 
       for (let dy = -6; dy <= 6; dy++) {
         for (let dx = -6; dx <= 6; dx++) {
@@ -126,12 +119,12 @@ for (let y = 0; y < cropH; y++) {
           if (px >= 0 && px < finalW && py >= 0 && py < finalH) {
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist <= 6) {
-              const shadowAlpha = Math.floor((1 - dist / 6) * 40 * (srcAlpha / 255));
+              const shadowAlpha = Math.floor((1 - dist / 6) * 50);
               const destIdx = (py * finalW + px) * 4;
               if (finalPng.data[destIdx + 3] < shadowAlpha) {
-                finalPng.data[destIdx] = 10;
-                finalPng.data[destIdx + 1] = 25;
-                finalPng.data[destIdx + 2] = 60;
+                finalPng.data[destIdx] = 5;
+                finalPng.data[destIdx + 1] = 15;
+                finalPng.data[destIdx + 2] = 40;
                 finalPng.data[destIdx + 3] = shadowAlpha;
               }
             }
@@ -147,31 +140,89 @@ for (let y = 0; y < cropH; y++) {
   for (let x = 0; x < cropW; x++) {
     const srcX = cropMinX + x;
     const srcY = cropMinY + y;
-    const srcIdx = getIdx(srcX, srcY);
-    const srcAlpha = data[srcIdx + 3];
+    const pos = srcY * width + srcX;
 
-    if (srcAlpha > 0) {
+    if (!visited[pos]) {
       const destX = x + shadowPad;
       const destY = y + shadowPad;
       const destIdx = (destY * finalW + destX) * 4;
+      const srcIdx = getIdx(srcX, srcY);
 
-      // Alpha composite shield over shadow
-      const alphaFactor = srcAlpha / 255;
-      const bgAlphaFactor = (finalPng.data[destIdx + 3] / 255) * (1 - alphaFactor);
-      const outAlpha = alphaFactor + bgAlphaFactor;
-
-      finalPng.data[destIdx] = Math.round((data[srcIdx] * alphaFactor + finalPng.data[destIdx] * bgAlphaFactor) / outAlpha);
-      finalPng.data[destIdx + 1] = Math.round((data[srcIdx + 1] * alphaFactor + finalPng.data[destIdx + 1] * bgAlphaFactor) / outAlpha);
-      finalPng.data[destIdx + 2] = Math.round((data[srcIdx + 2] * alphaFactor + finalPng.data[destIdx + 2] * bgAlphaFactor) / outAlpha);
-      finalPng.data[destIdx + 3] = Math.round(outAlpha * 255);
+      finalPng.data[destIdx] = data[srcIdx];
+      finalPng.data[destIdx + 1] = data[srcIdx + 1];
+      finalPng.data[destIdx + 2] = data[srcIdx + 2];
+      finalPng.data[destIdx + 3] = 255;
     }
   }
 }
 
-const outBuf = PNG.sync.write(finalPng);
-fs.writeFileSync(logoPath, outBuf);
-fs.writeFileSync(path.join(__dirname, '../public/logo_192.png'), outBuf);
-fs.writeFileSync(path.join(__dirname, '../public/logo_512.png'), outBuf);
-fs.writeFileSync(path.join(__dirname, '../public/logo.jpg'), outBuf);
+function resampleBilinear(src, dstW, dstH) {
+  const dst = new PNG({ width: dstW, height: dstH });
+  const w = src.width, h = src.height;
+  for (let y = 0; y < dstH; y++) {
+    const v = y / (dstH - 1) * (h - 1);
+    const y0 = Math.floor(v);
+    const y1 = Math.min(h - 1, y0 + 1);
+    const wy = v - y0;
+    for (let x = 0; x < dstW; x++) {
+      const u = x / (dstW - 1) * (w - 1);
+      const x0 = Math.floor(u);
+      const x1 = Math.min(w - 1, x0 + 1);
+      const wx = u - x0;
+      for (let c = 0; c < 4; c++) {
+        const p00 = src.data[(y0 * w + x0) * 4 + c];
+        const p10 = src.data[(y0 * w + x1) * 4 + c];
+        const p01 = src.data[(y1 * w + x0) * 4 + c];
+        const p11 = src.data[(y1 * w + x1) * 4 + c];
+        const top = p00 * (1 - wx) + p10 * wx;
+        const bot = p01 * (1 - wx) + p11 * wx;
+        dst.data[(y * dstW + x) * 4 + c] = Math.round(top * (1 - wy) + bot * wy);
+      }
+    }
+  }
+  return dst;
+}
 
-console.log(`Professional HD Shield generated! Final Dimensions: ${finalW}x${finalH}, Size: ${outBuf.length} bytes`);
+const publicDir = path.join(__dirname, '../public');
+const outBuf = PNG.sync.write(finalPng);
+fs.writeFileSync(path.join(publicDir, 'logo.png'), outBuf);
+console.log(`Saved public/logo.png (${finalW}x${finalH}) - ${outBuf.length} bytes`);
+
+// Generate cleanly resampled PNGs
+const sizes = [
+  { name: 'icon-192.png', size: 192 },
+  { name: 'icon-512.png', size: 512 },
+  { name: 'logo-192.png', size: 192 },
+  { name: 'logo-512.png', size: 512 },
+  { name: 'logo_192.png', size: 192 },
+  { name: 'logo_512.png', size: 512 },
+  { name: 'apple-touch-icon.png', size: 180 },
+  { name: 'favicon.png', size: 64 }
+];
+
+for (const item of sizes) {
+  const resized = resampleBilinear(finalPng, item.size, item.size);
+  const buf = PNG.sync.write(resized);
+  fs.writeFileSync(path.join(publicDir, item.name), buf);
+  console.log(`Saved public/${item.name} (${item.size}x${item.size}) - ${buf.length} bytes`);
+}
+
+// Create JPG version on dark background (#020617)
+const jpgData = {
+  width: finalW,
+  height: finalH,
+  data: new Uint8Array(finalW * finalH * 4)
+};
+for (let i = 0; i < finalW * finalH * 4; i += 4) {
+  const alpha = finalPng.data[i + 3] / 255;
+  // Blend over #020617 (R:2, G:6, B:23)
+  jpgData.data[i] = Math.round(finalPng.data[i] * alpha + 2 * (1 - alpha));
+  jpgData.data[i + 1] = Math.round(finalPng.data[i + 1] * alpha + 6 * (1 - alpha));
+  jpgData.data[i + 2] = Math.round(finalPng.data[i + 2] * alpha + 23 * (1 - alpha));
+  jpgData.data[i + 3] = 255;
+}
+const jpgBuf = jpeg.encode(jpgData, 92).data;
+fs.writeFileSync(path.join(publicDir, 'logo.jpg'), jpgBuf);
+console.log(`Saved public/logo.jpg (${finalW}x${finalH}) - ${jpgBuf.length} bytes`);
+
+console.log('All HD logo files generated successfully!');

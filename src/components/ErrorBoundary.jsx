@@ -46,7 +46,7 @@ export class ErrorBoundary extends React.Component {
         <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center p-6">
           <div className="bg-slate-900 border border-slate-800 p-8 rounded-2xl max-w-md w-full text-center space-y-4 shadow-2xl">
             <div className="w-20 h-20 mx-auto flex items-center justify-center overflow-hidden">
-              <img src="/logo.png" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
+              <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
 
             <div className="w-10 h-10 bg-rose-500/20 text-rose-400 rounded-xl flex items-center justify-center mx-auto">

@@ -40,7 +40,7 @@ function MainApp() {
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
         <div className="relative w-24 h-24 mb-6">
            <img 
-             src="/logo.png" 
+             src="/logo.png?v=clean-20260726" 
              alt="Haedo Futsal Logo" 
              className="w-full h-full object-contain animate-pulse drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" 
            />
