@@ -95,15 +95,9 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
           </button>
           <button
             onClick={onOpenModalEvent}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/20"
+            className="bg-red-500 hover:bg-red-600 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-red-500/20 cursor-pointer"
           >
             <Calendar className="w-4 h-4" /> Crear Partido / Práctica
-          </button>
-          <button
-            onClick={onOpenModalNotice}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-purple-500/20"
-          >
-            <Megaphone className="w-4 h-4" /> Enviar Comunicado Masivo
           </button>
         </div>
       </div>

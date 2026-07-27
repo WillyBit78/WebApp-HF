@@ -191,22 +191,16 @@ export const DashboardContador = ({ onOpenModalUser }) => {
   return (
     <div className="space-y-6">
       {/* Header Navigation */}
-      <div className="bg-gradient-to-r from-slate-900 via-amber-950/20 to-slate-900 border border-amber-500/20 p-6 rounded-2xl shadow-xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/20 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
-            <Wallet className="w-4 h-4" /> SECTOR FINANZAS Y CONTABILIDAD
-          </div>
-          <h2 className="text-2xl font-extrabold text-white">Gestión Financiera & Mercado Pago</h2>
-          <p className="text-xs text-slate-400 mt-1">
-            Conciliación inteligente en tiempo real para la cuenta <strong>{clubSettings.aliasMercadoPago}</strong>
-          </p>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Finanzas</h2>
         </div>
 
         {/* 3 Main Sub-Tabs */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('control_financiero')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'control_financiero'
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
@@ -218,7 +212,7 @@ export const DashboardContador = ({ onOpenModalUser }) => {
 
           <button
             onClick={() => setActiveTab('mp_feed')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'mp_feed'
                 ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
@@ -235,7 +229,7 @@ export const DashboardContador = ({ onOpenModalUser }) => {
 
           <button
             onClick={() => setActiveTab('auditoria')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'auditoria'
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
@@ -248,22 +242,6 @@ export const DashboardContador = ({ onOpenModalUser }) => {
                 {pendientesRevCount}
               </span>
             )}
-          </button>
-
-          <div className="h-6 w-px bg-slate-800 mx-1 hidden sm:block"></div>
-
-          <button
-            onClick={onOpenModalUser}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Alta Socio
-          </button>
-          
-          <button
-            onClick={handleCopyLink}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
-          >
-            <Share2 className="w-4 h-4 text-emerald-400" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link'}
           </button>
         </div>
       </div>

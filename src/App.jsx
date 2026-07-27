@@ -73,7 +73,7 @@ function MainApp() {
     switch (activeRoleId) {
       case 'admin': return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'contador': return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
-      case 'coach': return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} />;
+      case 'coach': return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'socio': return <DashboardSocio />;
       default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} />;
     }
@@ -90,9 +90,9 @@ function MainApp() {
       case 'finance':
         return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
-        return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} />;
+        return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'planteles':
-        return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
+        return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'settings':
         return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'profile':

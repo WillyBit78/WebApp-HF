@@ -20,7 +20,8 @@ import {
   Filter, 
   AlertTriangle,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Share2
 } from 'lucide-react';
 
 export const DISCIPLINAS_CONFIG = [
@@ -173,18 +174,31 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
     return map;
   }, [socios, searchTerm]);
 
-  // Helper stats calculation
-  const getStats = (sociosList = []) => {
-    const total = sociosList.length;
-    const alDia = sociosList.filter(s => s.estadoCuota === 'al_dia').length;
-    const pendiente = total - alDia;
+  // Helper stats calculator supporting Al Día, En Revisión, and Morosos
+  const getStats = (socioList) => {
+    const total = socioList.length;
+    const alDia = socioList.filter(s => s.estadoCuota === 'al_dia').length;
+    const revision = socioList.filter(s => s.estadoCuota === 'pendiente').length;
+    const sinPagar = socioList.filter(s => s.estadoCuota === 'moroso' || !s.estadoCuota).length;
+    
     const pctAlDia = total > 0 ? Math.round((alDia / total) * 100) : 0;
-    const pctPendiente = total > 0 ? (100 - pctAlDia) : 0;
-    return { total, alDia, pendiente, pctAlDia, pctPendiente };
+    const pctRevision = total > 0 ? Math.round((revision / total) * 100) : 0;
+    const pctSinPagar = total > 0 ? Math.max(0, 100 - pctAlDia - pctRevision) : 0;
+
+    return { total, alDia, revision, sinPagar, pctAlDia, pctRevision, pctSinPagar };
   };
 
   // Global total stats
   const globalStats = useMemo(() => getStats(socios), [socios]);
+
+  const [copiedLink, setCopiedLink] = useState(false);
+  const handleCopyLink = () => {
+    const url = window.location.origin + window.location.pathname + '#registro';
+    const shareText = `Haedo Futsal App\nInscribite en la App Oficial del Club!\n${url}`;
+    navigator.clipboard.writeText(shareText);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   // Accordion Toggles
   const toggleDisc = (id) => {
@@ -209,31 +223,45 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
 
   const isSearchActive = Boolean(searchTerm);
   const canManage = currentUser?.rol === 'admin' || currentUser?.rol === 'coach' || currentUser?.rol === 'contador';
+  const isStaffAdmin = currentUser?.rol === 'admin' || currentUser?.rol === 'contador';
 
   // Render Visual Percentage Indicator Bar & Badges
   const renderStatusIndicators = (stats) => {
     return (
-      <div className="space-y-1.5 w-full sm:w-auto min-w-[200px]">
-        <div className="flex items-center justify-between gap-3 text-[11px] font-bold">
+      <div className="space-y-1.5 w-full sm:w-auto min-w-[220px]">
+        <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
           <span className="text-emerald-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            {stats.pctAlDia}% Al día ({stats.alDia})
+            {stats.pctAlDia}% Al día
           </span>
+          {stats.revision > 0 && (
+            <span className="text-amber-400 flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              {stats.pctRevision}% Revisión
+            </span>
+          )}
           <span className="text-rose-400 flex items-center gap-1">
             <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-            {stats.pctPendiente}% Pendiente ({stats.pendiente})
+            {stats.pctSinPagar}% Sin pagar
           </span>
         </div>
 
-        {/* Dual Progress Bar */}
+        {/* Multi-Segment Segmented Bar */}
         <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden flex border border-slate-800 shadow-inner">
           <div 
             style={{ width: `${stats.pctAlDia}%` }} 
             className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full transition-all duration-500"
+            title={`Al día: ${stats.alDia} (${stats.pctAlDia}%)`}
           />
           <div 
-            style={{ width: `${stats.pctPendiente}%` }} 
+            style={{ width: `${stats.pctRevision}%` }} 
+            className="bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-500"
+            title={`En revisión: ${stats.revision} (${stats.pctRevision}%)`}
+          />
+          <div 
+            style={{ width: `${stats.pctSinPagar}%` }} 
             className="bg-gradient-to-r from-rose-500 to-rose-600 h-full transition-all duration-500"
+            title={`Sin pagar: ${stats.sinPagar} (${stats.pctSinPagar}%)`}
           />
         </div>
       </div>
@@ -247,61 +275,135 @@ export const DashboardSocios = ({ onOpenModalUser }) => {
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 p-6 rounded-3xl shadow-2xl relative overflow-hidden">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
           <div>
-            <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
-              <Users className="w-4 h-4" /> GESTIÓN INTEGRAL DE SOCIOS
-            </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Padrón y Estado de Cuentas por Disciplina
+              Gestión de Socios
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Monitoreo jerárquico de morosidad y cobro por Disciplina, Categoría y Sub-categoría
-            </p>
           </div>
 
-          {onOpenModalUser && (
+          <div className="flex flex-wrap items-center gap-2">
+            {onOpenModalUser && (
+              <button
+                onClick={onOpenModalUser}
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Alta Socio
+              </button>
+            )}
+
             <button
-              onClick={onOpenModalUser}
-              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-2.5 rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all cursor-pointer shrink-0"
+              onClick={handleCopyLink}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" /> Alta Nuevo Socio
+              <Share2 className="w-4 h-4 text-emerald-400" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link Inscripción'}
             </button>
-          )}
+
+            {isStaffAdmin && onOpenModalStaff && (
+              <button
+                onClick={onOpenModalStaff}
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" /> Alta Staff / Usuario
+              </button>
+            )}
+          </div>
         </div>
 
-        {/* Key Metrics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-800/80">
+        {/* Visual Modern Status Breakdown Panel */}
+        <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-4">
           
-          <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-3.5 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-slate-400 font-semibold uppercase">Total Socios Padrón</span>
-              <div className="text-xl font-extrabold text-white mt-0.5">{globalStats.total} socios</div>
-            </div>
-            <div className="p-2.5 bg-blue-500/15 text-blue-400 rounded-xl">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="bg-slate-950/80 border border-emerald-500/20 rounded-2xl p-3.5 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-emerald-400 font-semibold uppercase">Socios Al Día</span>
-              <div className="text-xl font-extrabold text-emerald-300 mt-0.5">
-                {globalStats.alDia} <span className="text-xs font-bold text-emerald-400/80">({globalStats.pctAlDia}%)</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            
+            <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total Padrón</span>
+                <div className="text-xl font-extrabold text-white mt-0.5">{globalStats.total} socios</div>
+              </div>
+              <div className="p-2.5 bg-blue-500/15 text-blue-400 rounded-xl">
+                <Users className="w-5 h-5" />
               </div>
             </div>
-            <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </div>
 
-          <div className="bg-slate-950/80 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between">
-            <div>
-              <span className="text-[11px] text-rose-400 font-semibold uppercase">Pendientes / Morosos</span>
-              <div className="text-xl font-extrabold text-rose-300 mt-0.5">
-                {globalStats.pendiente} <span className="text-xs font-bold text-rose-400/80">({globalStats.pctPendiente}%)</span>
+            <div className="bg-slate-950/80 border border-emerald-500/20 rounded-2xl p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Socios Al Día</span>
+                <div className="text-xl font-extrabold text-emerald-300 mt-0.5">
+                  {globalStats.alDia} <span className="text-xs font-bold text-emerald-400/80">({globalStats.pctAlDia}%)</span>
+                </div>
+              </div>
+              <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl">
+                <CheckCircle2 className="w-5 h-5" />
               </div>
             </div>
-            <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl">
-              <AlertCircle className="w-5 h-5" />
+
+            <div className="bg-slate-950/80 border border-amber-500/20 rounded-2xl p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-amber-400 font-semibold uppercase tracking-wider">En Revisión</span>
+                <div className="text-xl font-extrabold text-amber-300 mt-0.5">
+                  {globalStats.revision} <span className="text-xs font-bold text-amber-400/80">({globalStats.pctRevision}%)</span>
+                </div>
+              </div>
+              <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl">
+                <Clock className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-slate-950/80 border border-rose-500/20 rounded-2xl p-3.5 flex items-center justify-between">
+              <div>
+                <span className="text-[10px] text-rose-400 font-semibold uppercase tracking-wider">Sin Pagar / Morosos</span>
+                <div className="text-xl font-extrabold text-rose-300 mt-0.5">
+                  {globalStats.sinPagar} <span className="text-xs font-bold text-rose-400/80">({globalStats.pctSinPagar}%)</span>
+                </div>
+              </div>
+              <div className="p-2.5 bg-rose-500/20 text-rose-400 rounded-xl">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+            </div>
+
+          </div>
+
+          {/* Visual Percentage Progress Bar Graphic */}
+          <div className="bg-slate-950/90 border border-slate-800/90 p-4 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold">
+              <span className="text-slate-300 flex items-center gap-1.5">
+                <TrendingUp className="w-4 h-4 text-amber-400" />
+                Estado de Cuentas General
+              </span>
+              <span className="text-slate-400 font-mono text-[11px]">
+                {globalStats.alDia} / {globalStats.total} al día
+              </span>
+            </div>
+
+            <div className="w-full bg-slate-900 h-4 rounded-xl overflow-hidden flex border border-slate-800 p-0.5 shadow-inner">
+              <div 
+                style={{ width: `${globalStats.pctAlDia}%` }} 
+                className="bg-gradient-to-r from-emerald-500 to-emerald-400 h-full rounded-l-lg transition-all duration-500"
+                title={`Al Día: ${globalStats.alDia} socios (${globalStats.pctAlDia}%)`}
+              />
+              <div 
+                style={{ width: `${globalStats.pctRevision}%` }} 
+                className="bg-gradient-to-r from-amber-500 to-amber-400 h-full transition-all duration-500"
+                title={`En Revisión: ${globalStats.revision} socios (${globalStats.pctRevision}%)`}
+              />
+              <div 
+                style={{ width: `${globalStats.pctSinPagar}%` }} 
+                className="bg-gradient-to-r from-rose-500 to-rose-600 h-full rounded-r-lg transition-all duration-500"
+                title={`Sin Pagar: ${globalStats.sinPagar} socios (${globalStats.pctSinPagar}%)`}
+              />
+            </div>
+
+            <div className="flex items-center justify-around pt-1 text-[11px] font-semibold text-slate-400">
+              <span className="flex items-center gap-1 text-emerald-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                Al Día ({globalStats.pctAlDia}%)
+              </span>
+              <span className="flex items-center gap-1 text-amber-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                En Revisión ({globalStats.pctRevision}%)
+              </span>
+              <span className="flex items-center gap-1 text-rose-400">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                Sin Pagar ({globalStats.pctSinPagar}%)
+              </span>
             </div>
           </div>
 

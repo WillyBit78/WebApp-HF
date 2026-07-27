@@ -25,8 +25,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
       label: 'Administración',
       items: [
         { id: 'users', label: 'Gestión de Socios', icon: Users, roles: ['admin', 'contador', 'coach'] },
-        { id: 'planteles', label: 'Gestión de Planteles', icon: Trophy, roles: ['admin', 'contador', 'coach'] },
-        { id: 'finance', label: 'Control Financiero', icon: Wallet, roles: ['admin', 'contador'] },
+        { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['admin', 'contador'] },
         { id: 'settings', label: 'Ajustes del Club', icon: Settings, roles: ['admin'] },
       ]
     }

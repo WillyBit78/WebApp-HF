@@ -334,29 +334,6 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
             </button>
           ))}
         </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={onOpenModalUser}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Alta Socio
-          </button>
-          
-          <button
-            onClick={handleCopyLink}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
-          >
-            <Share2 className="w-4 h-4 text-emerald-400" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link Inscripción'}
-          </button>
-
-          <button
-            onClick={onOpenModalStaff}
-            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" /> Alta Staff / Usuario
-          </button>
-        </div>
       </div>
 
       {/* Tab 1: Resumen de Socios */}

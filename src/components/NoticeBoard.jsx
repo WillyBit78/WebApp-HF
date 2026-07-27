@@ -19,9 +19,9 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
         {(activeRoleId === 'admin' || activeRoleId === 'coach') && (
           <button
             onClick={onOpenModalNotice}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-purple-500/20"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-extrabold px-4 py-2.5 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer shrink-0"
           >
-            <Plus className="w-4 h-4" /> Nuevo Comunicado
+            <Megaphone className="w-4 h-4" /> Enviar Comunicado Masivo
           </button>
         )}
       </div>

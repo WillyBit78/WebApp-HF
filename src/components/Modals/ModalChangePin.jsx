@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Key, Lock, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
+import { Key, CheckCircle2, AlertCircle, X, ShieldCheck } from 'lucide-react';
 
 export const ModalChangePin = ({ onClose }) => {
-  const { currentUser, addOrUpdateUser, setCurrentUser } = useApp();
+  const { currentUser, addOrUpdateUser, setCurrentUser, registrarLog } = useApp();
 
   const [pinActual, setPinActual] = useState('');
   const [pinNuevo, setPinNuevo] = useState('');
@@ -12,8 +12,7 @@ export const ModalChangePin = ({ onClose }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSavePin = () => {
     setErrorMsg('');
     setSuccessMsg('');
 
@@ -35,15 +34,25 @@ export const ModalChangePin = ({ onClose }) => {
       return;
     }
 
-    // Guardar nuevo PIN
+    // Actualizar usuario en estado global y Supabase
     const updatedUser = { ...currentUser, clave: pinNuevo };
     addOrUpdateUser(updatedUser);
     if (setCurrentUser) setCurrentUser(updatedUser);
 
+    // Registrar en el Log de Auditoría del Sistema
+    if (registrarLog) {
+      registrarLog(
+        'modificacion_usuario',
+        `Cambio de PIN de acceso (${currentUser.nombre} ${currentUser.apellido})`,
+        `PIN actualizado exitosamente por el usuario`,
+        updatedUser
+      );
+    }
+
     setSuccessMsg('¡PIN actualizado correctamente!');
     setTimeout(() => {
       onClose();
-    }, 1500);
+    }, 1200);
   };
 
   return (
@@ -62,8 +71,9 @@ export const ModalChangePin = ({ onClose }) => {
             </div>
           </div>
           <button 
+            type="button"
             onClick={onClose} 
-            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+            className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -84,30 +94,32 @@ export const ModalChangePin = ({ onClose }) => {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        {/* Form Container (Div, avoiding form submit native password autofill) */}
+        <div className="space-y-4 text-xs">
           
           <div>
             <label className="block text-slate-400 mb-1 font-semibold">PIN Actual (4 dígitos)</label>
-            <div className="relative">
-              <input
-                type="password"
-                maxLength={4}
-                required
-                value={pinActual}
-                onChange={(e) => setPinActual(e.target.value.replace(/\D/g, ''))}
-                placeholder="****"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-center text-amber-400 font-mono text-lg tracking-widest focus:border-amber-400 focus:outline-none"
-              />
-            </div>
+            <input
+              type="text"
+              inputMode="numeric"
+              maxLength={4}
+              autoComplete="off"
+              data-lpignore="true"
+              value={pinActual}
+              onChange={(e) => setPinActual(e.target.value.replace(/\D/g, ''))}
+              placeholder="****"
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-center text-amber-400 font-mono text-lg tracking-widest focus:border-amber-400 focus:outline-none"
+            />
           </div>
 
           <div>
             <label className="block text-slate-400 mb-1 font-semibold">Nuevo PIN (4 dígitos)</label>
             <input
-              type="password"
+              type="text"
+              inputMode="numeric"
               maxLength={4}
-              required
+              autoComplete="off"
+              data-lpignore="true"
               value={pinNuevo}
               onChange={(e) => setPinNuevo(e.target.value.replace(/\D/g, ''))}
               placeholder="****"
@@ -118,9 +130,11 @@ export const ModalChangePin = ({ onClose }) => {
           <div>
             <label className="block text-slate-400 mb-1 font-semibold">Confirmar Nuevo PIN</label>
             <input
-              type="password"
+              type="text"
+              inputMode="numeric"
               maxLength={4}
-              required
+              autoComplete="off"
+              data-lpignore="true"
               value={pinConfirmar}
               onChange={(e) => setPinConfirmar(e.target.value.replace(/\D/g, ''))}
               placeholder="****"
@@ -132,12 +146,13 @@ export const ModalChangePin = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition-all"
+              className="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs transition-all cursor-pointer"
             >
               Cancelar
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSavePin}
               className="w-1/2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold py-2.5 rounded-xl text-xs shadow-lg shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
             >
               <ShieldCheck className="w-4 h-4" />
@@ -145,7 +160,7 @@ export const ModalChangePin = ({ onClose }) => {
             </button>
           </div>
 
-        </form>
+        </div>
 
       </div>
     </div>
