@@ -253,29 +253,15 @@ export const AppProvider = ({ children }) => {
 
   // Auth actions
   const login = (usuarioInput, claveInput) => {
-    let cleanUserStr = usuarioInput.trim().toUpperCase();
-    if (cleanUserStr === 'ADMIN') cleanUserStr = 'WILLY';
+    const cleanUserStr = usuarioInput.trim().toUpperCase();
 
     const targetUser = users.find(u => 
-      u.usuario && (
-        u.usuario.trim().toUpperCase() === cleanUserStr || 
-        (cleanUserStr === 'WILLY' && (u.id === 'usr-1' || u.usuario.toUpperCase() === 'ADMIN'))
-      ) && String(u.clave) === String(claveInput)
+      u.usuario && u.usuario.trim().toUpperCase() === cleanUserStr && String(u.clave) === String(claveInput)
     );
 
     if (targetUser) {
-      const updatedUser = {
-        ...targetUser,
-        usuario: 'WILLY',
-        nombre: 'Willy'
-      };
-      setCurrentUser(updatedUser);
-      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${updatedUser.rol.toUpperCase()}`, updatedUser);
-      
-      // Update in Supabase if it was still ADMIN
-      if (isSupabaseConfigured && supabase && (targetUser.usuario === 'ADMIN' || targetUser.nombre === 'Admin')) {
-        supabase.from('users').update({ usuario: 'WILLY', nombre: 'Willy' }).eq('id', targetUser.id).then();
-      }
+      setCurrentUser(targetUser);
+      registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
       return true;
     }
     return false;
