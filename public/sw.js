@@ -1,5 +1,5 @@
 // Service Worker para PWA Haedo Futsal
-const CACHE_NAME = 'haedo-futsal-v3'; // Cambiar versión para forzar actualización
+const CACHE_NAME = 'haedo-futsal-v4'; // v4: Network First para todo
 const urlsToCache = [
   '/',
   '/index.html',
@@ -16,7 +16,7 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  // Limpiar cachés viejos
+  // Limpiar TODOS los cachés viejos
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -58,19 +58,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (event.request.mode === 'navigate') {
-    // Para navegación (index.html), estrategia: Network First, fallback to Cache
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/index.html');
+  // TODAS las peticiones: Network First, fallback to Cache
+  // Esto garantiza que los JS/CSS/imágenes nuevos se carguen siempre del servidor
+  event.respondWith(
+    fetch(event.request)
+      .then((response) => {
+        // Cachear la respuesta fresca para uso offline
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseClone);
+          });
+        }
+        return response;
       })
-    );
-  } else {
-    // Para otros recursos (imágenes, CSS, JS), estrategia: Cache First, fallback to Network
-    event.respondWith(
-      caches.match(event.request).then((response) => {
-        return response || fetch(event.request);
+      .catch(() => {
+        return caches.match(event.request);
       })
-    );
-  }
+  );
 });
