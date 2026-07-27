@@ -56,8 +56,8 @@ export const ModalChangePin = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-6 space-y-5 shadow-2xl text-slate-200">
+    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl text-slate-200 my-auto relative">
         
         {/* Header */}
         <div className="flex justify-between items-center border-b border-slate-800 pb-3">
