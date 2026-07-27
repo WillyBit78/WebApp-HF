@@ -17,9 +17,9 @@ export const MOCK_CATEGORIES = {
 export const MOCK_USERS = [
   {
     id: 'usr-1',
-    nombre: 'Admin',
-    apellido: 'Club',
-    usuario: 'ADMIN',
+    nombre: 'Willy',
+    apellido: 'Admin',
+    usuario: 'WILLY',
     clave: '1234',
     telefono: '11-4567-8901',
     rol: 'admin',
