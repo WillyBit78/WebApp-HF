@@ -116,7 +116,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             type="submit"
             className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
           >
-            Ingresar al Sistema
+            Ingresar
           </button>
 
           <div className="pt-2 border-t border-slate-800/80 text-center">

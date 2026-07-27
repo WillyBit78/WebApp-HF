@@ -30,7 +30,7 @@ import {
   Key
 } from 'lucide-react';
 
-export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalEvent }) => {
+export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalEvent, initialSubTab = 'resumen' }) => {
   const { 
     stats, 
     users, 
@@ -47,7 +47,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
     currentUser
   } = useApp();
 
-  const [activeSubTab, setActiveSubTab] = useState('resumen'); // 'resumen' | 'logs' | 'configuracion'
+  const [activeSubTab, setActiveSubTab] = useState(initialSubTab); // 'resumen' | 'logs' | 'configuracion'
   const [editingSettings, setEditingSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState(clubSettings);
   const [copiedLink, setCopiedLink] = useState(false);

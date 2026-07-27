@@ -44,16 +44,22 @@ function MainApp() {
 
   if (loadingDb) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400">
-        <div className="relative w-24 h-24 mb-6">
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 relative overflow-hidden">
+        {/* Soft Red Background Light Glow */}
+        <div className="absolute w-80 h-80 bg-red-600/25 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+
+        <div className="relative w-28 h-28 mb-6 flex items-center justify-center">
+           {/* Vibrant Blue Spinning Surrounding Circle */}
+           <div className="absolute inset-0 rounded-full border-4 border-blue-600/20 border-t-blue-500 border-r-blue-400 animate-spin shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+
+           {/* Shield Logo with Soft Red Drop-Shadow */}
            <img 
              src="/logo.png?v=clean-20260726" 
              alt="Haedo Futsal Logo" 
-             className="w-full h-full object-contain animate-pulse drop-shadow-[0_0_15px_rgba(34,197,94,0.5)]" 
+             className="w-20 h-20 object-contain drop-shadow-[0_0_25px_rgba(239,68,68,0.8)] z-10" 
            />
-           <div className="absolute inset-0 rounded-full border-2 border-brand-500/30 animate-ping"></div>
         </div>
-        <p className="font-semibold tracking-wide text-brand-400 animate-pulse">Conectando con la base de datos...</p>
+        <p className="font-bold tracking-wide text-slate-200 text-xs uppercase tracking-widest animate-pulse z-10">Conectando con la base de datos...</p>
       </div>
     );
   }
@@ -94,7 +100,7 @@ function MainApp() {
       case 'planteles':
         return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'settings':
-        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+        return <DashboardAdmin initialSubTab="configuracion" onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'profile':
       case 'payments':
         return <DashboardSocio />;
