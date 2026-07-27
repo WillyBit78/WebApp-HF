@@ -47,6 +47,12 @@ export const AppProvider = ({ children }) => {
       if (lower === 'montocuota') normalized.montoCuota = obj[key];
       if (lower === 'creadopor') normalized.creadoPor = obj[key];
       if (lower === 'coelsaid') normalized.coelsaId = obj[key];
+      // Notice fields (Supabase uses snake_case)
+      if (lower === 'destinatariotipo') normalized.destinatarioTipo = obj[key];
+      if (lower === 'destinatariovalor') normalized.destinatarioValor = obj[key];
+      if (lower === 'filtroestadocuenta') normalized.filtroEstadoCuenta = obj[key];
+      if (lower === 'fechaprogramada') normalized.fechaProgramada = obj[key];
+      if (lower === 'categoriadestino') normalized.categoriaDestino = obj[key];
     }
 
     return normalized;
@@ -186,11 +192,12 @@ export const AppProvider = ({ children }) => {
     const refreshDataSilent = async () => {
       if (!isSupabaseConfigured || !supabase) return;
       try {
-        const [uRes, pRes, mRes, lRes] = await Promise.all([
+        const [uRes, pRes, mRes, lRes, nRes] = await Promise.all([
           supabase.from('users').select('*').order('created_at', { ascending: true }),
           supabase.from('payments').select('*').order('created_at', { ascending: false }),
           supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
-          supabase.from('logs').select('*').order('created_at', { ascending: false })
+          supabase.from('logs').select('*').order('created_at', { ascending: false }),
+          supabase.from('notices').select('*').order('created_at', { ascending: false })
         ]);
         if (uRes.data) {
           const dbUsers = uRes.data.map(normalizeKeys);
@@ -212,6 +219,10 @@ export const AppProvider = ({ children }) => {
             }
             return combined;
           });
+        }
+        // Sync notices from Supabase so all devices stay updated
+        if (nRes.data && nRes.data.length > 0) {
+          setNotices(nRes.data.map(normalizeKeys));
         }
       } catch (e) {}
     };
@@ -299,6 +310,13 @@ export const AppProvider = ({ children }) => {
       console.warn('Push subscription notice:', err);
     }
   };
+
+  // Auto register push subscription when user is logged in
+  useEffect(() => {
+    if (currentUser) {
+      registerPushSubscription(currentUser);
+    }
+  }, [currentUser]);
 
   // Auth actions
   const login = (usuarioInput, claveInput) => {
@@ -741,7 +759,32 @@ export const AppProvider = ({ children }) => {
     setNotices(prev => [newNotice, ...prev]);
 
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('notices').insert([newNotice]).catch(console.error);
+      // Map to the exact column names the notices table has in Supabase
+      const supabasePayload = {
+        id: newNotice.id,
+        titulo: newNotice.titulo,
+        contenido: newNotice.contenido,
+        autor: newNotice.autor,
+        fecha: newNotice.fecha,
+        urgente: newNotice.urgente,
+        destinatario_tipo: newNotice.destinatarioTipo,
+        destinatario_valor: newNotice.destinatarioValor,
+        filtro_estado_cuenta: newNotice.filtroEstadoCuenta,
+        fecha_programada: newNotice.fechaProgramada || null,
+        categoria_destino: newNotice.destinatarioValor
+      };
+
+      const { error: insertErr } = await supabase.from('notices').insert([supabasePayload]);
+      if (insertErr) {
+        // Fallback: try inserting with minimal fields in case table has old schema
+        await supabase.from('notices').insert([{
+          id: newNotice.id,
+          titulo: newNotice.titulo,
+          contenido: newNotice.contenido,
+          autor: newNotice.autor,
+          urgente: newNotice.urgente
+        }]).catch(() => {});
+      }
     }
 
     if (registrarLog) {
@@ -755,12 +798,19 @@ export const AppProvider = ({ children }) => {
 
     // Call Vercel Serverless Function to send Push Notifications
     try {
-      fetch('/api/send-push', {
+      const pushRes = await fetch('/api/send-push', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newNotice)
-      }).catch(err => console.warn('Push error:', err));
-    } catch (e) {}
+      });
+      if (pushRes.ok) {
+        const pushResult = await pushRes.json();
+        return { success: true, notice: newNotice, pushResult };
+      }
+    } catch (err) {
+      console.warn('Push error:', err);
+    }
+    return { success: true, notice: newNotice, pushResult: null };
   };
 
   const deleteNotice = async (noticeId) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Bell, AlertTriangle, Plus, Megaphone, Trash2, Shield, Users, Clock, CheckCircle2, Filter } from 'lucide-react';
+import { Bell, AlertTriangle, Plus, Megaphone, Trash2, Shield, Users, Clock, CheckCircle2, Filter, RotateCcw } from 'lucide-react';
 
 export const NoticeBoard = ({ onOpenModalNotice }) => {
   const { notices, currentUser, getNoticesForUser, deleteNotice } = useApp();
@@ -27,7 +27,7 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
 
         {canPublish && (
           <button
-            onClick={onOpenModalNotice}
+            onClick={() => onOpenModalNotice()}
             className="bg-purple-600 hover:bg-purple-700 text-white font-black px-4 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all cursor-pointer shrink-0"
           >
             <Megaphone className="w-4.5 h-4.5" /> Enviar Comunicado Masivo
@@ -107,14 +107,26 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
               </div>
 
               {/* Footer */}
-              <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 font-medium flex items-center justify-between">
+              <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 font-medium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-1.5">
                   <Megaphone className="w-4 h-4 text-purple-400" /> Emitido por: <strong className="text-white font-bold">{notice.autor}</strong>
                 </div>
 
-                <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 font-semibold">
-                  <CheckCircle2 className="w-3 h-3" /> Notificación Push Transmitida
-                </span>
+                <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                  {canPublish && (
+                    <button
+                      onClick={() => onOpenModalNotice(notice)}
+                      className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                      title="Reutilizar este mensaje y modificar destinatario si es necesario"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Reutilizar Aviso
+                    </button>
+                  )}
+
+                  <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 font-semibold">
+                    <CheckCircle2 className="w-3 h-3" /> Push Transmitido
+                  </span>
+                </div>
               </div>
             </div>
           ))

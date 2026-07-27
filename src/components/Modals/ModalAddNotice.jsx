@@ -1,22 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { DISCIPLINAS_CONFIG } from '../DashboardSocios';
-import { X, Megaphone, Send, RotateCcw, Clock, AlertTriangle, Filter, Users, ShieldAlert } from 'lucide-react';
+import { X, Megaphone, Send, RotateCcw, Clock, AlertTriangle, Filter, Users, Check, AlertCircle } from 'lucide-react';
 
-export const ModalAddNotice = ({ onClose }) => {
+export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
   const { addNotice, notices, currentUser } = useApp();
 
   const [formData, setFormData] = useState({
-    titulo: '',
-    contenido: '',
-    destinatarioTipo: 'todos', // todos | disciplina | categoria | subcategoria
-    destinatarioValor: 'Todos los Socios',
-    filtroEstadoCuenta: 'todos', // todos | al_dia | pendiente
-    urgente: false,
-    fechaProgramada: ''
+    titulo: initialNotice?.titulo || '',
+    contenido: initialNotice?.contenido || '',
+    destinatarioTipo: initialNotice?.destinatarioTipo || 'todos',
+    destinatarioValor: initialNotice?.destinatarioValor || initialNotice?.categoriaDestino || 'Todos los Socios',
+    filtroEstadoCuenta: initialNotice?.filtroEstadoCuenta || 'todos',
+    urgente: Boolean(initialNotice?.urgente),
+    fechaProgramada: initialNotice?.fechaProgramada || ''
   });
 
-  const [selectedNoticeToReuse, setSelectedNoticeToReuse] = useState('');
+  const [selectedNoticeToReuse, setSelectedNoticeToReuse] = useState(initialNotice?.id || '');
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
+
+  useEffect(() => {
+    if (initialNotice) {
+      setFormData({
+        titulo: initialNotice.titulo || '',
+        contenido: initialNotice.contenido || '',
+        destinatarioTipo: initialNotice.destinatarioTipo || 'todos',
+        destinatarioValor: initialNotice.destinatarioValor || initialNotice.categoriaDestino || 'Todos los Socios',
+        filtroEstadoCuenta: initialNotice.filtroEstadoCuenta || 'todos',
+        urgente: Boolean(initialNotice.urgente),
+        fechaProgramada: initialNotice.fechaProgramada || ''
+      });
+    }
+  }, [initialNotice]);
 
   // Handle auto-population when reusing a previous notice
   const handleReuseNotice = (noticeId) => {
@@ -37,13 +53,22 @@ export const ModalAddNotice = ({ onClose }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addNotice({
+    setSending(true);
+    setSendResult(null);
+
+    const res = await addNotice({
       ...formData,
       categoriaDestino: formData.destinatarioValor
     });
-    onClose();
+
+    setSending(false);
+    setSendResult(res);
+
+    setTimeout(() => {
+      onClose();
+    }, 2200);
   };
 
   return (
@@ -57,7 +82,9 @@ export const ModalAddNotice = ({ onClose }) => {
               <Megaphone className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">Crear Comunicado u Aviso</h3>
+              <h3 className="font-extrabold text-white text-base">
+                {initialNotice ? 'Reutilizar / Modificar Comunicado' : 'Crear Comunicado u Aviso'}
+              </h3>
               <p className="text-[11px] text-slate-400">Difusión masiva + Push Notification en celulares</p>
             </div>
           </div>
@@ -69,8 +96,26 @@ export const ModalAddNotice = ({ onClose }) => {
           </button>
         </div>
 
+        {/* Feedback Alert Result */}
+        {sendResult && (
+          <div className="bg-emerald-500/20 border border-emerald-500/40 p-3.5 rounded-2xl text-emerald-300 text-xs font-bold space-y-1 animate-fadeIn">
+            <div className="flex items-center gap-2 text-sm">
+              <Check className="w-4 h-4 text-emerald-400" /> ¡Comunicado publicado exitosamente!
+            </div>
+            {sendResult.pushResult ? (
+              <p className="text-[11px] text-emerald-400/90 font-mono">
+                📱 Push Notifications enviadas: {sendResult.pushResult.sentCount} de {sendResult.pushResult.targetedSubscriptions} dispositivos destinatarios.
+              </p>
+            ) : (
+              <p className="text-[11px] text-amber-300 font-mono">
+                ⚠️ Recordá ejecutar el SQL de la tabla push_subscriptions en Supabase para habilitar los push nativos en el celular.
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Option to Reuse Previous Notices */}
-        {notices.length > 0 && (
+        {notices.length > 0 && !initialNotice && (
           <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 space-y-1.5 text-xs">
             <label className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5">
               <RotateCcw className="w-3.5 h-3.5" /> Reutilizar un Aviso Anterior:
@@ -108,7 +153,7 @@ export const ModalAddNotice = ({ onClose }) => {
           {/* Destinatarios (Jerárquico) */}
           <div className="space-y-3 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
             <label className="block text-amber-400 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5" /> Segmentación de Destinatarios (Targeting)
+              <Users className="w-3.5 h-3.5" /> Segmentación de Destinatarios (Modificar si es necesario)
             </label>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -221,7 +266,7 @@ export const ModalAddNotice = ({ onClose }) => {
 
             <div>
               <label className="block text-[11px] text-slate-400 font-semibold mb-1 flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5 text-blue-400" /> Programar Envío Automático (Opcional):
+                <Clock className="w-3.5 h-3.5 text-blue-400" /> Programar Envío (Opcional):
               </label>
               <input
                 type="datetime-local"
@@ -243,10 +288,11 @@ export const ModalAddNotice = ({ onClose }) => {
             </button>
             <button
               type="submit"
-              className="w-2/3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-2.5 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
+              disabled={sending}
+              className="w-2/3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-2.5 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
-              Difundir + Enviar Push Notification
+              {sending ? 'Difundiendo...' : (initialNotice ? 'Reutilizar y Difundir' : 'Difundir + Push Notification')}
             </button>
           </div>
 

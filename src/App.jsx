@@ -28,6 +28,7 @@ function MainApp() {
   const [modalStaffOpen, setModalStaffOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
   const [modalNoticeOpen, setModalNoticeOpen] = useState(false);
+  const [noticeToReuse, setNoticeToReuse] = useState(null);
 
   // Cash payment modal triggered from global Ficha Socio
   const [cashModalSocio, setCashModalSocio] = useState(null);
@@ -92,7 +93,14 @@ function MainApp() {
       case 'calendar':
         return <CalendarModule onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'notices':
-        return <NoticeBoard onOpenModalNotice={() => setModalNoticeOpen(true)} />;
+        return (
+          <NoticeBoard 
+            onOpenModalNotice={(notice = null) => {
+              setNoticeToReuse(notice);
+              setModalNoticeOpen(true);
+            }} 
+          />
+        );
       case 'finance':
         return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
@@ -219,7 +227,15 @@ function MainApp() {
 
       {modalStaffOpen && <ModalAddUser onClose={() => setModalStaffOpen(false)} />}
       {modalEventOpen && <ModalAddEvent onClose={() => setModalEventOpen(false)} />}
-      {modalNoticeOpen && <ModalAddNotice onClose={() => setModalNoticeOpen(false)} />}
+      {modalNoticeOpen && (
+        <ModalAddNotice 
+          initialNotice={noticeToReuse} 
+          onClose={() => {
+            setModalNoticeOpen(false);
+            setNoticeToReuse(null);
+          }} 
+        />
+      )}
       
       <PWAInstallBanner />
     </div>
