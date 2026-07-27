@@ -90,6 +90,8 @@ export const AppProvider = ({ children }) => {
   });
 
   // Load from Supabase on mount and setup Realtime subscriptions
+  const broadcastChannelRef = React.useRef(null);
+
   useEffect(() => {
     let channel = null;
 
@@ -148,6 +150,26 @@ export const AppProvider = ({ children }) => {
           (payload) => handleRealtimeChange('notices', payload, setNotices)
         )
         .subscribe();
+
+      // Broadcast channel — works WITHOUT needing the notices table to exist in Supabase.
+      // When any client calls addNotice(), it broadcasts to this channel.
+      // All connected clients (other devices/browsers) receive the notice immediately.
+      const bcast = supabase.channel('haedo-notices-broadcast');
+      bcast
+        .on('broadcast', { event: 'notice_created' }, ({ payload }) => {
+          if (!payload?.id) return;
+          const notice = normalizeKeys(payload);
+          setNotices(prev => {
+            if (prev.some(n => n.id === notice.id)) return prev;
+            return [notice, ...prev];
+          });
+        })
+        .on('broadcast', { event: 'notice_deleted' }, ({ payload }) => {
+          if (!payload?.id) return;
+          setNotices(prev => prev.filter(n => n.id !== payload.id));
+        })
+        .subscribe();
+      broadcastChannelRef.current = bcast;
     };
 
     const loadData = async () => {
@@ -238,6 +260,9 @@ export const AppProvider = ({ children }) => {
       clearInterval(syncInterval);
       if (channel && isSupabaseConfigured && supabase) {
         supabase.removeChannel(channel);
+      }
+      if (broadcastChannelRef.current && isSupabaseConfigured && supabase) {
+        supabase.removeChannel(broadcastChannelRef.current);
       }
     };
   }, []);
@@ -785,6 +810,17 @@ export const AppProvider = ({ children }) => {
           urgente: newNotice.urgente
         }]).catch(() => {});
       }
+
+      // ✅ BROADCAST: Send notice to ALL connected devices instantly
+      // This works regardless of whether the DB insert succeeded.
+      // Every device subscribed to 'haedo-notices-broadcast' will receive it.
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.send({
+          type: 'broadcast',
+          event: 'notice_created',
+          payload: newNotice
+        }).catch(() => {});
+      }
     }
 
     if (registrarLog) {
@@ -817,6 +853,14 @@ export const AppProvider = ({ children }) => {
     setNotices(prev => prev.filter(n => n.id !== noticeId));
     if (isSupabaseConfigured && supabase) {
       await supabase.from('notices').delete().eq('id', noticeId).catch(console.error);
+      // Broadcast deletion to all connected devices
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.send({
+          type: 'broadcast',
+          event: 'notice_deleted',
+          payload: { id: noticeId }
+        }).catch(() => {});
+      }
     }
   };
 
