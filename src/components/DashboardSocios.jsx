@@ -189,9 +189,9 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   // Global total stats
   const globalStats = useMemo(() => getStats(socios), [socios]);
 
-  // Staff members list (Coach, Contador, Admin)
+  // Staff members list (Coach, Contador, Admin - excluding Willy)
   const staffMembers = useMemo(() => {
-    return users.filter(u => u.rol === 'admin' || u.rol === 'contador' || u.rol === 'coach');
+    return users.filter(u => (u.rol === 'admin' || u.rol === 'contador' || u.rol === 'coach') && u.usuario !== 'WILLY' && u.nombre !== 'Willy');
   }, [users]);
 
   const [showStaffSection, setShowStaffSection] = useState(false);
@@ -460,8 +460,13 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
           <div className="p-4 bg-slate-950 border-t border-slate-800/80 space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {staffMembers.map(member => (
-                <div key={member.id} className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center gap-3 hover:border-amber-500/30 transition-all shadow-md">
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-sm shrink-0 overflow-hidden">
+                <div 
+                  key={member.id} 
+                  className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center gap-3 hover:border-amber-500/50 transition-all shadow-md cursor-pointer group"
+                  onClick={() => openFichaSocio(member)}
+                  title="Haz clic para ver Ficha / Modificar Datos"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-sm shrink-0 overflow-hidden group-hover:border-amber-400 transition-colors">
                     {member.fotoUrl || member.foto ? (
                       <img src={member.fotoUrl || member.foto} alt="" className="w-full h-full object-cover" />
                     ) : (
@@ -469,7 +474,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="font-extrabold text-white text-xs truncate">
+                    <div className="font-extrabold text-white text-xs truncate group-hover:text-amber-400 transition-colors">
                       {member.nombre} {member.apellido}
                     </div>
                     <div className="flex items-center gap-1.5 mt-0.5">

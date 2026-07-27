@@ -18,7 +18,7 @@ export const MOCK_USERS = [
   {
     id: 'usr-1',
     nombre: 'Willy',
-    apellido: 'Admin',
+    apellido: '',
     usuario: 'WILLY',
     clave: '1234',
     telefono: '11-4567-8901',
