@@ -77,8 +77,9 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
               <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
             </div>
             <div>
-              <span className="font-bold text-base text-white tracking-tight flex items-center gap-1">
-                HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
+              <span className="font-bold text-base text-white tracking-tight flex items-center gap-1.5">
+                <span className="text-white font-bold">HAEDO</span>
+                <span className="text-red-500 font-normal">FUTSAL</span>
               </span>
               <span 
                 className="text-white font-medium tracking-wider -mt-0.5 block"

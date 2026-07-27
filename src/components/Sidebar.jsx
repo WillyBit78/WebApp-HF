@@ -40,8 +40,10 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
           <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
         </div>
         <div className="flex flex-col">
-          <span className="font-bold text-white leading-none">HAEDO</span>
-          <span className="text-[10px] font-normal text-red-500 tracking-widest uppercase">Futsal</span>
+          <span className="font-bold text-sm text-white tracking-tight flex items-center gap-1.5 leading-none mb-0.5">
+            <span className="text-white font-bold">HAEDO</span>
+            <span className="text-red-500 font-normal">FUTSAL</span>
+          </span>
           <span 
             className="text-white font-medium tracking-wider"
             style={{ 

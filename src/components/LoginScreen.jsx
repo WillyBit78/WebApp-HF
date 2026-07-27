@@ -51,8 +51,9 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
           >
             <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.5)]" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-2">
-            HAEDO <span className="text-red-500 font-normal">FUTSAL</span>
+          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-1.5">
+            <span className="text-white font-bold">HAEDO</span>
+            <span className="text-red-500 font-normal">FUTSAL</span>
           </h1>
           <p 
             className="text-white font-medium tracking-wider"
