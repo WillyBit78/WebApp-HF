@@ -11,6 +11,8 @@ import { BottomNav } from './components/BottomNav';
 import { Sidebar } from './components/Sidebar';
 import { LoginScreen } from './components/LoginScreen';
 
+import { DashboardSocios } from './components/DashboardSocios';
+import { ModalFichaSocio } from './components/ModalFichaSocio';
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
 import { ModalAddNotice } from './components/Modals/ModalAddNotice';
@@ -19,13 +21,18 @@ import { PWAInstallBanner } from './components/PWAInstallBanner';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
-  const { currentUser, loadingDb } = useApp();
+  const { currentUser, loadingDb, selectedSocioForModal, closeFichaSocio, registrarPagoEfectivoCoach } = useApp();
   const [currentTab, setCurrentTab] = useState('dashboard'); // dashboard, calendar, notices, finance, users, settings
 
   const [modalUserOpen, setModalUserOpen] = useState(false);
   const [modalStaffOpen, setModalStaffOpen] = useState(false);
   const [modalEventOpen, setModalEventOpen] = useState(false);
   const [modalNoticeOpen, setModalNoticeOpen] = useState(false);
+
+  // Cash payment modal triggered from global Ficha Socio
+  const [cashModalSocio, setCashModalSocio] = useState(null);
+  const [cashMonto, setCashMonto] = useState(15000);
+  const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
   const [hash, setHash] = useState(window.location.hash);
 
@@ -66,7 +73,7 @@ function MainApp() {
     switch (activeRoleId) {
       case 'admin': return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'contador': return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
-      case 'coach': return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
+      case 'coach': return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'socio': return <DashboardSocio />;
       default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} />;
     }
@@ -83,7 +90,7 @@ function MainApp() {
       case 'finance':
         return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
-        return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+        return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'planteles':
         return <DashboardCoach onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} onOpenModalNotice={() => setModalNoticeOpen(true)} />;
       case 'settings':
@@ -94,6 +101,13 @@ function MainApp() {
       default:
         return renderDashboardByRole();
     }
+  };
+
+  const handleConfirmCashPayment = (e) => {
+    e.preventDefault();
+    if (!cashModalSocio) return;
+    registrarPagoEfectivoCoach(cashModalSocio.id, cashMonto, cashConcepto);
+    setCashModalSocio(null);
   };
 
   return (
@@ -120,6 +134,76 @@ function MainApp() {
 
         <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
       </div>
+
+      {/* Global Ficha Personal Modal */}
+      {selectedSocioForModal && (
+        <ModalFichaSocio 
+          socio={selectedSocioForModal} 
+          onClose={closeFichaSocio} 
+          onOpenCashModal={(socio) => {
+            setCashModalSocio(socio);
+            setCashMonto(socio.montoCuota || 15000);
+          }}
+        />
+      )}
+
+      {/* Cash Payment Modal */}
+      {cashModalSocio && (
+        <div className="fixed inset-0 z-60 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <h3 className="font-bold text-white text-base">Cobrar Cuota en Efectivo</h3>
+              <button onClick={() => setCashModalSocio(null)} className="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <form onSubmit={handleConfirmCashPayment} className="space-y-4 text-xs">
+              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                <div className="text-slate-400 text-[10px] font-semibold uppercase">Socio pagador:</div>
+                <div className="font-extrabold text-white text-base mt-0.5">{cashModalSocio.nombre} {cashModalSocio.apellido}</div>
+                <div className="text-[11px] text-amber-400 font-mono">N° Socio: #{cashModalSocio.numeroSocio} • Categoría: {cashModalSocio.categoria}</div>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Monto Recibido ($)</label>
+                <input
+                  type="number"
+                  required
+                  value={cashMonto}
+                  onChange={(e) => setCashMonto(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-bold text-base"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Concepto / Período</label>
+                <input
+                  type="text"
+                  required
+                  value={cashConcepto}
+                  onChange={(e) => setCashConcepto(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-medium"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCashModalSocio(null)}
+                  className="w-1/2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="w-1/2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold py-2.5 rounded-xl text-xs shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  Confirmar Cobro
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {modalUserOpen && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto">

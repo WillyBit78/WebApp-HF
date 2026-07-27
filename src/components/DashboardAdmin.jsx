@@ -42,6 +42,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
     clearLogs,
     registrarPagoEfectivoCoach,
     registrarLog,
+    openFichaSocio,
     currentUser
   } = useApp();
 
@@ -393,7 +394,13 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
                         {(u.nombre || u.nombres || 'S').charAt(0)}
                       </div>
                       <div>
-                        <div>{u.nombre || u.nombres || 'Socio'} {u.apellido || ''}</div>
+                        <button
+                          onClick={() => openFichaSocio(u)}
+                          className="font-bold text-white hover:text-amber-400 hover:underline transition-colors text-left cursor-pointer"
+                          title="Ver Ficha Personal del Socio"
+                        >
+                          {u.nombre || u.nombres || 'Socio'} {u.apellido || ''}
+                        </button>
                         <div className="text-[10px] text-slate-500 font-normal">{u.email || u.telefono || 'Sin datos de contacto'}</div>
                       </div>
                     </td>

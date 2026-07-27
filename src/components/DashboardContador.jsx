@@ -44,7 +44,8 @@ export const DashboardContador = ({ onOpenModalUser }) => {
     updatePaymentStatus,
     auditoriaFilterStatus,
     setAuditoriaFilterStatus,
-    markNotificationsAsViewed
+    markNotificationsAsViewed,
+    openFichaSocio
   } = useApp();
 
   const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
@@ -1012,7 +1013,14 @@ export const DashboardContador = ({ onOpenModalUser }) => {
                       className="bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 p-3 rounded-xl flex items-center justify-between gap-3 text-xs transition-all"
                     >
                       <div>
-                        <div className="font-bold text-white text-sm">{u.nombre} {u.apellido}</div>
+                        <button
+                          type="button"
+                          onClick={() => openFichaSocio(u)}
+                          className="font-bold text-white hover:text-amber-400 hover:underline text-sm text-left transition-colors cursor-pointer"
+                          title="Ver Ficha Personal del Socio"
+                        >
+                          {u.nombre} {u.apellido}
+                        </button>
                         <div className="text-slate-400 text-[11px]">
                           N° Socio: #{u.numeroSocio} • Estado: <span className={u.estadoCuota === 'al_dia' ? 'text-emerald-400 font-semibold' : 'text-amber-400 font-semibold'}>{(u.estadoCuota || '').replace('_', ' ').toUpperCase()}</span>
                         </div>

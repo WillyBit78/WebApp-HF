@@ -703,11 +703,29 @@ export const AppProvider = ({ children }) => {
   const totalGastosGlobal = gastosCuotasMov + gastosTorneosTotal;
   const balanceGeneralTotal = saldoCajaCuotas + saldoCajaTorneos;
 
+  // Ficha Personal del Socio Modal State
+  const [selectedSocioForModal, setSelectedSocioForModal] = useState(null);
+
+  const openFichaSocio = (socioOrId) => {
+    if (!socioOrId) return;
+    if (typeof socioOrId === 'object') {
+      setSelectedSocioForModal(socioOrId);
+    } else {
+      const found = users.find(u => u.id === socioOrId || u.numeroSocio === Number(socioOrId));
+      if (found) setSelectedSocioForModal(found);
+    }
+  };
+
+  const closeFichaSocio = () => {
+    setSelectedSocioForModal(null);
+  };
+
   return (
     <AppContext.Provider value={{
       currentUser, login, logout,
       users, payments, events, notices, movimientosFinancieros, logs, mercadoPagoTransfers,
       loadingDb,
+      selectedSocioForModal, openFichaSocio, closeFichaSocio,
       auditoriaFilterStatus, setAuditoriaFilterStatus, openAuditoriaStatus,
       viewedNotifications, markNotificationsAsViewed,
       addMovimientoFinanciero, deleteMovimientoFinanciero,

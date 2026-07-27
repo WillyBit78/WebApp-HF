@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalNotice }) => {
-  const { users, events, notices, currentUser, deleteUser, registrarPagoEfectivoCoach } = useApp();
+  const { users, events, notices, currentUser, deleteUser, registrarPagoEfectivoCoach, openFichaSocio } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -153,7 +153,13 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
                 {filteredUsers.map(u => (
                   <tr key={u.id} className="hover:bg-slate-800/50">
                     <td className="p-3">
-                      <div className="font-bold text-white">{u.nombre || u.nombres || 'Socio'} {u.apellido || ''}</div>
+                      <button
+                        onClick={() => openFichaSocio(u)}
+                        className="font-bold text-white hover:text-amber-400 hover:underline transition-colors text-left cursor-pointer"
+                        title="Ver Ficha Personal del Socio"
+                      >
+                        {u.nombre || u.nombres || 'Socio'} {u.apellido || ''}
+                      </button>
                       <div className="text-[10px] text-slate-400">N° Socio: #{u.numeroSocio}</div>
                     </td>
                     <td className="p-3">
@@ -192,9 +198,13 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
                       )}
 
                       <button
-                        onClick={() => deleteUser(u.id)}
-                        className="p-1.5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg"
-                        title="Baja de jugador"
+                        onClick={() => {
+                          if (window.confirm(`¿Estás seguro de dar de baja al socio ${u.nombre} ${u.apellido}? Esta acción no se puede deshacer.`)) {
+                            deleteUser(u.id);
+                          }
+                        }}
+                        className="p-1.5 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg cursor-pointer"
+                        title="Baja de jugador (pide confirmación)"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
