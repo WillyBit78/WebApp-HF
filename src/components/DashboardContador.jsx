@@ -97,6 +97,53 @@ export const DashboardContador = ({ onOpenModalUser }) => {
   const [filterTipo, setFilterTipo] = useState('todos');
   const [filterResponsable, setFilterResponsable] = useState('todos');
 
+  // Date range filter — defaults to current month
+  const now = new Date();
+  const firstOfMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+  const lastOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const lastOfMonthStr = `${lastOfMonth.getFullYear()}-${String(lastOfMonth.getMonth() + 1).padStart(2, '0')}-${String(lastOfMonth.getDate()).padStart(2, '0')}`;
+  const [dateFrom, setDateFrom] = useState(firstOfMonth);
+  const [dateTo, setDateTo]   = useState(lastOfMonthStr);
+
+  // Helper: check if a date string (YYYY-MM-DD) falls within the selected range
+  const inRange = (dateStr) => {
+    if (!dateStr) return true;
+    const d = dateStr.substring(0, 10);
+    if (dateFrom && d < dateFrom) return false;
+    if (dateTo && d > dateTo) return false;
+    return true;
+  };
+
+  // Filtered movimientos for historial (includes date + caja + tipo + responsable)
+  const filteredMovimientos = movimientosFinancieros.filter(m => {
+    if (!inRange(m.fecha)) return false;
+    if (filterCaja !== 'todas' && m.caja !== filterCaja) return false;
+    if (filterTipo !== 'todos' && m.tipo !== filterTipo) return false;
+    if (filterResponsable !== 'todos' && m.responsable && !m.responsable.toLowerCase().includes(filterResponsable.toLowerCase())) return false;
+    return true;
+  });
+
+  // Financial stats filtered by the selected date range
+  const paymentsInRange = payments.filter(p => p.estado === 'aprobado' && inRange(p.fecha || p.created_at));
+  const totalRecaudadoFiltrado = paymentsInRange.reduce((sum, p) => sum + Number(p.monto), 0);
+
+  const movCuotasIngreso = movimientosFinancieros.filter(m => m.caja === 'cuotas' && m.tipo === 'ingreso' && inRange(m.fecha));
+  const movCuotasGasto   = movimientosFinancieros.filter(m => m.caja === 'cuotas' && m.tipo === 'gasto' && inRange(m.fecha));
+  const movTorneosIngreso = movimientosFinancieros.filter(m => m.caja === 'torneos' && m.tipo === 'ingreso' && inRange(m.fecha));
+  const movTorneosGasto   = movimientosFinancieros.filter(m => m.caja === 'torneos' && m.tipo === 'gasto' && inRange(m.fecha));
+
+  const ingCuotas  = totalRecaudadoFiltrado + movCuotasIngreso.reduce((s, m) => s + Number(m.monto), 0);
+  const gastCuotas = movCuotasGasto.reduce((s, m) => s + Number(m.monto), 0);
+  const saldoCuotas = ingCuotas - gastCuotas;
+
+  const ingTorneos  = movTorneosIngreso.reduce((s, m) => s + Number(m.monto), 0);
+  const gastTorneos = movTorneosGasto.reduce((s, m) => s + Number(m.monto), 0);
+  const saldoTorneos = ingTorneos - gastTorneos;
+
+  const totalIngresos = ingCuotas + ingTorneos;
+  const totalGastos   = gastCuotas + gastTorneos;
+  const balanceTotal  = saldoCuotas + saldoTorneos;
+
   // Scanner & Auto-match state
   const [scanningId, setScanningId] = useState(null);
   const [matchResult, setMatchResult] = useState(null);
@@ -179,14 +226,10 @@ export const DashboardContador = ({ onOpenModalUser }) => {
     return p.estado === filterStatus;
   });
 
-  const filteredMovimientos = movimientosFinancieros.filter(m => {
-    if (filterCaja !== 'todas' && m.caja !== filterCaja) return false;
-    if (filterTipo !== 'todos' && m.tipo !== filterTipo) return false;
-    if (filterResponsable !== 'todos' && m.responsable && !m.responsable.toLowerCase().includes(filterResponsable.toLowerCase())) return false;
-    return true;
-  });
-
   const pendientesRevCount = payments.filter(p => p.estado === 'en_revision').length;
+
+  // Month label for the date filter display
+  const monthLabel = new Date(dateFrom + 'T12:00:00').toLocaleDateString('es-AR', { month: 'long', year: 'numeric' });
 
   return (
     <div className="space-y-6">
@@ -196,7 +239,7 @@ export const DashboardContador = ({ onOpenModalUser }) => {
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Finanzas</h2>
         </div>
 
-        {/* 3 Main Sub-Tabs */}
+        {/* Main Sub-Tabs + Precios Cuotas */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setActiveTab('control_financiero')}
@@ -207,7 +250,7 @@ export const DashboardContador = ({ onOpenModalUser }) => {
             }`}
           >
             <Scale className="w-4 h-4" />
-            Balance General & Cajas
+            Balance General
           </button>
 
           <button
@@ -243,6 +286,15 @@ export const DashboardContador = ({ onOpenModalUser }) => {
               </span>
             )}
           </button>
+
+          {/* Precios Cuotas button — moved here from inside Balance view */}
+          <button
+            onClick={() => setShowCuotasModal(true)}
+            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
+          >
+            <DollarSign className="w-4 h-4" />
+            Precios Cuotas por Categoría
+          </button>
         </div>
       </div>
 
@@ -251,34 +303,59 @@ export const DashboardContador = ({ onOpenModalUser }) => {
         <div className="space-y-6">
           {/* Balance General Banner */}
           <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-xl relative overflow-hidden">
+            {/* Date Range Filter */}
+            <div className="flex flex-wrap items-center gap-3 mb-5 pb-4 border-b border-slate-800">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-amber-400" /> Período:
+              </span>
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={e => setDateFrom(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-mono outline-none focus:border-amber-400"
+                />
+                <span className="text-slate-500 text-xs">al</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={e => setDateTo(e.target.value)}
+                  className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-mono outline-none focus:border-amber-400"
+                />
+              </div>
+              <span className="text-[11px] text-amber-400 font-semibold capitalize bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-lg">
+                {monthLabel}
+              </span>
+              <button
+                onClick={() => { setDateFrom(firstOfMonth); setDateTo(lastOfMonthStr); }}
+                className="text-[11px] text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 py-1 rounded-lg transition-colors"
+              >
+                Mes actual
+              </button>
+            </div>
+
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
               <div>
                 <span className="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
-                  <Scale className="w-4 h-4" /> BALANCE GENERAL TOTAL DEL CLUB
+                  <Scale className="w-4 h-4" /> BALANCE GENERAL DEL CLUB
                 </span>
                 <div className={`text-3xl sm:text-4xl font-black ${
-                  stats.balanceGeneralTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  balanceTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'
                 }`}>
-                  ${stats.balanceGeneralTotal.toLocaleString('es-AR')}
+                  ${balanceTotal.toLocaleString('es-AR')}
                 </div>
                 <div className="text-xs text-slate-400 mt-1 flex items-center gap-3">
                   <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> Ingresos Totales: ${stats.totalIngresosGlobal.toLocaleString('es-AR')}
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Ingresos: ${totalIngresos.toLocaleString('es-AR')}
                   </span>
                   <span className="text-slate-600">•</span>
                   <span className="text-rose-400 font-semibold flex items-center gap-1">
-                    <ArrowDownRight className="w-3.5 h-3.5" /> Egreso Total: ${stats.totalGastosGlobal.toLocaleString('es-AR')}
+                    <ArrowDownRight className="w-3.5 h-3.5" /> Egresos: ${totalGastos.toLocaleString('es-AR')}
                   </span>
                 </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowCuotasModal(true)}
-                  className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-red-500/20"
-                >
-                  <DollarSign className="w-4 h-4" /> Precios Cuotas por Categoría
-                </button>
                 <button
                   onClick={() => setShowModalMov(true)}
                   className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
@@ -291,19 +368,16 @@ export const DashboardContador = ({ onOpenModalUser }) => {
 
           {/* Las 2 Cajas Separadas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* CAJA 1: CUOTAS MENSUALES */}
+            {/* CAJA 1: CUOTAS */}
             <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/20 border border-amber-500/30 p-5 rounded-2xl shadow-xl space-y-4">
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4" /> CAJA 1: CUOTAS MENSUALES
+                    <Building2 className="w-4 h-4" /> CAJA 1: CUOTAS
                   </span>
                   <div className="text-2xl font-black text-white mt-1">
-                    ${stats.saldoCajaCuotas.toLocaleString('es-AR')}
+                    ${saldoCuotas.toLocaleString('es-AR')}
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    Recaudación social & mantenimiento de sede
-                  </span>
                 </div>
                 <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
                   <DollarSign className="w-6 h-6" />
@@ -313,28 +387,25 @@ export const DashboardContador = ({ onOpenModalUser }) => {
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800 text-xs">
                 <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="text-slate-400 text-[10px] uppercase font-semibold">Total Ingresos Cuotas</div>
-                  <div className="text-emerald-400 font-bold text-sm mt-0.5">${stats.ingresosCuotasTotal.toLocaleString('es-AR')}</div>
+                  <div className="text-emerald-400 font-bold text-sm mt-0.5">${ingCuotas.toLocaleString('es-AR')}</div>
                 </div>
                 <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="text-slate-400 text-[10px] uppercase font-semibold">Gastos Operativos</div>
-                  <div className="text-rose-400 font-bold text-sm mt-0.5">${stats.gastosCuotasMov.toLocaleString('es-AR')}</div>
+                  <div className="text-rose-400 font-bold text-sm mt-0.5">${gastCuotas.toLocaleString('es-AR')}</div>
                 </div>
               </div>
             </div>
 
-            {/* CAJA 2: TORNEOS & LIGA */}
+            {/* CAJA 2: TORNEOS */}
             <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/20 border border-blue-500/30 p-5 rounded-2xl shadow-xl space-y-4">
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Trophy className="w-4 h-4" /> CAJA 2: TORNEOS & COMPETENCIAS
+                    <Trophy className="w-4 h-4" /> CAJA 2: TORNEOS
                   </span>
                   <div className="text-2xl font-black text-white mt-1">
-                    ${stats.saldoCajaTorneos.toLocaleString('es-AR')}
+                    ${saldoTorneos.toLocaleString('es-AR')}
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-0.5 block">
-                    Inscripciones a ligas, arbitrajes y planillas
-                  </span>
                 </div>
                 <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
                   <Trophy className="w-6 h-6" />
@@ -344,11 +415,11 @@ export const DashboardContador = ({ onOpenModalUser }) => {
               <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800 text-xs">
                 <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="text-slate-400 text-[10px] uppercase font-semibold">Ingresos Torneos</div>
-                  <div className="text-emerald-400 font-bold text-sm mt-0.5">${stats.ingresosTorneosTotal.toLocaleString('es-AR')}</div>
+                  <div className="text-emerald-400 font-bold text-sm mt-0.5">${ingTorneos.toLocaleString('es-AR')}</div>
                 </div>
                 <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800">
                   <div className="text-slate-400 text-[10px] uppercase font-semibold">Gastos Torneos/Arbitraje</div>
-                  <div className="text-rose-400 font-bold text-sm mt-0.5">${stats.gastosTorneosTotal.toLocaleString('es-AR')}</div>
+                  <div className="text-rose-400 font-bold text-sm mt-0.5">${gastTorneos.toLocaleString('es-AR')}</div>
                 </div>
               </div>
             </div>
@@ -359,29 +430,18 @@ export const DashboardContador = ({ onOpenModalUser }) => {
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <h3 className="font-bold text-white text-base flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-amber-400" />
-                Historial de Movimientos de Caja
+                Historial de Movimientos
               </h3>
 
               <div className="flex flex-wrap gap-2 text-xs">
-                <select
-                  value={filterResponsable}
-                  onChange={(e) => setFilterResponsable(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 text-amber-300 px-3 py-1.5 rounded-xl font-bold"
-                >
-                  <option value="todos">Todos los Coaches / Responsables</option>
-                  <option value="Diego Santi">Diego Santi (Coach DT)</option>
-                  <option value="Mariana">Mariana López (Contador)</option>
-                  <option value="Gonzalo">Gonzalo Martínez (Admin)</option>
-                </select>
-
                 <select
                   value={filterCaja}
                   onChange={(e) => setFilterCaja(e.target.value)}
                   className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl font-medium"
                 >
                   <option value="todas">Todas las Cajas</option>
-                  <option value="cuotas">Caja Cuotas</option>
-                  <option value="torneos">Caja Torneos</option>
+                  <option value="cuotas">CUOTAS</option>
+                  <option value="torneos">TORNEOS</option>
                 </select>
 
                 <select
@@ -421,10 +481,10 @@ export const DashboardContador = ({ onOpenModalUser }) => {
                       <tr key={m.id} className="hover:bg-slate-800/40 transition-colors">
                         <td className="p-3 text-slate-400 font-mono">{m.fecha}</td>
                         <td className="p-3 font-semibold">
-                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase ${
+                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
                             m.caja === 'cuotas' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
                           }`}>
-                            {m.caja === 'cuotas' ? 'Caja Cuotas' : 'Caja Torneos'}
+                            {m.caja === 'cuotas' ? 'CUOTAS' : 'TORNEOS'}
                           </span>
                         </td>
                         <td className="p-3">
@@ -892,7 +952,7 @@ export const DashboardContador = ({ onOpenModalUser }) => {
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="font-bold text-white text-base flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-amber-400" />
-                Precios de Cuotas por Categoría Madre
+                Precios de Cuotas por Categoría
               </h3>
               <button onClick={() => setShowCuotasModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
