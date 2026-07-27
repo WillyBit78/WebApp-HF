@@ -19,13 +19,25 @@ export class ErrorBoundary extends React.Component {
     } catch (e) {}
   }
 
-  handleReset = () => {
+  handleReset = async () => {
     try {
       localStorage.clear();
       sessionStorage.clear();
     } catch (e) {}
+    if ('serviceWorker' in navigator) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        for (const r of regs) { await r.unregister(); }
+      } catch (e) {}
+    }
+    if ('caches' in window) {
+      try {
+        const names = await caches.keys();
+        for (const name of names) { await caches.delete(name); }
+      } catch (e) {}
+    }
     this.setState({ hasError: false, error: null });
-    window.location.href = window.location.origin + window.location.pathname;
+    window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
   };
 
   render() {

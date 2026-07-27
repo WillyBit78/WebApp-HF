@@ -33,8 +33,7 @@
   <body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-slate-950">
     <div id="root"></div>
     <script>
-      // Nuclear cleanup: unregister old SWs, purge all caches & localStorage
-      // This runs from index.html BEFORE any JS bundle loads
+      // Nuclear cleanup & quota protection: runs BEFORE any JS bundle loads
       (function() {
         try { localStorage.clear(); } catch(e) {}
         try { sessionStorage.clear(); } catch(e) {}
@@ -48,6 +47,23 @@
             names.forEach(function(name) { caches.delete(name); });
           });
         }
+        // Monkey-patch setItem to prevent QuotaExceededError from breaking the app
+        var origLocal = localStorage.setItem;
+        localStorage.setItem = function(k, v) {
+          try { origLocal.call(localStorage, k, v); }
+          catch(err) {
+            try { localStorage.clear(); origLocal.call(localStorage, k, v); }
+            catch(err2) { console.warn('Ignorado error de cuota en localStorage:', k); }
+          }
+        };
+        var origSession = sessionStorage.setItem;
+        sessionStorage.setItem = function(k, v) {
+          try { origSession.call(sessionStorage, k, v); }
+          catch(err) {
+            try { sessionStorage.clear(); origSession.call(sessionStorage, k, v); }
+            catch(err2) { console.warn('Ignorado error de cuota en sessionStorage:', k); }
+          }
+        };
       })();
     </script>
     <script type="module" src="/src/main.jsx"></script>

@@ -1,29 +1,17 @@
-// Service Worker para PWA Haedo Futsal
-const CACHE_NAME = 'haedo-futsal-v4'; // v4: Network First para todo
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json'
-];
+// Service Worker v5 - Network Only para HTML/JS/CSS, sin cachés problemáticos
+const CACHE_NAME = 'haedo-futsal-v5-clean';
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting(); // Fuerza a que el SW se active inmediatamente
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
-    })
-  );
+  self.skipWaiting(); // Fuerza a que el SW v5 tome el control inmediatamente
 });
 
 self.addEventListener('activate', (event) => {
-  // Limpiar TODOS los cachés viejos
+  // Limpiar TODOS los cachés de versiones anteriores (v1, v2, v3, v4, etc.)
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
+          return caches.delete(cacheName);
         })
       );
     }).then(() => self.clients.claim())
@@ -31,7 +19,7 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Web Share Target Interception
+  // Web Share Target Interception para comprobantes
   if (event.request.method === 'POST' && event.request.url.includes('/share-receipt')) {
     event.respondWith((async () => {
       try {
@@ -58,22 +46,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // TODAS las peticiones: Network First, fallback to Cache
-  // Esto garantiza que los JS/CSS/imágenes nuevos se carguen siempre del servidor
+  // Para todo lo demás: consultar siempre al servidor (Network Only / No Cache in SW)
+  // Dejamos que el navegador maneje su propio HTTP cache de Vercel (ETags/max-age)
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Cachear la respuesta fresca para uso offline
-        if (response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      })
+    fetch(event.request).catch(() => {
+      return caches.match(event.request);
+    })
   );
 });
