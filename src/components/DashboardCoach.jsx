@@ -178,16 +178,18 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
                       )}
                     </td>
                     <td className="p-3 text-right flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setCashModalSocio(u);
-                          setCashMonto(u.montoCuota || 15000);
-                        }}
-                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
-                        title="Cobrar Cuota en Efectivo"
-                      >
-                        <Banknote className="w-3.5 h-3.5" /> Cobrar Efectivo
-                      </button>
+                      {u.rol === 'socio' && (
+                        <button
+                          onClick={() => {
+                            setCashModalSocio(u);
+                            setCashMonto(u.montoCuota || 15000);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold flex items-center gap-1 transition-all"
+                          title="Cobrar Cuota en Efectivo"
+                        >
+                          <Banknote className="w-3.5 h-3.5" /> Cobrar Efectivo
+                        </button>
+                      )}
 
                       <button
                         onClick={() => deleteUser(u.id)}
@@ -204,39 +206,6 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
           </div>
         </div>
 
-        {/* Upcoming Team Events */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <h3 className="font-bold text-base text-white flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-amber-400" />
-            Próximos Partidos y Prácticas
-          </h3>
-
-          <div className="space-y-3">
-            {filteredEvents.map(evt => (
-              <div 
-                key={evt.id}
-                className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-xs space-y-2"
-              >
-                <div className="flex justify-between items-start">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                    evt.tipo === 'partido' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                  }`}>
-                    {evt.tipo} • {evt.categoria}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-mono">{evt.fecha}</span>
-                </div>
-
-                <div className="font-bold text-white text-sm">{evt.titulo}</div>
-                <div className="text-slate-400 text-[11px]">📍 {evt.lugar}</div>
-                {evt.detalles && (
-                  <div className="text-amber-300/80 text-[10px] bg-slate-900 p-2 rounded border border-slate-800">
-                    ℹ️ {evt.detalles}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
       </div>
 
       {/* Modal Cobro en Efectivo por Coach */}

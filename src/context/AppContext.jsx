@@ -71,7 +71,10 @@ export const AppProvider = ({ children }) => {
     aliasMercadoPago: 'HAEDOFUTSAL.MP',
     cuitClub: '30-71234567-8',
     montoCuotaGeneral: 15000,
-    cuentaTitular: 'Club Social y Deportivo Haedo Futsal'
+    cuentaTitular: 'Club Social y Deportivo Haedo Futsal',
+    cbuCvu: '',
+    mpAccessToken: '',
+    mpPublicKey: ''
   });
 
   // Load from Supabase on mount and setup Realtime subscriptions
