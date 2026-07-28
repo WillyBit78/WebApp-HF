@@ -10,13 +10,29 @@ export const AppProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [events, setEvents] = useState([]);
-  const [notices, setNotices] = useState([]);
+  const [notices, setNotices] = useState(() => {
+    // Load saved notices from localStorage or initialize as empty array
+    try {
+      const savedNotices = localStorage.getItem('app_notices');
+      return savedNotices ? JSON.parse(savedNotices) : [];
+    } catch (e) {
+      console.warn('Failed to load notices from localStorage:', e);
+      return [];
+    }
+  });
   const [movimientosFinancieros, setMovimientosFinancieros] = useState([]);
   const [mercadoPagoTransfers, setMercadoPagoTransfers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
 
-  // Logs are persisted ONLY in Supabase, no localStorage
+  // Save notices to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_notices', JSON.stringify(notices));
+    } catch (e) {
+      console.warn('Failed to save notices to localStorage:', e);
+    }
+  }, [notices]);
 
   // Helper para normalizar claves minúsculas que emite Supabase Realtime (WAL) a las propiedades camelCase de React
   const normalizeKeys = (obj) => {
