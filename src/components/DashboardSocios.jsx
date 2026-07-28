@@ -667,8 +667,8 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                     className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
                                                     title="Ver Ficha Personal"
                                                   >
-                                                    {socio.fotoUrl || socio.foto ? (
-                                                      <img src={socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
+                                                    {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
+                                                      <img src={socio.fotoRostro || socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
                                                     ) : (
                                                       (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
                                                     )}
@@ -691,9 +691,22 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                   @{socio.usuario || 'N/A'}
                                                 </td>
 
-                                                {/* Teléfono */}
+                                                {/* Teléfono / WA Link */}
                                                 <td className="p-2.5 text-slate-300 text-xs">
-                                                  {socio.telefono || 'Sin registrar'}
+                                                  {socio.telefono ? (
+                                                    <a
+                                                      href={`https://wa.me/${(socio.telefono || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
+                                                      title="Abrir chat de WhatsApp"
+                                                    >
+                                                      <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                                      {socio.telefono}
+                                                    </a>
+                                                  ) : (
+                                                    <span className="text-slate-500 italic">Sin registrar</span>
+                                                  )}
                                                 </td>
 
                                                 {/* Estado Cuenta */}

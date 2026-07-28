@@ -53,6 +53,9 @@ export const AppProvider = ({ children }) => {
       if (lower === 'filtroestadocuenta') normalized.filtroEstadoCuenta = obj[key];
       if (lower === 'fechaprogramada') normalized.fechaProgramada = obj[key];
       if (lower === 'categoriadestino') normalized.categoriaDestino = obj[key];
+      if (lower === 'fotorostro') normalized.fotoRostro = obj[key];
+      if (lower === 'fotourl') normalized.fotoUrl = obj[key];
+      if (lower === 'fechanacimiento') normalized.fechaNacimiento = obj[key];
     }
 
     return normalized;
@@ -598,7 +601,11 @@ export const AppProvider = ({ children }) => {
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
             estadoCuota: newUser.estadoCuota || 'pendiente',
-            montoCuota: Number(newUser.montoCuota) || 0
+            montoCuota: Number(newUser.montoCuota) || 0,
+            dni: newUser.dni || '',
+            telefono: newUser.telefono || '',
+            fotoRostro: newUser.fotoRostro || newUser.fotoUrl || '',
+            fotoUrl: newUser.fotoUrl || newUser.fotoRostro || ''
           };
 
           const { error } = await supabase.from('users').insert([dbUserPayload]);

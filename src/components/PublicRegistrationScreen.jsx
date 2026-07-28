@@ -419,36 +419,50 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               </p>
             </div>
 
-            {/* Alerta si el usuario ya existe */}
+            {/* Alerta si el usuario DNI ya existe (PK) */}
             {existingUserFound && (
-              <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-2xl space-y-3 animate-fadeIn">
+              <div className="bg-amber-500/10 border border-amber-500/40 p-4.5 rounded-2xl space-y-3.5 animate-fadeIn">
                 <div className="flex items-start gap-2.5 text-amber-300">
-                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 text-amber-400" />
                   <div className="text-xs space-y-1">
-                    <div className="font-bold text-white text-sm">¡Hola, {existingUserFound.nombre} {existingUserFound.apellido}!</div>
-                    <p>Tu DNI ({dniInput}) ya se encuentra registrado en el padrón del club.</p>
-                    <div className="text-[11px] text-amber-400 font-mono">Usuario de acceso: {existingUserFound.usuario}</div>
+                    <div className="font-bold text-white text-sm">¡DNI Ya Registrado en la App!</div>
+                    <p className="text-slate-300">
+                      Hola <strong>{existingUserFound.nombre} {existingUserFound.apellido}</strong>, tu DNI (<span className="font-mono text-amber-300">{dniInput}</span>) ya figura como clave única en el padrón oficial del club.
+                    </p>
+                    <div className="text-[11px] text-amber-400 font-mono pt-0.5">Usuario asignado: @{existingUserFound.usuario}</div>
                   </div>
                 </div>
 
-                <div className="pt-2 border-t border-amber-500/20 space-y-2">
-                  <label className="block text-[11px] font-bold text-slate-300 uppercase">Ingresá tu Contraseña para acceder:</label>
+                <div className="pt-2.5 border-t border-amber-500/20 space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-300 uppercase">Ingresá tu PIN para acceder directamente:</label>
                   <input
                     type="password"
-                    placeholder="PIN / Contraseña"
+                    placeholder="PIN / Contraseña de acceso (Ej: 1234)"
                     value={existingPassword}
                     onChange={(e) => setExistingPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-amber-400"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-amber-400 font-mono tracking-widest"
                   />
-                  {dniLoginError && <p className="text-[11px] text-rose-400 font-medium">{dniLoginError}</p>}
+                  {dniLoginError && <p className="text-[11px] text-rose-400 font-bold">{dniLoginError}</p>}
                   
-                  <button
-                    type="button"
-                    onClick={handleLoginExistingUser}
-                    className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20"
-                  >
-                    <Lock className="w-4 h-4" /> Ingresar a Mi Estado de Cuenta
-                  </button>
+                  <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleLoginExistingUser}
+                      className="flex-1 bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-400/20 cursor-pointer"
+                    >
+                      <Lock className="w-4 h-4" /> Ingresar Ahora
+                    </button>
+
+                    {onBackToLogin && (
+                      <button
+                        type="button"
+                        onClick={onBackToLogin}
+                        className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1 border border-slate-700 cursor-pointer"
+                      >
+                        <User className="w-4 h-4 text-slate-400" /> Ir a Iniciar Sesión
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -642,13 +656,43 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               </button>
               <button
                 type="button"
-                disabled={!formData.apellido || !formData.nombres || !formData.telefono}
-                onClick={() => setStep(3)}
-                className="flex-1 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20"
+                onClick={() => {
+                  if (!formData.apellido || !formData.nombres) {
+                    alert('Es obligatorio ingresar tu Apellido y Nombres completos.');
+                    return;
+                  }
+                  if (!formData.fechaNacimiento || formData.fechaNacimiento.length < 10) {
+                    alert('Es obligatorio ingresar la Fecha de Nacimiento (DD/MM/AAAA).');
+                    return;
+                  }
+                  if (!formData.telefono) {
+                    alert('Es obligatorio ingresar tu número de Teléfono / WhatsApp.');
+                    return;
+                  }
+                  if (!formData.fotoRostro) {
+                    alert('📸 Es obligatorio tomar o subir una foto del rostro para completar tu ficha de socio.');
+                    return;
+                  }
+                  if (!formData.nombreContacto || !formData.telefonoContacto) {
+                    alert('Es obligatorio completar el Nombre y Teléfono del contacto de emergencia.');
+                    return;
+                  }
+                  setStep(3);
+                }}
+                className={`flex-1 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-all ${
+                  (formData.apellido && formData.nombres && formData.fechaNacimiento && formData.telefono && formData.fotoRostro && formData.nombreContacto && formData.telefonoContacto)
+                    ? 'bg-amber-400 hover:bg-amber-500 text-slate-950 shadow-amber-400/20 cursor-pointer'
+                    : 'bg-slate-800 text-slate-400 border border-slate-700 cursor-pointer'
+                }`}
               >
                 Siguiente: Disciplinas <ArrowRight className="w-4 h-4" />
               </button>
             </div>
+            {(!formData.fotoRostro || !formData.telefono || !formData.fechaNacimiento) && (
+              <p className="text-[11px] text-amber-400/90 text-center font-medium animate-pulse pt-1">
+                ⚠️ Todos los campos son obligatorios (incluida la foto del rostro).
+              </p>
+            )}
           </div>
         )}
 
