@@ -664,16 +664,27 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteUser = async (userId) => {
-    const target = users.find(u => u.id === userId);
-    setUsers(prev => prev.filter(u => u.id !== userId));
+    const target = users.find(u => u.id === userId || u.usuario === userId);
+    const targetId = target?.id || userId;
+    const targetUsuario = target?.usuario;
+    const targetNum = target?.numeroSocio;
+
+    setUsers(prev => prev.filter(u => u.id !== targetId && u.usuario !== targetUsuario));
+
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('users').delete().eq('id', userId);
+        await supabase.from('users').delete().eq('id', targetId);
+        if (targetUsuario) {
+          await supabase.from('users').delete().eq('usuario', targetUsuario);
+        }
+        if (targetNum) {
+          await supabase.from('users').delete().eq('numero_socio', targetNum);
+        }
       } catch (err) {
         console.warn("Supabase delete error:", err);
       }
     }
-    if (target) registrarLog('baja_usuario', `Baja de usuario (${target.nombre})`, `Rol: ${target.rol}`);
+    if (target) registrarLog('baja_usuario', `Baja de usuario (${target.nombre || ''} ${target.apellido || ''})`, `Rol: ${target.rol}`);
   };
 
   // Payments

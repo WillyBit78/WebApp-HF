@@ -26,7 +26,7 @@ import {
   Share2
 } from 'lucide-react';
 
-export const DashboardContador = ({ onOpenModalUser }) => {
+export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_financiero' }) => {
   const { 
     payments, 
     users,
@@ -48,7 +48,11 @@ export const DashboardContador = ({ onOpenModalUser }) => {
     openFichaSocio
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState('control_financiero'); // 'control_financiero' | 'mp_feed' | 'auditoria'
+  const [activeTab, setActiveTab] = useState(initialTab); // 'control_financiero' (Balance General) | 'mp_feed' | 'auditoria'
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleCopyLink = () => {

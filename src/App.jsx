@@ -79,7 +79,7 @@ function MainApp() {
   const renderDashboardByRole = () => {
     switch (activeRoleId) {
       case 'admin': return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
-      case 'contador': return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
+      case 'contador': return <DashboardContador initialTab="control_financiero" onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'coach': return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'socio': return <DashboardSocio />;
       default: return <DashboardAdmin onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
@@ -102,7 +102,7 @@ function MainApp() {
           />
         );
       case 'finance':
-        return <DashboardContador onOpenModalUser={() => setModalUserOpen(true)} />;
+        return <DashboardContador initialTab="control_financiero" onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
         return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'planteles':
