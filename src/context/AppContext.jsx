@@ -338,8 +338,12 @@ export const AppProvider = ({ children }) => {
 
     try {
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BNrO1BAPOhrooMRFovIRtRVXGwd9dxgT1ZWyzEVkPIauISEjh-EZl0MwUwaF1Wn7HJ1lOojM7CKt3he8jXvH-MQ';
-      const registration = await navigator.serviceWorker.ready;
       
+      let registration = await navigator.serviceWorker.getRegistration();
+      if (!registration) {
+        registration = await navigator.serviceWorker.register('/sw.js');
+      }
+
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         const permission = await Notification.requestPermission();
