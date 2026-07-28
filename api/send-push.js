@@ -99,7 +99,10 @@ export default async function handler(req, res) {
       targetSubs.map(async (sub) => {
         try {
           const pushConfig = typeof sub.subscription === 'string' ? JSON.parse(sub.subscription) : sub.subscription;
-          await webpush.sendNotification(pushConfig, pushPayload);
+          await webpush.sendNotification(pushConfig, pushPayload, {
+            TTL: 86400,
+            urgency: urgente ? 'high' : 'normal'
+          });
           sentCount++;
         } catch (err) {
           failedCount++;
