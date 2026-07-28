@@ -211,14 +211,19 @@ export const AppProvider = ({ children }) => {
           if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
           if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
-          if (nRes.data) {
+          if (nRes.data && nRes.data.length > 0) {
             const loadedNotices = nRes.data.map(normalizeKeys);
             setNotices(loadedNotices);
             try { localStorage.setItem('haedo_notices_cache', JSON.stringify(loadedNotices)); } catch (e) {}
           } else {
             try {
               const cached = localStorage.getItem('haedo_notices_cache');
-              if (cached) setNotices(JSON.parse(cached));
+              if (cached) {
+                const parsed = JSON.parse(cached);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                  setNotices(parsed);
+                }
+              }
             } catch (e) {}
           }
           if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
