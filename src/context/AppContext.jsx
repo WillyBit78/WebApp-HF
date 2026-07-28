@@ -938,23 +938,31 @@ export const AppProvider = ({ children }) => {
     const userFeeStatus = targetUser.estadoCuota || 'al_dia';
 
     return notices.filter(n => {
-      // Fee status filter check
+      // 1. Fee status check
       if (n.filtroEstadoCuenta === 'al_dia' && userFeeStatus !== 'al_dia') return false;
-      if (n.filtroEstadoCuenta === 'pendiente' && userFeeStatus === 'al_dia') return false;
+      if (n.filtroEstadoCuenta === 'pendiente' && (userFeeStatus === 'al_dia' || userFeeStatus === 'al-dia')) return false;
 
-      const destVal = (n.destinatarioValor || n.categoriaDestino || '').toLowerCase().trim();
-      const destType = (n.destinatarioTipo || '').toLowerCase();
+      // 2. Global targeting check (Todos)
+      const destValRaw = (n.destinatarioValor || n.categoriaDestino || 'todos').toLowerCase().trim();
+      const destType = (n.destinatarioTipo || 'todos').toLowerCase();
 
-      // Normalize strings removing accents and extra spaces
+      if (
+        destType === 'todos' || 
+        destValRaw === 'todos' || 
+        destValRaw.includes('todos') || 
+        destValRaw === 'todos los socios'
+      ) {
+        return true;
+      }
+
+      // 3. Category/Discipline targeting check
       const normCat = userCat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-      const normDest = destVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const normDest = destValRaw.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-      // Flexible matching (checks word tokens and includes)
       if (normCat.includes(normDest) || normDest.includes(normCat)) return true;
 
-      // Token overlap matching (e.g. "Mayores" in "EDEFI Mayores (+42)")
       const destTokens = normDest.split(/\s+/).filter(t => t.length > 3 && !['futsal', 'futbol', 'bafi', 'edefi'].includes(t));
-      if (destTokens.some(token => normCat.includes(token))) return true;
+      if (destTokens.length > 0 && destTokens.some(token => normCat.includes(token))) return true;
 
       return false;
     });

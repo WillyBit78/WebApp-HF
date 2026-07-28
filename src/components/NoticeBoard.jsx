@@ -25,14 +25,34 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
           <p className="text-xs text-slate-400 mt-1">Información oficial para socios, deportistas, contadores y cuerpo técnico</p>
         </div>
 
-        {canPublish && (
-          <button
-            onClick={() => onOpenModalNotice()}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-black px-4 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all cursor-pointer shrink-0"
-          >
-            <Megaphone className="w-4.5 h-4.5" /> Enviar Comunicado Masivo
-          </button>
-        )}
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {canPublish && (
+            <button
+              onClick={() => onOpenModalNotice()}
+              className="bg-purple-600 hover:bg-purple-700 text-white font-black px-4 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all cursor-pointer"
+            >
+              <Megaphone className="w-4.5 h-4.5" /> Enviar Comunicado Masivo
+            </button>
+          )}
+
+          {typeof window !== 'undefined' && 'Notification' in window && (
+            <button
+              onClick={async () => {
+                if (Notification.permission === 'granted') {
+                  alert('🔔 Las notificaciones Push ya están activadas en este dispositivo.');
+                } else {
+                  const p = await Notification.requestPermission();
+                  if (p === 'granted') alert('✅ Notificaciones Push activadas con éxito.');
+                  else alert('⚠️ Para recibir avisos con la app cerrada, debes habilitar las notificaciones en la configuración del navegador.');
+                }
+              }}
+              className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold px-3 py-3 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
+              title="Verificar Notificaciones Push en este celular"
+            >
+              <Bell className="w-4 h-4 text-amber-400" /> Alertas Push
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Notices List */}
