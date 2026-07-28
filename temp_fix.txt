@@ -1,0 +1,1 @@
+Fix: Added authentication session persistence and notification localStorage
