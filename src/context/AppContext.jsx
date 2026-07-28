@@ -260,12 +260,7 @@ export const AppProvider = ({ children }) => {
           supabase.from('notices').select('*').order('created_at', { ascending: false })
         ]);
         if (uRes.data) {
-          const dbUsers = uRes.data.map(normalizeKeys);
-          setUsers(prev => {
-            const dbIds = new Set(dbUsers.map(u => u.id));
-            const localOnly = prev.filter(u => !dbIds.has(u.id));
-            return [...dbUsers, ...localOnly];
-          });
+          setUsers(uRes.data.map(normalizeKeys));
         }
         if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
         if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
