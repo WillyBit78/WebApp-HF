@@ -10,11 +10,29 @@ export const AppProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [events, setEvents] = useState([]);
-  const [notices, setNotices] = useState([]);
+  const [notices, setNotices] = useState(() => {
+    // Load saved notices from localStorage or initialize as empty array
+    try {
+      const savedNotices = localStorage.getItem('app_notices');
+      return savedNotices ? JSON.parse(savedNotices) : [];
+    } catch (e) {
+      console.warn('Failed to load notices from localStorage:', e);
+      return [];
+    }
+  });
   const [movimientosFinancieros, setMovimientosFinancieros] = useState([]);
   const [mercadoPagoTransfers, setMercadoPagoTransfers] = useState([]);
   const [logs, setLogs] = useState([]);
   const [loadingDb, setLoadingDb] = useState(true);
+
+  // Save notices to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('app_notices', JSON.stringify(notices));
+    } catch (e) {
+      console.warn('Failed to save notices to localStorage:', e);
+    }
+  }, [notices]);
 
   // Logs are persisted ONLY in Supabase, no localStorage
 
@@ -184,11 +202,11 @@ export const AppProvider = ({ children }) => {
             supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
             supabase.from('logs').select('*').order('created_at', { ascending: false })
           ]);
-          if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
-          if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
-          if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
-          if (nRes.data) setNotices(nRes.data.map(normalizeKeys));
-          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
+          if (uRes.data) setUsers(uRes.data.map(normalizeKeys)));
+          if (pRes.data) setPayments(pRes.data.map(normalizeKeys)));
+          if (eRes.data) setEvents(eRes.data.map(normalizeKeys)));
+          if (nRes.data) setNotices(nRes.data.map(normalizeKeys)));
+          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys)));
           if (lRes.data) {
             const dbLogs = lRes.data.map(normalizeKeys);
             setLogs(prev => {
