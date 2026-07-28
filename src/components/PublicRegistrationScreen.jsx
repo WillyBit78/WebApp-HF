@@ -112,11 +112,6 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
     return `${raw.slice(0, 2)}.${raw.slice(2, 5)}.${raw.slice(5)}`;
   };
 
-  const handleDniChange = (e) => {
-    setDniInput(formatDNI(e.target.value));
-    setExistingUserFound(null);
-    setDniLoginError('');
-  };
 
   // Formato Nombres: Formato Título
   const formatNombres = (val) => {
@@ -143,18 +138,42 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
     return `${raw.slice(0, 2)} ${raw.slice(2, 6)}-${raw.slice(6)}`;
   };
 
-  // Verificar DNI
-  const handleCheckDni = (e) => {
-    e.preventDefault();
-    const cleanDni = dniInput.replace(/\D/g, '');
-    if (cleanDni.length < 7) return;
+  const checkDniMatch = (inputVal) => {
+    const cleanDni = (inputVal || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (cleanDni.length < 6) return null;
+    return users.find(u => {
+      const uDni = String(u.dni || u.documentoDni || u.numeroDni || u.documento || '').replace(/\D/g, '').replace(/^0+/, '');
+      return Boolean(uDni && uDni === cleanDni);
+    });
+  };
 
-    const found = users.find(u => u.dni && u.dni.replace(/\D/g, '') === cleanDni);
+  const handleDniChange = (e) => {
+    const formatted = formatDNI(e.target.value);
+    setDniInput(formatted);
+    const found = checkDniMatch(formatted);
     if (found) {
       setExistingUserFound(found);
     } else {
-      setStep(2);
+      setExistingUserFound(null);
     }
+  };
+
+  // Verificar DNI (Primary Key Única)
+  const handleCheckDni = (e) => {
+    if (e) e.preventDefault();
+    const cleanDni = dniInput.replace(/\D/g, '').replace(/^0+/, '');
+    if (cleanDni.length < 6) return;
+
+    const found = checkDniMatch(dniInput);
+    if (found) {
+      setExistingUserFound(found);
+      // BLOQUEADO: No se permite avanzar al formulario si el DNI ya existe en el padrón
+      return;
+    }
+
+    setExistingUserFound(null);
+    setFormData(prev => ({ ...prev, dni: dniInput }));
+    setStep(2);
   };
 
   // Login para socio con DNI existente
@@ -467,26 +486,25 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               </div>
             )}
 
-            {!existingUserFound && (
-              <div className="flex gap-3 pt-2">
-                {onBackToLogin && (
-                  <button
-                    type="button"
-                    onClick={onBackToLogin}
-                    className="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5"
-                  >
-                    <ArrowLeft className="w-4 h-4" /> Volver
-                  </button>
-                )}
+            <div className="flex gap-3 pt-2">
+              {onBackToLogin && (
                 <button
-                  type="submit"
-                  disabled={dniInput.replace(/\D/g, '').length < 7}
-                  className="flex-1 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20"
+                  type="button"
+                  onClick={onBackToLogin}
+                  className="w-1/3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl text-xs flex items-center justify-center gap-1.5"
                 >
-                  Continuar Formulario <ArrowRight className="w-4 h-4" />
+                  <ArrowLeft className="w-4 h-4" /> Volver
                 </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                disabled={dniInput.replace(/\D/g, '').length < 6}
+                onClick={handleCheckDni}
+                className="flex-1 bg-amber-400 hover:bg-amber-500 disabled:opacity-50 text-slate-950 font-black py-3 rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-400/20 cursor-pointer"
+              >
+                Continuar Formulario <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </form>
         )}
 

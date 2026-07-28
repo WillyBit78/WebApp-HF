@@ -41,14 +41,18 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   const [editForm, setEditForm] = useState({
     nombre: socio?.nombre || socio?.nombres || '',
     apellido: socio?.apellido || '',
-    dni: socio?.dni || '',
+    dni: socio?.dni || socio?.documentoDni || socio?.numeroDni || '',
     telefono: socio?.telefono || '',
     categoria: socio?.categoria || '',
     clave: socio?.clave || '1234',
     rol: socio?.rol || 'socio',
     estadoCuota: socio?.estadoCuota || 'al_dia',
     montoCuota: socio?.montoCuota || 15000,
-    fotoUrl: currentPhoto
+    fotoUrl: currentPhoto,
+    fechaNacimiento: socio?.fechaNacimiento || '',
+    hinchaDe: socio?.hinchaDe || '',
+    nombreContacto: socio?.nombreContacto || '',
+    telefonoContacto: socio?.telefonoContacto || ''
   });
 
   if (!socio) return null;
@@ -66,6 +70,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   };
 
   const waLink = getWhatsAppLink(socio.telefono);
+  const waContactLink = getWhatsAppLink(socio.telefonoContacto);
   const socioPayments = payments.filter(p => p.socioId === socio.id || String(p.numeroSocio) === String(socio.numeroSocio));
 
   const handleDeleteSocio = () => {
@@ -466,7 +471,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">Documento DNI:</span>
-                    <span className="font-mono text-slate-200">{socio.dni || 'Sin registrar'}</span>
+                    <span className="font-mono font-bold text-slate-200">{socio.dni || socio.documentoDni || socio.numeroDni || 'Sin registrar'}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
@@ -474,9 +479,27 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                     <span className="font-bold text-amber-400">#{socio.numeroSocio || 'S/N'}</span>
                   </div>
 
-                  <div className="flex justify-between items-center pt-1 border-t border-slate-900">
+                  {socio.fechaNacimiento && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <Calendar className="w-3.5 h-3.5 text-amber-400" /> Nacimiento:
+                      </span>
+                      <span className="font-mono text-slate-200">{socio.fechaNacimiento}</span>
+                    </div>
+                  )}
+
+                  {socio.hinchaDe && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <Shield className="w-3.5 h-3.5 text-amber-400" /> Hincha de:
+                      </span>
+                      <span className="font-semibold text-amber-300">{socio.hinchaDe}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-900">
                     <span className="text-slate-500 flex items-center gap-1">
-                      <Phone className="w-3.5 h-3.5 text-emerald-400" /> Teléfono / WA:
+                      <Phone className="w-3.5 h-3.5 text-emerald-400" /> Teléfono / WA Socio:
                     </span>
                     {socio.telefono ? (
                       waLink ? (
@@ -485,20 +508,52 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition-all"
-                          title="Enviar mensaje por WhatsApp"
+                          title="Enviar WhatsApp al socio"
                         >
-                          <MessageCircle className="w-3 h-3" /> {socio.telefono}
+                          <MessageCircle className="w-3 h-3 text-emerald-400" /> {socio.telefono}
                         </a>
                       ) : (
                         <span className="text-slate-200">{socio.telefono}</span>
                       )
                     ) : (
-                      <span className="text-slate-600 font-italic">No especificado</span>
+                      <span className="text-slate-600 italic">No especificado</span>
                     )}
                   </div>
 
+                  {(socio.nombreContacto || socio.telefonoContacto) && (
+                    <div className="pt-1.5 border-t border-slate-900 space-y-1.5">
+                      <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Contacto de Emergencia / Familiar:</div>
+                      {socio.nombreContacto && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500">Nombre Tutor/Contacto:</span>
+                          <span className="font-bold text-slate-200">{socio.nombreContacto}</span>
+                        </div>
+                      )}
+                      {socio.telefonoContacto && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-slate-500 flex items-center gap-1">
+                            <Phone className="w-3 h-3 text-emerald-400" /> Teléfono Familiar / WA:
+                          </span>
+                          {waContactLink ? (
+                            <a
+                              href={waContactLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition-all"
+                              title="Enviar WhatsApp al contacto de emergencia"
+                            >
+                              <MessageCircle className="w-3 h-3 text-emerald-400" /> {socio.telefonoContacto}
+                            </a>
+                          ) : (
+                            <span className="text-slate-200">{socio.telefonoContacto}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {canManage && (
-                    <div className="flex justify-between items-center">
+                    <div className="flex justify-between items-center pt-1 border-t border-slate-900">
                       <span className="text-slate-500 flex items-center gap-1">
                         <Key className="w-3.5 h-3.5 text-amber-400" /> PIN Acceso:
                       </span>

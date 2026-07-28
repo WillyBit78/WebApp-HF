@@ -69,9 +69,14 @@ export const AppProvider = ({ children }) => {
       if (lower === 'filtroestadocuenta') normalized.filtroEstadoCuenta = obj[key];
       if (lower === 'fechaprogramada') normalized.fechaProgramada = obj[key];
       if (lower === 'categoriadestino') normalized.categoriaDestino = obj[key];
-      if (lower === 'fotorostro') normalized.fotoRostro = obj[key];
-      if (lower === 'fotourl') normalized.fotoUrl = obj[key];
-      if (lower === 'fechanacimiento') normalized.fechaNacimiento = obj[key];
+      // User registration & contact fields (Supabase snake_case & variations)
+      if (lower === 'fotorostro' || lower === 'foto_rostro') normalized.fotoRostro = obj[key];
+      if (lower === 'fotourl' || lower === 'foto_url') normalized.fotoUrl = obj[key];
+      if (lower === 'fechanacimiento' || lower === 'fecha_nacimiento') normalized.fechaNacimiento = obj[key];
+      if (lower === 'hinchade' || lower === 'hincha_de') normalized.hinchaDe = obj[key];
+      if (lower === 'nombrecontacto' || lower === 'nombre_contacto' || lower === 'contacto_nombre') normalized.nombreContacto = obj[key];
+      if (lower === 'telefonocontacto' || lower === 'telefono_contacto' || lower === 'contacto_telefono') normalized.telefonoContacto = obj[key];
+      if (lower === 'documentodni' || lower === 'documento_dni' || lower === 'numerodni' || lower === 'numero_dni') normalized.dni = obj[key];
     }
 
     return normalized;
@@ -206,7 +211,16 @@ export const AppProvider = ({ children }) => {
           if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
           if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
-          if (nRes.data) setNotices(nRes.data.map(normalizeKeys));
+          if (nRes.data) {
+            const loadedNotices = nRes.data.map(normalizeKeys);
+            setNotices(loadedNotices);
+            try { localStorage.setItem('haedo_notices_cache', JSON.stringify(loadedNotices)); } catch (e) {}
+          } else {
+            try {
+              const cached = localStorage.getItem('haedo_notices_cache');
+              if (cached) setNotices(JSON.parse(cached));
+            } catch (e) {}
+          }
           if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
           if (lRes.data) {
             const dbLogs = lRes.data.map(normalizeKeys);
@@ -621,7 +635,11 @@ export const AppProvider = ({ children }) => {
             dni: newUser.dni || '',
             telefono: newUser.telefono || '',
             fotoRostro: newUser.fotoRostro || newUser.fotoUrl || '',
-            fotoUrl: newUser.fotoUrl || newUser.fotoRostro || ''
+            fotoUrl: newUser.fotoUrl || newUser.fotoRostro || '',
+            fechaNacimiento: newUser.fechaNacimiento || '',
+            hinchaDe: newUser.hinchaDe || '',
+            nombreContacto: newUser.nombreContacto || '',
+            telefonoContacto: newUser.telefonoContacto || ''
           };
 
           const { error } = await supabase.from('users').insert([dbUserPayload]);
@@ -804,7 +822,11 @@ export const AppProvider = ({ children }) => {
       ...noticeData
     };
 
-    setNotices(prev => [newNotice, ...prev]);
+    setNotices(prev => {
+      const updated = [newNotice, ...prev];
+      try { localStorage.setItem('haedo_notices_cache', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
 
     // ─── BACKGROUND TASKS (fire & forget — UI never blocked) ───────────────
     // Everything below runs asynchronously WITHOUT blocking the return value.
@@ -880,7 +902,11 @@ export const AppProvider = ({ children }) => {
   };
 
   const deleteNotice = async (noticeId) => {
-    setNotices(prev => prev.filter(n => n.id !== noticeId));
+    setNotices(prev => {
+      const updated = prev.filter(n => n.id !== noticeId);
+      try { localStorage.setItem('haedo_notices_cache', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
     if (isSupabaseConfigured && supabase) {
       await supabase.from('notices').delete().eq('id', noticeId).catch(console.error);
       // Broadcast deletion to all connected devices
