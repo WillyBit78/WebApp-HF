@@ -933,13 +933,21 @@ export const AppProvider = ({ children }) => {
       if (n.filtroEstadoCuenta === 'al_dia' && userFeeStatus !== 'al_dia') return false;
       if (n.filtroEstadoCuenta === 'pendiente' && userFeeStatus === 'al_dia') return false;
 
-      // Targeting check
-      if (!n.destinatarioTipo || n.destinatarioTipo === 'todos' || n.destinatarioValor === 'Todos' || n.categoriaDestino === 'Todos') {
-        return true;
-      }
+      const destVal = (n.destinatarioValor || n.categoriaDestino || '').toLowerCase().trim();
+      const destType = (n.destinatarioTipo || '').toLowerCase();
 
-      const destVal = (n.destinatarioValor || n.categoriaDestino || '').toLowerCase();
-      return userCat.includes(destVal) || destVal.includes(userCat);
+      // Normalize strings removing accents and extra spaces
+      const normCat = userCat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const normDest = destVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+      // Flexible matching (checks word tokens and includes)
+      if (normCat.includes(normDest) || normDest.includes(normCat)) return true;
+
+      // Token overlap matching (e.g. "Mayores" in "EDEFI Mayores (+42)")
+      const destTokens = normDest.split(/\s+/).filter(t => t.length > 3 && !['futsal', 'futbol', 'bafi', 'edefi'].includes(t));
+      if (destTokens.some(token => normCat.includes(token))) return true;
+
+      return false;
     });
   };
 

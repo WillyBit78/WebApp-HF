@@ -63,14 +63,17 @@ export default async function handler(req, res) {
       if (filtroEstadoCuenta === 'al_dia' && sub.estado_cuota !== 'al_dia') return false;
       if (filtroEstadoCuenta === 'pendiente' && sub.estado_cuota === 'al_dia') return false;
 
-      // 2. Targeting filter
-      if (!destinatarioTipo || destinatarioTipo === 'todos' || destinatarioValor === 'Todos') return true;
-
       const userCat = (sub.categoria || '').toLowerCase();
       const targetVal = (destinatarioValor || '').toLowerCase();
 
       if (destinatarioTipo === 'disciplina' || destinatarioTipo === 'categoria' || destinatarioTipo === 'subcategoria') {
-        return userCat.includes(targetVal) || targetVal.includes(userCat);
+        const normCat = userCat.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const normDest = targetVal.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        if (normCat.includes(normDest) || normDest.includes(normCat)) return true;
+
+        const destTokens = normDest.split(/\s+/).filter(t => t.length > 3 && !['futsal', 'futbol', 'bafi', 'edefi'].includes(t));
+        return destTokens.some(token => normCat.includes(token));
       }
 
       return true;
