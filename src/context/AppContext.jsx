@@ -202,11 +202,11 @@ export const AppProvider = ({ children }) => {
             supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
             supabase.from('logs').select('*').order('created_at', { ascending: false })
           ]);
-          if (uRes.data) setUsers(uRes.data.map(normalizeKeys)));
-          if (pRes.data) setPayments(pRes.data.map(normalizeKeys)));
-          if (eRes.data) setEvents(eRes.data.map(normalizeKeys)));
-          if (nRes.data) setNotices(nRes.data.map(normalizeKeys)));
-          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys)));
+          if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
+          if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
+          if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
+          if (nRes.data) setNotices(nRes.data.map(normalizeKeys));
+          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
           if (lRes.data) {
             const dbLogs = lRes.data.map(normalizeKeys);
             setLogs(prev => {
