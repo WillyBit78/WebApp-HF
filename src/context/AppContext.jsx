@@ -314,20 +314,10 @@ export const AppProvider = ({ children }) => {
           }
           if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
-          if (nRes.data && nRes.data.length > 0) {
+          if (nRes.data) {
             const loadedNotices = nRes.data.map(normalizeKeys);
             setNotices(loadedNotices);
             try { localStorage.setItem('haedo_notices_cache', JSON.stringify(loadedNotices)); } catch (e) {}
-          } else {
-            try {
-              const cached = localStorage.getItem('haedo_notices_cache');
-              if (cached) {
-                const parsed = JSON.parse(cached);
-                if (Array.isArray(parsed) && parsed.length > 0) {
-                  setNotices(parsed);
-                }
-              }
-            } catch (e) {}
           }
           if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
           if (lRes.data) {
@@ -378,14 +368,8 @@ export const AppProvider = ({ children }) => {
             return combined;
           });
         }
-        // Sync notices from Supabase so all devices stay updated (merge preserving newly created ones)
-        if (nRes.data && nRes.data.length > 0) {
-          const fetchedNotices = nRes.data.map(normalizeKeys);
-          setNotices(prev => {
-            const fetchedIds = new Set(fetchedNotices.map(n => n.id));
-            const localOnly = prev.filter(n => !fetchedIds.has(n.id));
-            return [...localOnly, ...fetchedNotices];
-          });
+        if (nRes.data) {
+          setNotices(nRes.data.map(normalizeKeys));
         }
       } catch (e) {}
     };
