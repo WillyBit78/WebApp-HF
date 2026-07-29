@@ -436,8 +436,11 @@ export const AppProvider = ({ children }) => {
   };
 
   // Register push subscription in Supabase for Push Notifications
-  const registerPushSubscription = async (user) => {
-    if (!user || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  const registerPushSubscription = async (user = currentUser, forceRequest = false) => {
+    const targetUser = user || currentUser;
+    if (!targetUser || typeof window === 'undefined' || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+      return { success: false, reason: 'unsupported' };
+    }
 
     try {
       const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY || 'BNrO1BAPOhrooMRFovIRtRVXGwd9dxgT1ZWyzEVkPIauISEjh-EZl0MwUwaF1Wn7HJ1lOojM7CKt3he8jXvH-MQ';
@@ -448,9 +451,18 @@ export const AppProvider = ({ children }) => {
       }
 
       let subscription = await registration.pushManager.getSubscription();
+      
       if (!subscription) {
+        if (Notification.permission === 'denied') {
+          return { success: false, reason: 'denied' };
+        }
+        
+        if (Notification.permission !== 'granted' && !forceRequest) {
+          return { success: false, reason: 'prompt_needed' };
+        }
+
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') return { success: false, reason: 'denied' };
 
         const convertedKey = urlBase64ToUint8Array(vapidPublicKey);
         subscription = await registration.pushManager.subscribe({
@@ -461,18 +473,21 @@ export const AppProvider = ({ children }) => {
 
       if (subscription && isSupabaseConfigured && supabase) {
         const subData = {
-          id: `sub-${user.id}`,
-          user_id: user.id,
-          usuario: user.usuario,
-          rol: user.rol,
-          categoria: user.categoria || 'General',
-          estado_cuota: user.estadoCuota || 'al_dia',
+          id: `sub-${targetUser.id}`,
+          user_id: targetUser.id,
+          usuario: targetUser.usuario,
+          rol: targetUser.rol,
+          categoria: targetUser.categoria || 'General',
+          estado_cuota: targetUser.estadoCuota || 'al_dia',
           subscription: JSON.stringify(subscription)
         };
-        await supabase.from('push_subscriptions').upsert(subData).catch(() => {});
+        await supabase.from('push_subscriptions').upsert(subData).catch(console.warn);
+        return { success: true, subscription };
       }
+      return { success: false, reason: 'no_subscription' };
     } catch (err) {
-      console.warn('Push subscription notice:', err);
+      console.warn('Push subscription error:', err);
+      return { success: false, error: err.message };
     }
   };
 
@@ -1224,6 +1239,7 @@ export const AppProvider = ({ children }) => {
       uploadPaymentReceipt, updatePaymentStatus, deletePayment,
       addOrUpdateUser, deleteUser,
       addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead, toggleNoticeRead,
+      registerPushSubscription,
       stats: {
         totalRecaudado, pagosPendientesRev, sociosAlDiaCount, sociosPendientesCount, sociosMorososCount,
         totalSocios: users.length, ingresosCuotasTotal, gastosCuotasMov, saldoCajaCuotas,

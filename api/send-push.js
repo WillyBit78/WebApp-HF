@@ -101,7 +101,8 @@ export default async function handler(req, res) {
           const pushConfig = typeof sub.subscription === 'string' ? JSON.parse(sub.subscription) : sub.subscription;
           await webpush.sendNotification(pushConfig, pushPayload, {
             TTL: 86400,
-            urgency: urgente ? 'high' : 'normal'
+            urgency: 'high',
+            topic: 'haedo-notice'
           });
           sentCount++;
         } catch (err) {
