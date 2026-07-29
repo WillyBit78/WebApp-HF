@@ -1,14 +1,63 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { Trophy, KeyRound, User, AlertCircle } from 'lucide-react';
+import { Trophy, KeyRound, User, AlertCircle, Download, Sparkles, Share, PlusSquare, Smartphone } from 'lucide-react';
 
 export const LoginScreen = ({ onOpenPublicRegister }) => {
   const { login } = useApp();
   const [usuario, setUsuario] = useState('');
   const [clave, setClave] = useState('');
   const [error, setError] = useState(false);
-
   const [devClicks, setDevClicks] = useState(0);
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userAgent = window.navigator.userAgent.toLowerCase();
+      const iosDevice = /iphone|ipad|ipod/.test(userAgent);
+      const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+
+      setIsStandalone(standalone);
+
+      if (iosDevice && !standalone) {
+        setIsIOS(true);
+      }
+
+      const handleBeforeInstallPrompt = (e) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+
+      window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+      return () => {
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      };
+    }
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (isIOS) {
+      setShowIOSInstructions(prev => !prev);
+      return;
+    }
+
+    if (!deferredPrompt) {
+      alert('📱 Abrí esta página en Chrome o tu navegador móvil para instalar la App en tu pantalla de inicio.');
+      return;
+    }
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('App instalada desde la pantalla de login');
+    }
+    setDeferredPrompt(null);
+  };
 
   const handleLogoClick = () => {
     const newClicks = devClicks + 1;
@@ -119,7 +168,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             Ingresar
           </button>
 
-          <div className="pt-2 border-t border-slate-800/80 text-center">
+          <div className="pt-3 border-t border-slate-800/80 space-y-2 text-center">
             <button
               type="button"
               onClick={onOpenPublicRegister}
@@ -127,6 +176,31 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             >
               👥 ¿Sos Socio Nuevo? Inscribite acá
             </button>
+
+            {!isStandalone && (
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-extrabold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
+              >
+                <Download className="w-4 h-4 text-emerald-400 animate-bounce" />
+                📲 Instalar App Oficial en este Celular
+              </button>
+            )}
+
+            {/* iOS Instructions Dropdown */}
+            {showIOSInstructions && isIOS && (
+              <div className="bg-slate-950 p-4 rounded-2xl border border-amber-500/40 text-left text-xs space-y-2 animate-fadeIn text-slate-200 mt-2">
+                <div className="font-bold text-amber-400 flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4" /> Cómo instalar en tu iPhone:
+                </div>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] text-slate-300">
+                  <li>Toca el botón <Share className="w-3.5 h-3.5 inline text-blue-400 mx-1" /> <strong>Compartir</strong> en Safari.</li>
+                  <li>Desplázate hacia abajo y selecciona <PlusSquare className="w-3.5 h-3.5 inline text-emerald-400 mx-1" /> <strong>"Agregar a Inicio"</strong>.</li>
+                  <li>¡Listo! Abrí la app directamente desde tu pantalla principal.</li>
+                </ol>
+              </div>
+            )}
           </div>
         </form>
       </div>
