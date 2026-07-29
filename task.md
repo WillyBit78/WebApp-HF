@@ -21,6 +21,16 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
 
 ---
 
+## 🔑 CREDENCIALES Y ACCESOS DEL PROYECTO
+
+- **Supabase URL**: `https://jmfxxqbtmyzslkrslpvk.supabase.co`
+- **Supabase DB Password**: `HaedoFutsal.2026`
+- **Supabase Pooler (Postgres)**: `postgresql://postgres.jmfxxqbtmyzslkrslpvk:HaedoFutsal.2026@aws-0-ca-central-1.pooler.supabase.com:6543/postgres`
+- **Mercado Pago Token**: `APP_USR-3322444120483456-072316-c328d2ad7cb6de93a33a94812589756e-43153257`
+- **VAPID Public Key**: `BNrO1BAPOhrooMRFovIRtRVXGwd9dxgT1ZWyzEVkPIauISEjh-EZl0MwUwaF1Wn7HJ1lOojM7CKt3he8jXvH-MQ`
+
+---
+
 ## 1. 🗃️ ESQUEMA Y PERSISTENCIA EN SUPABASE (`users`)
 
 - **Campos Independientes en Tabla `users`**:
