@@ -755,6 +755,20 @@ export const AppProvider = ({ children }) => {
           const cleanApellido = (newUser.apellido || '').trim();
           const cleanUsuario = (newUser.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}` || `SOCIO${Date.now().toString().slice(-4)}`).toUpperCase();
 
+          // Respaldo local inquebrantable de metadatos del socio por ID y DNI
+          const fullMetadata = {
+            fechaNacimiento: newUser.fechaNacimiento || newUser.fecha_nacimiento || '',
+            hinchaDe: newUser.hinchaDe || newUser.hincha_de || 'Haedo Futsal',
+            nombreContacto: newUser.nombreContacto || newUser.nombre_contacto || '',
+            telefonoContacto: newUser.telefonoContacto || newUser.telefono_contacto || '',
+            fotoRostro: newUser.fotoRostro || newUser.fotoUrl || newUser.foto || ''
+          };
+          
+          try {
+            const metaKey = `socio_meta_${newUser.dni || newUser.usuario || newUser.id}`;
+            localStorage.setItem(metaKey, JSON.stringify(fullMetadata));
+          } catch (e) {}
+
           const dbUserPayload = {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
@@ -767,11 +781,33 @@ export const AppProvider = ({ children }) => {
             estadoCuota: newUser.estadoCuota || 'pendiente',
             montoCuota: Number(newUser.montoCuota) || 0,
             dni: newUser.dni || '',
-            telefono: newUser.telefono || ''
+            telefono: newUser.telefono || '',
+            fechaNacimiento: fullMetadata.fechaNacimiento,
+            hinchaDe: fullMetadata.hinchaDe,
+            nombreContacto: fullMetadata.nombreContacto,
+            telefonoContacto: fullMetadata.telefonoContacto,
+            fotoRostro: fullMetadata.fotoRostro
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
-          if (error) console.error("Supabase user upsert error:", error);
+          if (error) {
+            // Si la tabla aún no tiene las columnas extendidas, guardamos el payload estándar sin romper
+            const fallbackPayload = {
+              id: newUser.id,
+              numeroSocio: newUser.numeroSocio || (users.length + 201),
+              nombre: cleanNombre,
+              apellido: cleanApellido,
+              usuario: cleanUsuario,
+              clave: (newUser.clave || '1234').toString().slice(0, 4),
+              rol: newUser.rol || 'socio',
+              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
+              estadoCuota: newUser.estadoCuota || 'pendiente',
+              montoCuota: Number(newUser.montoCuota) || 0,
+              dni: newUser.dni || '',
+              telefono: newUser.telefono || ''
+            };
+            await supabase.from('users').upsert([fallbackPayload]).catch(console.error);
+          }
         } catch (err) {
           console.error("Supabase user insert catch error:", err);
         }

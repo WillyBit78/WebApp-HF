@@ -36,7 +36,15 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   const videoRef = useRef(null);
   const [cameraStream, setCameraStream] = useState(null);
 
-  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || socio?.foto_rostro || socio?.foto_url || '';
+  // Recuperar respaldo local persistente si existe
+  const metaKey = `socio_meta_${socio?.dni || socio?.usuario || socio?.id}`;
+  let savedMeta = {};
+  try {
+    const rawMeta = localStorage.getItem(metaKey);
+    if (rawMeta) savedMeta = JSON.parse(rawMeta);
+  } catch (e) {}
+
+  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || savedMeta.fotoRostro || '';
 
   const [editForm, setEditForm] = useState({
     nombre: socio?.nombre || socio?.nombres || '',
@@ -49,10 +57,10 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
     estadoCuota: socio?.estadoCuota || 'al_dia',
     montoCuota: socio?.montoCuota || 15000,
     fotoUrl: currentPhoto,
-    fechaNacimiento: socio?.fechaNacimiento || socio?.fecha_nacimiento || '',
-    hinchaDe: socio?.hinchaDe || socio?.hincha_de || '',
-    nombreContacto: socio?.nombreContacto || socio?.nombre_contacto || '',
-    telefonoContacto: socio?.telefonoContacto || socio?.telefono_contacto || ''
+    fechaNacimiento: socio?.fechaNacimiento || socio?.fecha_nacimiento || savedMeta.fechaNacimiento || '',
+    hinchaDe: socio?.hinchaDe || socio?.hincha_de || savedMeta.hinchaDe || '',
+    nombreContacto: socio?.nombreContacto || socio?.nombre_contacto || savedMeta.nombreContacto || '',
+    telefonoContacto: socio?.telefonoContacto || socio?.telefono_contacto || savedMeta.telefonoContacto || ''
   });
 
   if (!socio) return null;
