@@ -74,12 +74,14 @@ export const AppProvider = ({ children }) => {
       if (lower === 'montocuota') normalized.montoCuota = obj[key];
       if (lower === 'creadopor') normalized.creadoPor = obj[key];
       if (lower === 'coelsaid') normalized.coelsaId = obj[key];
-      // Notice fields (Supabase uses snake_case)
-      if (lower === 'destinatariotipo') normalized.destinatarioTipo = obj[key];
-      if (lower === 'destinatariovalor') normalized.destinatarioValor = obj[key];
-      if (lower === 'filtroestadocuenta') normalized.filtroEstadoCuenta = obj[key];
-      if (lower === 'fechaprogramada') normalized.fechaProgramada = obj[key];
-      if (lower === 'categoriadestino') normalized.categoriaDestino = obj[key];
+      // Notice fields (Supabase uses snake_case and mensaje)
+      if (lower === 'mensaje') normalized.contenido = obj[key];
+      if (lower === 'importante') normalized.urgente = obj[key];
+      if (lower === 'destinatariotipo' || lower === 'destinatario_tipo') normalized.destinatarioTipo = obj[key];
+      if (lower === 'destinatariovalor' || lower === 'destinatario_valor') normalized.destinatarioValor = obj[key];
+      if (lower === 'filtroestadocuenta' || lower === 'filtro_estado_cuenta') normalized.filtroEstadoCuenta = obj[key];
+      if (lower === 'fechaprogramada' || lower === 'fecha_programada') normalized.fechaProgramada = obj[key];
+      if (lower === 'categoriadestino' || lower === 'categoria_destino') normalized.categoriaDestino = obj[key];
       // User registration & contact fields (Supabase snake_case & variations)
       if (lower === 'fotorostro' || lower === 'foto_rostro') normalized.fotoRostro = obj[key];
       if (lower === 'fotourl' || lower === 'foto_url') normalized.fotoUrl = obj[key];
@@ -948,32 +950,21 @@ export const AppProvider = ({ children }) => {
     (async () => {
       try {
         if (isSupabaseConfigured && supabase) {
-          // 1. Save to Supabase DB for persistence (best effort, 4s timeout)
+          // 1. Save to Supabase DB for persistence
           const supabasePayload = {
             id: newNotice.id,
+            tipo: newNotice.tipo || 'general',
             titulo: newNotice.titulo,
-            contenido: newNotice.contenido,
+            mensaje: newNotice.contenido || newNotice.mensaje || '',
             autor: newNotice.autor,
-            fecha: newNotice.fecha,
-            urgente: newNotice.urgente,
-            destinatario_tipo: newNotice.destinatarioTipo,
-            destinatario_valor: newNotice.destinatarioValor,
-            filtro_estado_cuenta: newNotice.filtroEstadoCuenta,
-            fecha_programada: newNotice.fechaProgramada || null,
-            categoria_destino: newNotice.destinatarioValor
+            fecha: newNotice.fecha || new Date().toLocaleString('es-AR'),
+            destinatario_tipo: newNotice.destinatarioTipo || 'todos',
+            destinatario_valor: newNotice.destinatarioValor || 'Todos',
+            filtro_estado_cuenta: newNotice.filtroEstadoCuenta || 'todos',
+            categoria_destino: newNotice.destinatarioValor || 'Todos'
           };
-          const insertPromise = supabase.from('notices').insert([supabasePayload]);
-          const insertTimeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 4000));
-          await Promise.race([insertPromise, insertTimeout]).catch(() => {
-            // Fallback with minimal fields
-            supabase.from('notices').insert([{
-              id: newNotice.id,
-              titulo: newNotice.titulo,
-              contenido: newNotice.contenido,
-              autor: newNotice.autor,
-              urgente: newNotice.urgente
-            }]).catch(() => {});
-          });
+          
+          await supabase.from('notices').insert([supabasePayload]).catch(console.warn);
 
           // 2. Broadcast to ALL connected devices instantly (no DB dependency)
           if (broadcastChannelRef.current) {
