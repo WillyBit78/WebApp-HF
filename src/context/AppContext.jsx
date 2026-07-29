@@ -1038,80 +1038,61 @@ export const AppProvider = ({ children }) => {
       return updated;
     });
 
-    // ─── BACKGROUND TASKS (fire & forget — UI never blocked) ───────────────
-    // Everything below runs asynchronously WITHOUT blocking the return value.
-    // The notice is already in local state and will be broadcast to all devices.
-    (async () => {
-      try {
-        if (isSupabaseConfigured && supabase) {
-          // 1. Save to Supabase DB for persistence
-          const supabasePayload = {
-            id: newNotice.id,
-            tipo: newNotice.tipo || 'general',
-            titulo: newNotice.titulo,
-            mensaje: newNotice.contenido || newNotice.mensaje || '',
-            autor: newNotice.autor,
-            fecha: newNotice.fecha || new Date().toLocaleString('es-AR'),
-            destinatario_tipo: newNotice.destinatarioTipo || 'todos',
-            destinatario_valor: newNotice.destinatarioValor || 'Todos',
-            filtro_estado_cuenta: newNotice.filtroEstadoCuenta || 'todos',
-            categoria_destino: newNotice.destinatarioValor || 'Todos'
-          };
-          
-          await supabase.from('notices').insert([supabasePayload]).catch(console.warn);
+    // 2. Persistencia en Supabase DB + Broadcast + Push Notification
+    let pushResult = null;
+    try {
+      if (isSupabaseConfigured && supabase) {
+        const supabasePayload = {
+          id: newNotice.id,
+          tipo: newNotice.tipo || 'general',
+          titulo: newNotice.titulo,
+          mensaje: newNotice.contenido || newNotice.mensaje || '',
+          contenido: newNotice.contenido || newNotice.mensaje || '',
+          autor: newNotice.autor,
+          fecha: newNotice.fecha || new Date().toISOString().split('T')[0],
+          destinatario_tipo: newNotice.destinatarioTipo || 'todos',
+          destinatario_valor: newNotice.destinatarioValor || 'Todos',
+          filtro_estado_cuenta: newNotice.filtroEstadoCuenta || 'todos',
+          categoria_destino: newNotice.destinatarioValor || 'Todos',
+          urgente: newNotice.urgente || false
+        };
+        
+        await supabase.from('notices').insert([supabasePayload]).catch(err => console.warn("Supabase insert notice error:", err));
 
-          // 2. Broadcast to ALL connected devices instantly (no DB dependency)
-          if (broadcastChannelRef.current) {
-            broadcastChannelRef.current.send({
-              type: 'broadcast',
-              event: 'notice_created',
-              payload: newNotice
-            }).catch(() => {});
-          }
+        if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'notice_created',
+            payload: newNotice
+          }).catch(() => {});
         }
-
-        // 3. Register log in Audit Events
-        registrarLog(
-          'aviso_creado',
-          `Comunicado masivo emitido (${newNotice.titulo})`,
-          `Emisor: ${newNotice.autor} • Destinatarios: ${newNotice.destinatarioValor} (${newNotice.destinatarioTipo})`
-        );
-
-        // 4. Push notification to celulares (5s timeout, completely optional)
-        const pushController = new AbortController();
-        const pushTimeout = setTimeout(() => pushController.abort(), 5000);
-
-        const pushRes = await fetch('/api/send-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            titulo: newNotice.titulo,
-            contenido: newNotice.contenido || newNotice.mensaje,
-            urgente: newNotice.urgente,
-            destinatarioTipo: newNotice.destinatarioTipo,
-            destinatarioValor: newNotice.destinatarioValor,
-            filtroEstadoCuenta: newNotice.filtroEstadoCuenta
-          }),
-          signal: pushController.signal
-        }).catch(err => {
-          console.warn('Push dispatch notice:', err);
-          return null;
-        });
-
-        clearTimeout(pushTimeout);
-        let pushResult = null;
-        if (pushRes && pushRes.ok) {
-          pushResult = await pushRes.json().catch(() => null);
-        }
-
-        return { success: true, pushResult, notice: newNotice };
-      } catch (err) {
-        console.error('Error adding notice:', err);
-        return { success: false, error: err.message };
       }
-    })();
 
-    return { success: true, notice: newNotice };
+      // Dispatch Push notifications to mobile devices
+      const pushRes = await fetch('/api/send-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          titulo: newNotice.titulo,
+          contenido: newNotice.contenido || newNotice.mensaje,
+          urgente: newNotice.urgente,
+          destinatarioTipo: newNotice.destinatarioTipo,
+          destinatarioValor: newNotice.destinatarioValor,
+          filtroEstadoCuenta: newNotice.filtroEstadoCuenta
+        })
+      }).catch(err => {
+        console.warn('Push dispatch error:', err);
+        return null;
+      });
+
+      if (pushRes && pushRes.ok) {
+        pushResult = await pushRes.json().catch(() => null);
+      }
+    } catch (err) {
+      console.warn("Notice dispatch warning:", err);
+    }
+
+    return { success: true, pushResult, notice: newNotice };
   };
 
   const deleteNotice = async (noticeId) => {
