@@ -966,6 +966,13 @@ export const AppProvider = ({ children }) => {
       ...noticeData
     };
 
+    // 1. Synchronous Log & State Update
+    registrarLog(
+      'aviso_creado',
+      `Comunicado masivo emitido (${newNotice.titulo})`,
+      `Emisor: ${newNotice.autor} • Destinatarios: ${newNotice.destinatarioValor} (${newNotice.destinatarioTipo})`
+    );
+
     setNotices(prev => {
       const updated = [newNotice, ...prev];
       try { localStorage.setItem('haedo_notices_cache', JSON.stringify(updated)); } catch (e) {}
