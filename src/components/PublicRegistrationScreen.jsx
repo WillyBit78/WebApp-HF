@@ -822,21 +822,31 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
         {/* PASO 4: REGISTRO EXITOSO & CREDENCIALES */}
         {step === 4 && createdCredentials && (
           <div className="space-y-5 text-center animate-fadeIn">
-            <div className="w-16 h-16 mx-auto bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-10 h-10" />
+            
+            {/* Escudo del Club Destacado */}
+            <div className="w-24 h-24 mx-auto relative group mb-1">
+              <div className="absolute inset-0 bg-amber-400/20 rounded-full blur-xl animate-pulse"></div>
+              <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-2xl relative z-10" />
+            </div>
+
+            <div className="w-14 h-14 mx-auto bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center text-emerald-400">
+              <CheckCircle2 className="w-8 h-8" />
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-2xl font-black text-white">¡Bienvenido al Club, {createdCredentials.nombre}!</h2>
+              <h2 className="text-2xl font-black text-white">¡Socio Registrado con Éxito!</h2>
+              <p className="text-xs font-bold text-amber-400">
+                {createdCredentials.nombre}
+              </p>
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Tu inscripción ha sido registrada exitosamente en el padrón oficial de Haedo Futsal.
+                Se ha incorporado oficialmente al padrón de Haedo Futsal.
               </p>
             </div>
 
             {/* Tarjeta de Credenciales de Acceso */}
             <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 p-6 rounded-2xl border-2 border-amber-400/50 shadow-2xl space-y-4 text-center relative overflow-hidden">
               <div className="bg-amber-400 text-slate-950 font-black text-xs px-4 py-1.5 rounded-full inline-block uppercase tracking-wider shadow-md">
-                🔑 Tus Credenciales Oficiales de Acceso
+                🔑 Credenciales Oficiales de Acceso
               </div>
 
               <div className="space-y-3 pt-2">
@@ -856,28 +866,67 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
               </div>
 
               <p className="text-[11px] text-amber-300/90 font-medium bg-amber-400/10 border border-amber-400/20 p-2.5 rounded-xl flex items-center justify-center gap-1.5">
-                💡 Podés cambiar tu clave personal en cualquier momento ingresando a la App desde tu Perfil.
+                💡 El socio podrá cambiar su clave personal al ingresar a la App desde su Perfil.
               </p>
             </div>
 
             <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.hash = '';
-                  login(createdCredentials.usuario, createdCredentials.clave);
-                  if (onBackToLogin) onBackToLogin();
-                  if (onCloseModal) onCloseModal();
-                }}
-                className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-400/20 cursor-pointer"
-              >
-                <ExternalLink className="w-4 h-4" /> Ingresar a Mi Perfil
-              </button>
+              {currentUser ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onCloseModal) onCloseModal();
+                      else if (onBackToLogin) onBackToLogin();
+                    }}
+                    className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 cursor-pointer"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Finalizar y Volver al Sistema
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDniInput('');
+                      setExistingUserFound(null);
+                      setFormData({
+                        nombres: '',
+                        apellido: '',
+                        fechaNacimiento: '',
+                        telefono: '',
+                        hinchaDe: 'Haedo Futsal',
+                        nombreContacto: '',
+                        telefonoContacto: '',
+                        fotoRostro: null
+                      });
+                      setSelectedDiscIds(['baby']);
+                      setSelectedSubcategorias({});
+                      setStep(1);
+                    }}
+                    className="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-400/30 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    ➕ Registrar Otro Socio Nuevo
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.hash = '';
+                    login(createdCredentials.usuario, createdCredentials.clave);
+                    if (onBackToLogin) onBackToLogin();
+                    if (onCloseModal) onCloseModal();
+                  }}
+                  className="w-full bg-amber-400 hover:bg-amber-500 text-slate-950 font-black py-3.5 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-xl shadow-amber-400/20 cursor-pointer"
+                >
+                  <ExternalLink className="w-4 h-4" /> Ingresar a Mi Perfil
+                </button>
+              )}
 
               <button
                 type="button"
                 onClick={copyAppShareLink}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2"
+                className="w-full bg-slate-950 hover:bg-slate-900 text-slate-400 border border-slate-800 font-medium py-2 rounded-xl text-xs flex items-center justify-center gap-2"
               >
                 <Copy className="w-3.5 h-3.5" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link de Inscripción Directo'}
               </button>
