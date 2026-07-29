@@ -519,7 +519,17 @@ export const AppProvider = ({ children }) => {
 
     if (isSupabaseConfigured && supabase) {
       try {
-        await supabase.from('logs').insert([newLog]);
+        const dbLogPayload = {
+          id: newLog.id,
+          created_at: newLog.created_at,
+          fechaHora: newLog.fechaHora,
+          usuarioNombre: newLog.usuarioNombre,
+          usuarioRol: newLog.usuarioRol,
+          tipoEvento: newLog.tipoEvento,
+          descripcion: newLog.descripcion,
+          detalles: newLog.detalles
+        };
+        await supabase.from('logs').insert([dbLogPayload]);
       } catch (err) {
         console.warn("Supabase log insert error:", err);
       }
@@ -976,18 +986,44 @@ export const AppProvider = ({ children }) => {
           }
         }
 
-        // 3. Push notification to celulares (5s timeout, completely optional)
+        // 3. Register log in Audit Events
+        registrarLog(
+          'aviso_creado',
+          `Comunicado masivo emitido (${newNotice.titulo})`,
+          `Emisor: ${newNotice.autor} • Destinatarios: ${newNotice.destinatarioValor} (${newNotice.destinatarioTipo})`
+        );
+
+        // 4. Push notification to celulares (5s timeout, completely optional)
         const pushController = new AbortController();
         const pushTimeout = setTimeout(() => pushController.abort(), 5000);
-        fetch('/api/send-push', {
+
+        const pushRes = await fetch('/api/send-push', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newNotice),
+          body: JSON.stringify({
+            title: newNotice.titulo,
+            body: newNotice.contenido || newNotice.mensaje,
+            urgente: newNotice.urgente,
+            destinatarioTipo: newNotice.destinatarioTipo,
+            destinatarioValor: newNotice.destinatarioValor,
+            filtroEstadoCuenta: newNotice.filtroEstadoCuenta
+          }),
           signal: pushController.signal
-        }).then(() => clearTimeout(pushTimeout)).catch(() => clearTimeout(pushTimeout));
+        }).catch(err => {
+          console.warn('Push dispatch notice:', err);
+          return null;
+        });
 
-      } catch (_) {
-        // Background errors never affect the UI
+        clearTimeout(pushTimeout);
+        let pushResult = null;
+        if (pushRes && pushRes.ok) {
+          pushResult = await pushRes.json().catch(() => null);
+        }
+
+        return { success: true, pushResult, notice: newNotice };
+      } catch (err) {
+        console.error('Error adding notice:', err);
+        return { success: false, error: err.message };
       }
     })();
 
@@ -1023,6 +1059,7 @@ export const AppProvider = ({ children }) => {
         }).catch(() => {});
       }
     }
+    registrarLog('aviso_eliminado', `Comunicado o aviso eliminado del sistema`, `ID: ${noticeId}`);
   };
 
   const getNoticesForUser = (user) => {
