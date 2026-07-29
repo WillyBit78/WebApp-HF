@@ -18,6 +18,7 @@ import { ModalAddEvent } from './components/Modals/ModalAddEvent';
 import { ModalAddNotice } from './components/Modals/ModalAddNotice';
 import { PublicRegistrationScreen } from './components/PublicRegistrationScreen';
 import { PWAInstallBanner } from './components/PWAInstallBanner';
+import { StoreModule } from './components/StoreModule';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
 function MainApp() {
@@ -36,6 +37,37 @@ function MainApp() {
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
   const [hash, setHash] = useState(window.location.hash);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
+  // Swipe navigation flow
+  const swipeTabs = ['dashboard', 'calendar', 'notices', 'store'];
+
+  const handleTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const handleTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 60;
+    const isRightSwipe = distance < -60;
+
+    const currentIndex = swipeTabs.indexOf(currentTab);
+    if (currentIndex !== -1) {
+      if (isLeftSwipe && currentIndex < swipeTabs.length - 1) {
+        setCurrentTab(swipeTabs[currentIndex + 1]);
+      }
+      if (isRightSwipe && currentIndex > 0) {
+        setCurrentTab(swipeTabs[currentIndex - 1]);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash);
@@ -101,6 +133,8 @@ function MainApp() {
             }} 
           />
         );
+      case 'store':
+        return <StoreModule />;
       case 'finance':
         return <DashboardContador initialTab="control_financiero" onOpenModalUser={() => setModalUserOpen(true)} />;
       case 'users':
@@ -131,7 +165,12 @@ function MainApp() {
       <div className="flex-1 flex flex-col overflow-y-auto">
         <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6">
+        <main 
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6 touch-pan-y"
+        >
           {renderContent()}
         </main>
 

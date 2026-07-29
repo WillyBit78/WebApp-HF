@@ -31,6 +31,32 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
 
 ---
 
+## 📢 MEMORIA OFICIAL: MÓDULO DE COMUNICADOS Y AVISOS (`NoticeBoard.jsx` & `AppContext.jsx`)
+
+- **Persistencia e Inserción Directa**:
+  - `addNotice` ejecuta `await supabase.from('notices').insert(...)` arrojando excepciones explícitas si falla la conexión a la base de datos.
+  - El modal reporta el estado exacto de dispositivos y notificaciones push enviadas.
+- **Visualización Limpia de Avisos**:
+  - Los avisos se muestran exclusivamente en la sección **Avisos** (`NoticeBoard.jsx`).
+  - **REMOVIDO** el banner violeta/urgente de la pantalla principal de inicio del socio (`DashboardSocio.jsx`).
+- **Formato del Emisor**:
+  - El autor guarda y muestra únicamente el **nombre limpio** (ej: `"Guillermo"` o `"POL"`), removiendo cualquier sufijo de rol entre paréntesis.
+
+---
+
+## 🛍️ NAVEGACIÓN Y SECCIÓN TIENDA OFICIAL (`StoreModule.jsx`, `Sidebar.jsx`, `BottomNav.jsx`)
+
+- **Sección Tienda Oficial**:
+  - Ubicación en Celular: Botón **Tienda** (`ShoppingBag`) a la derecha de **Avisos** en la barra inferior.
+  - Ubicación en PC: Ítem **Tienda Oficial** en el grupo General de la barra lateral fija.
+  - Contenido: Muestra el banner explicativo *"Próximamente La Tienda oficial del Club"*.
+- **Navegación Táctil Horizontal (Swipe)**:
+  - Soporte de gestos en celular para deslizar horizontalmente la pantalla entre **Inicio ↔ Calendario ↔ Avisos ↔ Tienda**.
+- **Barra Lateral Fija en PC (`Sidebar.jsx`)**:
+  - La barra lateral permanece inmóvil (`sticky top-0 h-screen`) al hacer scroll vertical en el contenido del panel derecho.
+
+---
+
 ## 1. 🗃️ ESQUEMA NATIVO Y PERSISTENCIA EN SUPABASE (`users`)
 
 - **Campos Independientes y Nativos en Tabla `users`**:

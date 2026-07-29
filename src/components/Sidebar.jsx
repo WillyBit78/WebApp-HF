@@ -8,7 +8,8 @@ import {
   Wallet, 
   ShieldCheck,
   LogOut,
-  Trophy
+  Trophy,
+  ShoppingBag
 } from 'lucide-react';
 
 export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
@@ -19,6 +20,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
         { id: 'dashboard', label: 'Panel Principal', icon: LayoutDashboard },
         { id: 'calendar', label: 'Calendario', icon: Calendar },
         { id: 'notices', label: 'Comunicados', icon: Bell },
+        { id: 'store', label: 'Tienda Oficial', icon: ShoppingBag },
       ]
     },
     {

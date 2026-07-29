@@ -63,34 +63,7 @@ export const DashboardSocio = () => {
   return (
     <div className="space-y-6">
       
-      {/* Official Urgent Notice Banner for Socio */}
-      {myNotices.length > 0 && (
-        <div className={`p-4 sm:p-5 rounded-3xl border shadow-xl flex items-start justify-between gap-4 transition-all ${
-          urgentNotice 
-            ? 'bg-amber-500/10 border-amber-500/40 text-amber-200' 
-            : 'bg-purple-950/30 border-purple-500/30 text-purple-200'
-        }`}>
-          <div className="flex items-start gap-3">
-            <div className={`p-2.5 rounded-2xl shrink-0 ${urgentNotice ? 'bg-amber-500/20 text-amber-400' : 'bg-purple-500/20 text-purple-300'}`}>
-              {urgentNotice ? <AlertTriangle className="w-5 h-5 animate-pulse text-amber-400" /> : <Bell className="w-5 h-5 text-purple-300" />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-amber-400">
-                  {urgentNotice ? '🚨 AVISO URGENTE' : '📢 COMUNICADO OFICIAL'}
-                </span>
-                <span className="text-[10px] font-mono text-slate-400">{(urgentNotice || myNotices[0]).fecha}</span>
-              </div>
-              <h4 className="font-extrabold text-white text-sm sm:text-base mt-1">
-                {(urgentNotice || myNotices[0]).titulo}
-              </h4>
-              <p className="text-xs text-slate-300 mt-0.5 line-clamp-2 leading-relaxed">
-                {(urgentNotice || myNotices[0]).contenido}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+
 
       {/* Socio Personal Card - Centered & Responsive */}
       <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-amber-950/20 border border-slate-800 p-6 rounded-3xl shadow-2xl text-center flex flex-col items-center justify-center space-y-4">

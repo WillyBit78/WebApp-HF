@@ -1,5 +1,5 @@
 import React from 'react';
-import { Users, Calendar, Bell, Wallet, Settings, Home } from 'lucide-react';
+import { Users, Calendar, Bell, Wallet, Settings, Home, ShoppingBag } from 'lucide-react';
 
 export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
   const allNavItems = [
@@ -25,6 +25,12 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
       id: 'notices', 
       label: 'Avisos', 
       icon: Bell, 
+      roles: ['admin', 'contador', 'coach', 'socio'] 
+    },
+    { 
+      id: 'store', 
+      label: 'Tienda', 
+      icon: ShoppingBag, 
       roles: ['admin', 'contador', 'coach', 'socio'] 
     },
     { 
