@@ -80,16 +80,25 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const formData = await event.request.formData();
-        const file = formData.get('receiptImage');
+        let file = formData.get('receiptImage') || formData.get('file') || formData.get('media') || formData.get('image');
         
+        if (!file) {
+          for (const [key, value] of formData.entries()) {
+            if (value && typeof value === 'object' && (value.name || value.size)) {
+              file = value;
+              break;
+            }
+          }
+        }
+
         if (file) {
           const cache = await caches.open('shared-receipts');
           await cache.put(
             new Request('/shared-receipt.jpg'),
             new Response(file, {
               headers: {
-                'Content-Type': file.type,
-                'Content-Length': file.size
+                'Content-Type': file.type || 'image/jpeg',
+                'Content-Length': file.size || ''
               }
             })
           );

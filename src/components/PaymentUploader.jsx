@@ -27,9 +27,8 @@ export const PaymentUploader = ({ onSuccess }) => {
 
   React.useEffect(() => {
     const checkSharedFile = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('shared') === 'true') {
-        try {
+      try {
+        if ('caches' in window) {
           const cache = await caches.open('shared-receipts');
           const response = await cache.match('/shared-receipt.jpg');
           if (response) {
@@ -41,9 +40,9 @@ export const PaymentUploader = ({ onSuccess }) => {
             
             handleFileChange({ target: { files: [sharedFile] } });
           }
-        } catch (e) {
-          console.error("Error loading shared file:", e);
         }
+      } catch (e) {
+        console.error("Error loading shared file:", e);
       }
     };
     checkSharedFile();
