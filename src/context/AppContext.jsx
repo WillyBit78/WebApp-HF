@@ -745,35 +745,17 @@ export const AppProvider = ({ children }) => {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
             nombre: newUser.nombre,
-            apellido: newUser.apellido,
+            apellido: newUser.apellido || '',
             usuario: newUser.usuario,
             clave: newUser.clave,
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
             estadoCuota: newUser.estadoCuota || 'pendiente',
-            montoCuota: Number(newUser.montoCuota) || 0,
-            dni: newUser.dni || '',
-            telefono: newUser.telefono || ''
+            montoCuota: Number(newUser.montoCuota) || 0
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
-          if (error) {
-            console.warn("Supabase user upsert warning:", error);
-            // Fallback for minimal column schema
-            const fallbackPayload = {
-              id: newUser.id,
-              numeroSocio: newUser.numeroSocio || (users.length + 201),
-              nombre: newUser.nombre,
-              apellido: newUser.apellido,
-              usuario: newUser.usuario,
-              clave: newUser.clave,
-              rol: newUser.rol || 'socio',
-              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
-              estadoCuota: newUser.estadoCuota || 'pendiente',
-              montoCuota: Number(newUser.montoCuota) || 0
-            };
-            await supabase.from('users').upsert([fallbackPayload]).catch(console.error);
-          }
+          if (error) console.warn("Supabase user upsert error:", error);
         } catch (err) {
           console.warn("Supabase user insert catch error:", err);
         }
