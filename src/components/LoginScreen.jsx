@@ -41,22 +41,16 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
   }, []);
 
   const handleInstallApp = async () => {
-    if (isIOS) {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        console.log('App instalada desde la pantalla de login');
+      }
+      setDeferredPrompt(null);
+    } else if (isIOS) {
       setShowIOSInstructions(prev => !prev);
-      return;
     }
-
-    if (!deferredPrompt) {
-      alert('📱 Abrí esta página en Chrome o tu navegador móvil para instalar la App en tu pantalla de inicio.');
-      return;
-    }
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      console.log('App instalada desde la pantalla de login');
-    }
-    setDeferredPrompt(null);
   };
 
   const handleLogoClick = () => {
