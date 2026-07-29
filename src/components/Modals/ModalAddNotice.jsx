@@ -63,13 +63,17 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
         ...formData,
         categoriaDestino: formData.destinatarioValor
       });
-      setSendResult(res);
-      setTimeout(() => {
-        onClose();
-      }, 2200);
+      if (res && res.success) {
+        setSendResult(res);
+        setTimeout(() => {
+          onClose();
+        }, 2200);
+      } else {
+        setSendResult({ success: false, error: res?.error || 'Error publicando aviso' });
+      }
     } catch (err) {
       console.error('Error sending notice:', err);
-      setSendResult({ success: false });
+      setSendResult({ success: false, error: err.message || 'Falla de conexión' });
     } finally {
       setSending(false);
     }
@@ -101,7 +105,7 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
         </div>
 
         {/* Feedback Alert Result */}
-        {sendResult && (
+        {sendResult && sendResult.success && (
           <div className="bg-emerald-500/20 border border-emerald-500/40 p-3.5 rounded-2xl text-emerald-300 text-xs font-bold space-y-1 animate-fadeIn">
             <div className="flex items-center gap-2 text-sm">
               <Check className="w-4 h-4 text-emerald-400" /> ¡Comunicado enviado y publicado exitosamente!
@@ -111,6 +115,17 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
                 📱 Notificación entregada a {sendResult.pushResult.sentCount} de {sendResult.pushResult.targetedSubscriptions} dispositivo(s) destinatario(s).
               </p>
             )}
+          </div>
+        )}
+
+        {sendResult && !sendResult.success && (
+          <div className="bg-rose-500/20 border border-rose-500/40 p-3.5 rounded-2xl text-rose-300 text-xs font-bold space-y-1 animate-fadeIn">
+            <div className="flex items-center gap-2 text-sm">
+              <AlertTriangle className="w-4 h-4 text-rose-400" /> Error al enviar el comunicado
+            </div>
+            <p className="text-[11px] text-rose-200/90 font-mono">
+              {sendResult.error || 'Falla de conexión con el servidor.'}
+            </p>
           </div>
         )}
 

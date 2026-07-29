@@ -1050,7 +1050,11 @@ export const AppProvider = ({ children }) => {
           urgente: newNotice.urgente || false
         };
         
-        await supabase.from('notices').insert([supabasePayload]).catch(err => console.warn("Supabase insert notice error:", err));
+        const { error: insErr } = await supabase.from('notices').insert([supabasePayload]);
+        if (insErr) {
+          console.error("CRITICAL: Supabase insert notice failed:", insErr);
+          throw new Error(`Error en base de datos: ${insErr.message}`);
+        }
 
         if (broadcastChannelRef.current) {
           broadcastChannelRef.current.send({
