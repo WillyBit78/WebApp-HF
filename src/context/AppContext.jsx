@@ -92,7 +92,7 @@ export const AppProvider = ({ children }) => {
     return merged;
   };
 
-  // Settings and Cuotas por Disciplina
+  // Settings and Cuotas por Disciplina y Categoría
   const [cuotasPorDisciplina, setCuotasPorDisciplina] = useState(() => {
     try {
       const saved = localStorage.getItem('haedo_cuotas_disciplina');
@@ -106,6 +106,24 @@ export const AppProvider = ({ children }) => {
     };
   });
 
+  const [cuotasPorCategoria, setCuotasPorCategoria] = useState({
+    'BAFI Femenino': 20000,
+    'EDEFI Mayores': 15000,
+    'EDEFI Baby': 30000,
+    'FUTSALA Promo': 30000,
+    'FUTSALA Masculino': 30000,
+    'BAFI Masculino': 30000,
+    'Futbol Baby': 30000,
+    'Futsal Femenino': 20000,
+    'Futsal Masculino': 30000,
+    'Futsal Mayores': 15000
+  });
+
+  const updateCuotaCategoria = (nombre, monto) => {
+    const numMonto = Number(monto) || 0;
+    setCuotasPorCategoria(prev => ({ ...prev, [nombre]: numMonto }));
+  };
+
   const updateCuotaDisciplina = (nombre, monto, mesVigencia = null) => {
     const numMonto = Number(monto) || 0;
     setCuotasPorDisciplina(prev => {
@@ -113,6 +131,7 @@ export const AppProvider = ({ children }) => {
       try { localStorage.setItem('haedo_cuotas_disciplina', JSON.stringify(updated)); } catch (e) {}
       return updated;
     });
+    setCuotasPorCategoria(prev => ({ ...prev, [nombre]: numMonto }));
     registrarLog('configuracion', `Actualización de cuota para ${nombre} a $${numMonto.toLocaleString('es-AR')}${mesVigencia ? ` (Aplica en ${mesVigencia})` : ''}`);
   };
 
@@ -990,10 +1009,6 @@ export const AppProvider = ({ children }) => {
 
   const markNoticeAsRead = (noticeId) => {
     setReadNoticeIds(prev => prev.includes(noticeId) ? prev : [...prev, noticeId]);
-  };
-
-  const updateCuotaCategoria = (catName, nuevoMonto) => {
-    setCuotasPorCategoria(prev => ({ ...prev, [catName]: Number(nuevoMonto) }));
   };
 
   // Stats calculation

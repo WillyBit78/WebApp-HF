@@ -12,7 +12,7 @@ export const CLUB_CATEGORIES = {
 };
 
 export const ModalAddUser = ({ onClose }) => {
-  const { addOrUpdateUser, cuotasPorCategoria } = useApp();
+  const { addOrUpdateUser, cuotasPorCategoria = {} } = useApp();
   
   const [categoriaMadre, setCategoriaMadre] = useState('BAFI Femenino');
   const [subCategoria, setSubCategoria] = useState('1ra');
