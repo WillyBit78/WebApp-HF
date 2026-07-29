@@ -184,7 +184,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
                 className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-extrabold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
               >
                 <Download className="w-4 h-4 text-emerald-400 animate-bounce" />
-                📲 Instalar App Oficial en este Celular
+                Instalar Haedo Futsal App
               </button>
             )}
 
