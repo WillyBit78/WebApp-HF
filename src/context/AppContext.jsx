@@ -751,13 +751,17 @@ export const AppProvider = ({ children }) => {
 
       if (isSupabaseConfigured && supabase) {
         try {
+          const cleanNombre = (newUser.nombre || newUser.nombres || 'Socio').trim();
+          const cleanApellido = (newUser.apellido || '').trim();
+          const cleanUsuario = (newUser.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}` || `SOCIO${Date.now().toString().slice(-4)}`).toUpperCase();
+
           const dbUserPayload = {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
-            nombre: newUser.nombre,
-            apellido: `${newUser.apellido || ''}${newUser.telefono ? ` | Tel: ${newUser.telefono}` : ''}`,
-            usuario: newUser.usuario || newUser.dni || newUser.id,
-            clave: newUser.clave,
+            nombre: cleanNombre,
+            apellido: `${cleanApellido}${newUser.telefono ? ` | Tel: ${newUser.telefono}` : ''}`,
+            usuario: cleanUsuario,
+            clave: (newUser.clave || '1234').toString().slice(0, 4),
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
             estadoCuota: newUser.estadoCuota || 'pendiente',
@@ -765,12 +769,12 @@ export const AppProvider = ({ children }) => {
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
-          if (error) console.warn("Supabase user upsert error:", error);
+          if (error) console.error("Supabase user upsert error:", error);
         } catch (err) {
-          console.warn("Supabase user insert catch error:", err);
+          console.error("Supabase user insert catch error:", err);
         }
       }
-      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria} • DNI: ${newUser.dni}`, newUser);
+      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${(newUser.rol || 'socio').toUpperCase()} • Categoría: ${newUser.categoria} • DNI: ${newUser.dni}`, newUser);
     }
   };
 
