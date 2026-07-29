@@ -118,11 +118,13 @@ export const PWAInstallBanner = () => {
             onClick={async () => {
               const res = await registerPushSubscription(currentUser, true);
               if (res && res.success) {
-                alert('✅ ¡Tu celular quedó registrado con éxito para recibir avisos con la app cerrada!');
+                alert('✅ ¡Tu celular quedó registrado con éxito en la base de datos de Supabase para recibir avisos con la app cerrada!');
               } else if (res && res.reason === 'denied') {
-                alert('⚠️ Las notificaciones están bloqueadas en tu navegador. Ve a Configuración > Notificaciones para permitir.');
+                alert('⚠️ Las notificaciones están bloqueadas en la configuración de tu celular/navegador. Actívalas en Configuración > Sitios > Notificaciones.');
+              } else if (res && res.reason === 'db_error') {
+                alert('⚠️ Error al guardar en base de datos: ' + (res.details || 'Error RLS / DB'));
               } else {
-                alert('🔔 Permiso registrado. Tu celular recibirá las notificaciones del club.');
+                alert('⚠️ No se pudo obtener el token Push del celular: ' + (res?.error || res?.reason || 'Servidor Push no disponible en este navegador'));
               }
             }}
             className="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-extrabold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer select-none"

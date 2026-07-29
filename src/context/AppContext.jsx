@@ -486,7 +486,11 @@ export const AppProvider = ({ children }) => {
           estado_cuota: targetUser.estadoCuota || 'al_dia',
           subscription: JSON.stringify(subscription)
         };
-        await supabase.from('push_subscriptions').upsert(subData).catch(console.warn);
+        const { error: dbErr } = await supabase.from('push_subscriptions').upsert(subData);
+        if (dbErr) {
+          console.warn("Supabase push_subscriptions upsert error:", dbErr);
+          return { success: false, reason: 'db_error', details: dbErr.message };
+        }
         return { success: true, subscription };
       }
       return { success: false, reason: 'no_subscription' };
