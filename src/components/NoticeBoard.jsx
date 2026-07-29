@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Bell, AlertTriangle, Plus, Megaphone, Trash2, Shield, Users, Clock, CheckCircle2, Filter, RotateCcw } from 'lucide-react';
 
 export const NoticeBoard = ({ onOpenModalNotice }) => {
-  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead } = useApp();
+  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead, registerPushSubscription } = useApp();
 
   const userRole = currentUser?.rol || 'socio';
   const canPublish = userRole === 'admin' || userRole === 'coach' || userRole === 'contador';
@@ -38,18 +38,19 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
           {typeof window !== 'undefined' && 'Notification' in window && (
             <button
               onClick={async () => {
-                if (Notification.permission === 'granted') {
-                  alert('🔔 Las notificaciones Push ya están activadas en este dispositivo.');
+                const res = await registerPushSubscription(currentUser, true);
+                if (res && res.success) {
+                  alert('✅ ¡Alertas Push sincronizadas con éxito en este celular!');
+                } else if (res && res.reason === 'denied') {
+                  alert('⚠️ Las notificaciones están bloqueadas en tu navegador. Ve a Configuración > Notificaciones para permitir.');
                 } else {
-                  const p = await Notification.requestPermission();
-                  if (p === 'granted') alert('✅ Notificaciones Push activadas con éxito.');
-                  else alert('⚠️ Para recibir avisos con la app cerrada, debes habilitar las notificaciones en la configuración del navegador.');
+                  alert('🔔 Permiso concedido. Se guardará tu dispositivo para el próximo aviso.');
                 }
               }}
               className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold px-3 py-3 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Verificar Notificaciones Push en este celular"
+              title="Registrar y Vincular este celular para notificaciones Push con la App cerrada"
             >
-              <Bell className="w-4 h-4 text-amber-400" /> Alertas Push
+              <Bell className="w-4 h-4 text-amber-400" /> Registrar Alertas Push
             </button>
           )}
         </div>
