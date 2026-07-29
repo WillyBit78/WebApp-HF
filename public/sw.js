@@ -37,8 +37,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: data.body,
-    icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
+    icon: data.icon || '/logo_192.png',
+    badge: data.badge || '/logo_192.png',
     vibrate: [300, 100, 300, 100, 300],
     tag: data.tag || `haedo-notice-${Date.now()}`,
     renotify: true,
@@ -46,7 +46,7 @@ self.addEventListener('push', (event) => {
     timestamp: Date.now(),
     data: data.data || { url: '/?tab=notices' },
     actions: [
-      { action: 'open', title: 'Ver Comunicado 📢' }
+      { action: 'open', title: 'Abrir Haedo Futsal App 📢' }
     ]
   };
 

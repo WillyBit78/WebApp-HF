@@ -80,10 +80,10 @@ export default async function handler(req, res) {
     });
 
     const pushPayload = JSON.stringify({
-      title: `${urgente ? '🚨 URGENTE: ' : ''}${titulo || 'Nuevo Aviso Haedo Futsal'}`,
+      title: `${urgente ? '🚨 URGENTE: ' : ''}${titulo || 'Haedo Futsal App'}`,
       body: contenido || 'Tienes una nueva novedad importante del club.',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/logo_192.png',
+      badge: '/logo_192.png',
       tag: `notice-${Date.now()}`,
       data: {
         url: '/?tab=notices',
