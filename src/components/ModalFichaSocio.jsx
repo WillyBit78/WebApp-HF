@@ -36,23 +36,23 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   const videoRef = useRef(null);
   const [cameraStream, setCameraStream] = useState(null);
 
-  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || '';
+  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || socio?.foto_rostro || socio?.foto_url || '';
 
   const [editForm, setEditForm] = useState({
     nombre: socio?.nombre || socio?.nombres || '',
     apellido: socio?.apellido || '',
-    dni: socio?.dni || socio?.documentoDni || socio?.numeroDni || '',
-    telefono: socio?.telefono || '',
+    dni: socio?.dni || socio?.documentoDni || socio?.numeroDni || (socio?.id && socio?.id.includes('-') ? socio?.id.split('-').pop() : socio?.id) || '',
+    telefono: socio?.telefono || socio?.telefonoSocio || (socio?.apellido && socio?.apellido.includes(' | Tel: ') ? socio?.apellido.split(' | Tel: ')[1] : '') || '',
     categoria: socio?.categoria || '',
-    clave: socio?.clave || '1234',
+    clave: (socio?.clave || '1234').toString().slice(0, 4),
     rol: socio?.rol || 'socio',
     estadoCuota: socio?.estadoCuota || 'al_dia',
     montoCuota: socio?.montoCuota || 15000,
     fotoUrl: currentPhoto,
-    fechaNacimiento: socio?.fechaNacimiento || '',
-    hinchaDe: socio?.hinchaDe || '',
-    nombreContacto: socio?.nombreContacto || '',
-    telefonoContacto: socio?.telefonoContacto || ''
+    fechaNacimiento: socio?.fechaNacimiento || socio?.fecha_nacimiento || '',
+    hinchaDe: socio?.hinchaDe || socio?.hincha_de || '',
+    nombreContacto: socio?.nombreContacto || socio?.nombre_contacto || '',
+    telefonoContacto: socio?.telefonoContacto || socio?.telefono_contacto || ''
   });
 
   if (!socio) return null;
@@ -319,11 +319,6 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                   <Award className="w-4 h-4 text-amber-400" />
                   {editForm.categoria || 'General'}
                 </span>
-                {editForm.dni && (
-                  <span className="text-slate-400 font-mono">
-                    DNI: {editForm.dni}
-                  </span>
-                )}
               </div>
             </div>
           </div>
@@ -481,31 +476,34 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                     <span className="font-bold text-amber-400">#{socio.numeroSocio || 'S/N'}</span>
                   </div>
 
-                  {socio.fechaNacimiento && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5 text-amber-400" /> Nacimiento:
-                      </span>
-                      <span className="font-mono text-slate-200">{socio.fechaNacimiento}</span>
-                    </div>
-                  )}
+                  {/* Fecha de Nacimiento */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5 text-amber-400" /> Nacimiento:
+                    </span>
+                    <span className="font-mono text-slate-200">
+                      {socio.fechaNacimiento || socio.fecha_nacimiento || editForm.fechaNacimiento || 'Sin registrar'}
+                    </span>
+                  </div>
 
-                  {socio.hinchaDe && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 flex items-center gap-1">
-                        <Shield className="w-3.5 h-3.5 text-amber-400" /> Hincha de:
-                      </span>
-                      <span className="font-semibold text-amber-300">{socio.hinchaDe}</span>
-                    </div>
-                  )}
+                  {/* Hincha De */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5 text-amber-400" /> Hincha de:
+                    </span>
+                    <span className="font-semibold text-amber-300">
+                      {socio.hinchaDe || socio.hincha_de || editForm.hinchaDe || 'Haedo Futsal'}
+                    </span>
+                  </div>
 
+                  {/* Teléfono / WA Socio */}
                   <div className="flex justify-between items-center pt-1.5 border-t border-slate-900">
                     <span className="text-slate-500 flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-emerald-400" /> Teléfono / WA Socio:
                     </span>
-                    {(socio.telefono || (socio.apellido && socio.apellido.includes(' | Tel: ') ? socio.apellido.split(' | Tel: ')[1] : null)) ? (
-                      (() => {
-                        const telStr = socio.telefono || socio.apellido.split(' | Tel: ')[1];
+                    {(() => {
+                      const telStr = socio.telefono || editForm.telefono || (socio.apellido && socio.apellido.includes(' | Tel: ') ? socio.apellido.split(' | Tel: ')[1] : null);
+                      if (telStr) {
                         const waFormatted = `https://wa.me/${telStr.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`;
                         return (
                           <a
@@ -518,43 +516,44 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                             <MessageCircle className="w-3 h-3 text-emerald-400" /> {telStr}
                           </a>
                         );
-                      })()
-                    ) : (
-                      <span className="text-slate-600 italic">No especificado</span>
-                    )}
+                      }
+                      return <span className="text-slate-600 italic">No especificado</span>;
+                    })()}
                   </div>
 
-                  {(socio.nombreContacto || socio.telefonoContacto) && (
-                    <div className="pt-1.5 border-t border-slate-900 space-y-1.5">
-                      <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Contacto de Emergencia / Familiar:</div>
-                      {socio.nombreContacto && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-500">Nombre Tutor/Contacto:</span>
-                          <span className="font-bold text-slate-200">{socio.nombreContacto}</span>
-                        </div>
-                      )}
-                      {socio.telefonoContacto && (
-                        <div className="flex justify-between items-center">
-                          <span className="text-slate-500 flex items-center gap-1">
-                            <Phone className="w-3 h-3 text-emerald-400" /> Teléfono Familiar / WA:
-                          </span>
-                          {waContactLink ? (
+                  {/* Contacto de Emergencia / Familiar */}
+                  <div className="pt-1.5 border-t border-slate-900 space-y-1.5">
+                    <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">Contacto de Emergencia / Familiar:</div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500">Nombre Tutor/Contacto:</span>
+                      <span className="font-bold text-slate-200">
+                        {socio.nombreContacto || socio.nombre_contacto || editForm.nombreContacto || 'No registrado'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-slate-500 flex items-center gap-1">
+                        <Phone className="w-3 h-3 text-emerald-400" /> Teléfono Familiar / WA:
+                      </span>
+                      {(() => {
+                        const telFam = socio.telefonoContacto || socio.telefono_contacto || editForm.telefonoContacto;
+                        if (telFam) {
+                          const waFam = `https://wa.me/${telFam.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`;
+                          return (
                             <a
-                              href={waContactLink}
+                              href={waFam}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition-all"
                               title="Enviar WhatsApp al contacto de emergencia"
                             >
-                              <MessageCircle className="w-3 h-3 text-emerald-400" /> {socio.telefonoContacto}
+                              <MessageCircle className="w-3 h-3 text-emerald-400" /> {telFam}
                             </a>
-                          ) : (
-                            <span className="text-slate-200">{socio.telefonoContacto}</span>
-                          )}
-                        </div>
-                      )}
+                          );
+                        }
+                        return <span className="text-slate-600 italic">No especificado</span>;
+                      })()}
                     </div>
-                  )}
+                  </div>
 
                   {canManage && (
                     <div className="flex justify-between items-center pt-1 border-t border-slate-900">

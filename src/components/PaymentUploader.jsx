@@ -194,23 +194,23 @@ export const PaymentUploader = ({ onSuccess }) => {
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
           // Usar Gemini para analizar la imagen completa
-          const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ("AQ.Ab8RN6JWHFJi1F" + "mGJ5l2nwoD3moYvih4S-" + "Zzyhu0ZoLcSYzwSg");
-          if (!apiKey) {
-            throw new Error("Falta configurar la VITE_GEMINI_API_KEY en Vercel.");
-          }
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash-lite" });
+          let geminiResult = {};
+          try {
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ("AQ.Ab8RN6JWHFJi1F" + "mGJ5l2nwoD3moYvih4S-" + "Zzyhu0ZoLcSYzwSg");
+            if (apiKey) {
+              const genAI = new GoogleGenerativeAI(apiKey);
+              const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-          // Convertir dataUrl base64 a formato InlineData para Gemini
-          const base64Data = dataUrl.split(',')[1];
-          const imageParts = [{
-            inlineData: {
-              data: base64Data,
-              mimeType: "image/jpeg"
-            }
-          }];
+              // Convertir dataUrl base64 a formato InlineData para Gemini
+              const base64Data = dataUrl.split(',')[1];
+              const imageParts = [{
+                inlineData: {
+                  data: base64Data,
+                  mimeType: "image/jpeg"
+                }
+              }];
 
-          const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código, sin comentarios \`//\`, solo el objeto JSON).
+              const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código, sin comentarios \`//\`, solo el objeto JSON).
 Si un campo no se encuentra en el comprobante o no estás seguro, asignale null. No inventes datos.
 La fecha debe tener formato DD/MM/YYYY (ej: "12/07/2026").
 La hora formato HH:MM (ej: "18:44").
@@ -226,29 +226,21 @@ Buscá el Número de operación para numero_operacion.
   "emisor": "Nombre Apellido"
 }`;
 
-          let geminiResult = {};
-          try {
-            const result = await model.generateContent([prompt, ...imageParts]);
-            const response = await result.response;
-            let text = response.text();
-            
-            // Limpiar cualquier markdown residual y comentarios generados por error
-            let cleanedText = text.replace(/```json/gi, '').replace(/```/g, '');
-            // Eliminar comentarios tipo // por si la IA los incluye
-            cleanedText = cleanedText.replace(/\/\/.*$/gm, '').trim();
-            // Buscar solo el bloque desde { hasta }
-            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-            
-            if (jsonMatch) {
-              geminiResult = JSON.parse(jsonMatch[0]);
-            } else {
-              geminiResult = JSON.parse(cleanedText);
+              const result = await model.generateContent([prompt, ...imageParts]);
+              const response = await result.response;
+              let text = response.text();
+              
+              let cleanedText = text.replace(/```json/gi, '').replace(/```/g, '').replace(/\/\/.*$/gm, '').trim();
+              const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+              if (jsonMatch) {
+                geminiResult = JSON.parse(jsonMatch[0]);
+              } else {
+                geminiResult = JSON.parse(cleanedText);
+              }
             }
-            
-            console.log("Resultado Gemini:", geminiResult);
           } catch (e) {
-            console.error("Error parseando JSON de Gemini:", e);
-            throw new Error("La IA no devolvió un formato válido.");
+            console.warn("Gemini OCR no disponible o error de clave. Usando modo de revisión manual:", e);
+            geminiResult = {};
           }
 
           fechaExtraida = geminiResult.fecha || null;
@@ -449,8 +441,19 @@ Buscá el Número de operación para numero_operacion.
       if (typeof registrarLog === 'function') {
         registrarLog('error_critico_ocr', `Error procesando comprobante`, error.message);
       }
+      setPaymentStatus('en_revision');
+      await uploadPaymentReceipt({
+        monto: clubSettings.montoCuotaGeneral || 15000,
+        numeroOperacion: `MANUAL-${Date.now().toString().slice(-6)}`,
+        billeteraOrigen: 'Desconocida',
+        emisorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+        observaciones: 'Comprobante recibido para revisión manual.',
+        estado: 'en_revision',
+        comprobanteUrl: dataUrl
+      }).catch(console.warn);
+
       setParsing(false);
-      alert("Error crítico al procesar: " + error.message);
+      setStep(3);
     }
   };
 
