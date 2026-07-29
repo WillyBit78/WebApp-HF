@@ -123,7 +123,7 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
               {/* Title & Body */}
               <div className="space-y-2">
                 <h3 className="font-extrabold text-white text-xl tracking-tight">{notice.titulo}</h3>
-                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{notice.contenido}</p>
+                <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">{notice.contenido || notice.mensaje}</p>
               </div>
 
               {/* Footer */}

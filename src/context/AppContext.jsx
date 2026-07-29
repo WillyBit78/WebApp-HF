@@ -75,7 +75,14 @@ export const AppProvider = ({ children }) => {
       if (lower === 'creadopor') normalized.creadoPor = obj[key];
       if (lower === 'coelsaid') normalized.coelsaId = obj[key];
       // Notice fields (Supabase uses snake_case and mensaje)
-      if (lower === 'mensaje') normalized.contenido = obj[key];
+      if (lower === 'mensaje' && obj[key]) {
+        normalized.contenido = obj[key];
+        normalized.mensaje = obj[key];
+      }
+      if (lower === 'contenido' && obj[key]) {
+        normalized.mensaje = obj[key];
+        normalized.contenido = obj[key];
+      }
       if (lower === 'importante') normalized.urgente = obj[key];
       if (lower === 'destinatariotipo' || lower === 'destinatario_tipo') normalized.destinatarioTipo = obj[key];
       if (lower === 'destinatariovalor' || lower === 'destinatario_valor') normalized.destinatarioValor = obj[key];
@@ -501,13 +508,20 @@ export const AppProvider = ({ children }) => {
     const now = new Date();
     const timestampNow = now.getTime();
     const isoNow = now.toISOString();
+
+    let displayName = 'Sistema';
+    if (userToRecord) {
+      const full = `${userToRecord.nombre || ''} ${userToRecord.apellido || ''}`.trim();
+      displayName = full || userToRecord.usuario || 'Usuario';
+    }
+
     const newLog = {
       id: `log-${timestampNow}`,
       created_at: isoNow,
       timestamp: timestampNow,
       fechaHora: now.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short', hour12: false }),
-      usuarioNombre: userToRecord ? `${userToRecord.nombre} ${userToRecord.apellido}` : 'Sistema',
-      usuarioRol: userToRecord ? userToRecord.rol : 'sistema',
+      usuarioNombre: displayName,
+      usuarioRol: userToRecord ? (userToRecord.rol || 'socio') : 'sistema',
       tipoEvento,
       descripcion,
       detalles
