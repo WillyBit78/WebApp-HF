@@ -771,23 +771,7 @@ export const AppProvider = ({ children }) => {
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
-          if (error) {
-            console.warn("Supabase user upsert error:", error);
-            // Fallback for minimal column schema if table columns not added yet
-            const fallbackPayload = {
-              id: newUser.id,
-              numeroSocio: newUser.numeroSocio || (users.length + 201),
-              nombre: cleanNombre,
-              apellido: cleanApellido,
-              usuario: cleanUsuario,
-              clave: (newUser.clave || '1234').toString().slice(0, 4),
-              rol: newUser.rol || 'socio',
-              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
-              estadoCuota: newUser.estadoCuota || 'pendiente',
-              montoCuota: Number(newUser.montoCuota) || 0
-            };
-            await supabase.from('users').upsert([fallbackPayload]).catch(console.error);
-          }
+          if (error) console.error("Supabase user upsert error:", error);
         } catch (err) {
           console.error("Supabase user insert catch error:", err);
         }
