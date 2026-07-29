@@ -6,7 +6,14 @@ import { MOCK_ROLES } from '../mockData/initialData';
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem('haedo_current_user');
+      return savedUser ? JSON.parse(savedUser) : null;
+    } catch (e) {
+      return null;
+    }
+  });
   const [users, setUsers] = useState([]);
   const [payments, setPayments] = useState([]);
   const [events, setEvents] = useState([]);
@@ -431,10 +438,13 @@ export const AppProvider = ({ children }) => {
     }
   };
 
-  // Auto register push subscription when user is logged in
+  // Auto register push subscription and sync session to localStorage when user is logged in
   useEffect(() => {
     if (currentUser) {
       registerPushSubscription(currentUser);
+      try { localStorage.setItem('haedo_current_user', JSON.stringify(currentUser)); } catch (e) {}
+    } else {
+      try { localStorage.removeItem('haedo_current_user'); } catch (e) {}
     }
   }, [currentUser]);
 
@@ -448,6 +458,7 @@ export const AppProvider = ({ children }) => {
 
     if (targetUser) {
       setCurrentUser(targetUser);
+      try { localStorage.setItem('haedo_current_user', JSON.stringify(targetUser)); } catch (e) {}
       registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
       registerPushSubscription(targetUser);
       return true;
@@ -458,6 +469,7 @@ export const AppProvider = ({ children }) => {
   const logout = () => {
     if (currentUser) registrarLog('logout_usuario', `Cierre de sesión`, `Usuario: ${currentUser.usuario}`);
     setCurrentUser(null);
+    try { localStorage.removeItem('haedo_current_user'); } catch (e) {}
   };
 
   // Audit Logs
