@@ -89,7 +89,7 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
               <h3 className="font-extrabold text-white text-base">
                 {initialNotice ? 'Reutilizar / Modificar Comunicado' : 'Crear Comunicado u Aviso'}
               </h3>
-              <p className="text-[11px] text-slate-400">Difusión masiva + Push Notification en celulares</p>
+              <p className="text-[11px] text-slate-400">Difusión masiva a socios y miembros del club</p>
             </div>
           </div>
           <button 
@@ -104,15 +104,11 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
         {sendResult && (
           <div className="bg-emerald-500/20 border border-emerald-500/40 p-3.5 rounded-2xl text-emerald-300 text-xs font-bold space-y-1 animate-fadeIn">
             <div className="flex items-center gap-2 text-sm">
-              <Check className="w-4 h-4 text-emerald-400" /> ¡Comunicado publicado exitosamente!
+              <Check className="w-4 h-4 text-emerald-400" /> ¡Comunicado enviado y publicado exitosamente!
             </div>
-            {sendResult.pushResult ? (
+            {sendResult.pushResult && (
               <p className="text-[11px] text-emerald-400/90 font-mono">
-                📱 Push Notifications enviadas: {sendResult.pushResult.sentCount} de {sendResult.pushResult.targetedSubscriptions} dispositivos destinatarios.
-              </p>
-            ) : (
-              <p className="text-[11px] text-amber-300 font-mono">
-                ⚠️ Recordá ejecutar el SQL de la tabla push_subscriptions en Supabase para habilitar los push nativos en el celular.
+                📱 Notificación entregada a {sendResult.pushResult.sentCount} de {sendResult.pushResult.targetedSubscriptions} dispositivo(s) destinatario(s).
               </p>
             )}
           </div>
@@ -296,7 +292,7 @@ export const ModalAddNotice = ({ onClose, initialNotice = null }) => {
               className="w-2/3 bg-purple-600 hover:bg-purple-700 text-white font-extrabold py-2.5 rounded-xl shadow-lg shadow-purple-600/20 flex items-center justify-center gap-2 transition-all cursor-pointer disabled:opacity-50"
             >
               <Send className="w-4 h-4" />
-              {sending ? 'Difundiendo...' : (initialNotice ? 'Reutilizar y Difundir' : 'Difundir + Push Notification')}
+              {sending ? 'Enviando...' : (initialNotice ? 'Reutilizar y Difundir' : 'Difundir Comunicado')}
             </button>
           </div>
 

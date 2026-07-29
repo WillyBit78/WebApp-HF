@@ -1024,7 +1024,7 @@ export const AppProvider = ({ children }) => {
   const addNotice = async (noticeData) => {
     const newNotice = {
       id: `not-${Date.now()}`,
-      autor: `${currentUser?.nombre || 'Admin'} (${(currentUser?.rol || 'admin').toUpperCase()})`,
+      autor: currentUser?.nombre || 'Admin',
       fecha: new Date().toISOString().split('T')[0],
       destinatarioTipo: noticeData.destinatarioTipo || 'todos',
       destinatarioValor: noticeData.destinatarioValor || 'Todos',

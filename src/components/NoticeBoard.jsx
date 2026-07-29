@@ -145,7 +145,7 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
                 {/* Footer */}
                 <div className="pt-3 border-t border-slate-800/80 text-xs text-slate-400 font-medium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5">
-                    <Megaphone className="w-4 h-4 text-purple-400" /> Emitido por: <strong className="text-white font-bold">{notice.autor}</strong>
+                    <Megaphone className="w-4 h-4 text-purple-400" /> Emitido por: <strong className="text-white font-bold">{String(notice.autor || '').replace(/\s*\([^)]*\)/g, '')}</strong>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
