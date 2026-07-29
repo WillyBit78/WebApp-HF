@@ -245,7 +245,28 @@ export const AppProvider = ({ children }) => {
             supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
             supabase.from('logs').select('*').order('created_at', { ascending: false })
           ]);
-          if (uRes.data) setUsers(uRes.data.map(normalizeKeys));
+          if (uRes.data && uRes.data.length > 0) {
+            setUsers(uRes.data.map(normalizeKeys));
+          } else {
+            // Auto-seed base users (WILLY, POL, BOCHA, EPAZOS) if table is empty
+            setUsers(MOCK_USERS);
+            if (isSupabaseConfigured && supabase) {
+              const seedPayloads = MOCK_USERS.map(u => ({
+                id: u.id,
+                numero_socio: u.numeroSocio,
+                nombre: u.nombre,
+                apellido: u.apellido || '',
+                usuario: u.usuario,
+                clave: u.clave,
+                rol: u.rol,
+                categoria: u.categoria,
+                estado_cuota: u.estadoCuota,
+                monto_cuota: u.montoCuota,
+                telefono: u.telefono || ''
+              }));
+              supabase.from('users').upsert(seedPayloads).catch(console.warn);
+            }
+          }
           if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
           if (nRes.data && nRes.data.length > 0) {
@@ -665,6 +686,7 @@ export const AppProvider = ({ children }) => {
           const dbUserPayload = {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
+            numero_socio: newUser.numeroSocio || (users.length + 201),
             nombre: newUser.nombre,
             apellido: newUser.apellido,
             usuario: newUser.usuario,
@@ -672,7 +694,9 @@ export const AppProvider = ({ children }) => {
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
             estadoCuota: newUser.estadoCuota || 'pendiente',
+            estado_cuota: newUser.estadoCuota || 'pendiente',
             montoCuota: Number(newUser.montoCuota) || 0,
+            monto_cuota: Number(newUser.montoCuota) || 0,
             dni: newUser.dni || '',
             telefono: newUser.telefono || '',
             fotoRostro: newUser.fotoRostro || newUser.fotoUrl || '',
@@ -683,9 +707,9 @@ export const AppProvider = ({ children }) => {
             telefonoContacto: newUser.telefonoContacto || ''
           };
 
-          const { error } = await supabase.from('users').insert([dbUserPayload]);
+          const { error } = await supabase.from('users').upsert([dbUserPayload]);
           if (error) {
-            console.error("Supabase user insert error:", error);
+            console.error("Supabase user upsert error:", error);
           }
         } catch (err) {
           console.warn("Supabase user insert catch error:", err);
