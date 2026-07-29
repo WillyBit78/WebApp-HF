@@ -472,7 +472,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">Documento DNI:</span>
                     <span className="font-mono font-bold text-slate-200">
-                      {socio.dni || (socio.id && socio.id.startsWith('usr-') && !isNaN(socio.id.replace('usr-', '')) ? socio.id.replace('usr-', '') : '') || 'Sin registrar'}
+                      {socio.dni || (socio.id && socio.id.includes('-') ? socio.id.split('-').pop() : socio.id) || 'Sin registrar'}
                     </span>
                   </div>
 
