@@ -704,39 +704,49 @@ export const AppProvider = ({ children }) => {
 
   // Users / Socios
   const addOrUpdateUser = async (userData) => {
-    if (userData.id) {
-      setUsers(prev => prev.map(u => u.id === userData.id ? { ...u, ...userData } : u));
+    const isEdit = Boolean(userData.id && users.some(u => u.id === userData.id));
+    const userDni = (userData.dni || userData.id || '').toString().trim();
+    
+    // DNI acts as Primary Key (id) in Supabase users table
+    const userId = isEdit 
+      ? userData.id 
+      : (userDni ? `usr-${userDni}` : `usr-${Date.now()}`);
+
+    const newUser = {
+      ...userData,
+      id: userId,
+      dni: userDni || userData.dni || '',
+      telefono: userData.telefono || '',
+      estadoCuota: userData.estadoCuota || 'pendiente',
+      montoCuota: Number(userData.montoCuota) || (DISCIPLINAS_CONFIG[userData.categoria]?.monto || 15000),
+      numeroSocio: userData.numeroSocio || (users.length + 201)
+    };
+
+    if (isEdit) {
+      setUsers(prev => prev.map(u => u.id === newUser.id ? newUser : u));
+      if (currentUser && currentUser.id === newUser.id) setCurrentUser(newUser);
+
       if (isSupabaseConfigured && supabase) {
         try {
-          await supabase.from('users').update(userData).eq('id', userData.id);
+          const dbUserPayload = {
+            id: newUser.id,
+            numeroSocio: newUser.numeroSocio,
+            nombre: newUser.nombre,
+            apellido: `${newUser.apellido || ''}${newUser.telefono ? ` | Tel: ${newUser.telefono}` : ''}`,
+            usuario: newUser.usuario || newUser.dni || newUser.id,
+            clave: newUser.clave,
+            rol: newUser.rol || 'socio',
+            categoria: newUser.categoria || 'BAFI Femenino (1ra)',
+            estadoCuota: newUser.estadoCuota || 'pendiente',
+            montoCuota: Number(newUser.montoCuota) || 0
+          };
+          await supabase.from('users').upsert([dbUserPayload]).catch(console.warn);
         } catch (err) {
-          console.warn("Supabase update error:", err);
+          console.warn("Supabase update catch error:", err);
         }
       }
-      registrarLog('modificacion_usuario', `Usuario modificado (${userData.nombre})`, `Rol: ${userData.rol}`);
+      registrarLog('modificacion_usuario', `Modificación de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol}`);
     } else {
-      const generatedId = `usr-${Date.now()}`;
-      const isSocio = userData.rol === 'socio';
-      const cleanNombre = userData.nombre || userData.nombres || '';
-      const cleanApellido = userData.apellido || '';
-      
-      const newUser = {
-        ...userData, // Preserva fotoRostro, fechaNacimiento, hinchaDe, nombreContacto, telefonoContacto, disciplinas
-        id: generatedId,
-        numeroSocio: userData.numeroSocio || (users.length + 201),
-        montoCuota: isSocio ? (Number(userData.montoCuota) || 15000) : 0,
-        categoria: isSocio ? (userData.categoria || 'BAFI Femenino (1ra)') : 'Staff',
-        nombre: cleanNombre,
-        nombres: cleanNombre,
-        apellido: cleanApellido,
-        usuario: userData.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}`.toUpperCase(),
-        clave: userData.clave || '1234',
-        rol: userData.rol || 'socio',
-        telefono: userData.telefono || '',
-        dni: userData.dni || '',
-        estadoCuota: isSocio ? 'pendiente' : 'al_dia'
-      };
-
       setUsers(prev => [...prev, newUser]);
 
       if (isSupabaseConfigured && supabase) {
@@ -745,8 +755,8 @@ export const AppProvider = ({ children }) => {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
             nombre: newUser.nombre,
-            apellido: newUser.apellido || '',
-            usuario: newUser.usuario,
+            apellido: `${newUser.apellido || ''}${newUser.telefono ? ` | Tel: ${newUser.telefono}` : ''}`,
+            usuario: newUser.usuario || newUser.dni || newUser.id,
             clave: newUser.clave,
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
@@ -760,7 +770,7 @@ export const AppProvider = ({ children }) => {
           console.warn("Supabase user insert catch error:", err);
         }
       }
-      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria}`, newUser);
+      registrarLog('alta_usuario', `Alta de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol.toUpperCase()} • Categoría: ${newUser.categoria} • DNI: ${newUser.dni}`, newUser);
     }
   };
 

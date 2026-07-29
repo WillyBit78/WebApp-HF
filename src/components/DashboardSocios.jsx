@@ -653,6 +653,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                             <tr>
                                               <th className="p-2.5 rounded-l-lg">Foto</th>
                                               <th className="p-2.5">Nombre y Apellido</th>
+                                              <th className="p-2.5">DNI</th>
                                               <th className="p-2.5">Usuario</th>
                                               <th className="p-2.5">Teléfono</th>
                                               <th className="p-2.5">Estado Cuenta</th>
@@ -660,57 +661,70 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                             </tr>
                                           </thead>
                                           <tbody className="divide-y divide-slate-800/60 text-slate-200">
-                                            {subSocios.map(socio => (
-                                              <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
-                                                
-                                                {/* Foto Socio */}
-                                                <td className="p-2.5">
-                                                  <div 
-                                                    onClick={() => openFichaSocio(socio)}
-                                                    className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
-                                                    title="Ver Ficha Personal"
-                                                  >
-                                                    {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
-                                                      <img src={socio.fotoRostro || socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                      (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
-                                                    )}
-                                                  </div>
-                                                </td>
+                                            {subSocios.map(socio => {
+                                              const rawAp = socio.apellido || '';
+                                              const apParts = rawAp.split(' | Tel: ');
+                                              const cleanApellido = apParts[0] || rawAp;
+                                              const embeddedTel = apParts[1] || '';
+                                              const displayTel = socio.telefono || embeddedTel || '';
+                                              const displayDni = socio.dni || (socio.id && socio.id.startsWith('usr-') ? socio.id.replace('usr-', '') : '') || 'N/A';
 
-                                                {/* Nombre y Apellido - CLICKABLE TO OPEN FICHA */}
-                                                <td className="p-2.5">
-                                                  <button
-                                                    onClick={() => openFichaSocio(socio)}
-                                                    className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs"
-                                                    title="Haz clic para ver Ficha Personal completa"
-                                                  >
-                                                    {socio.nombre || socio.nombres} {socio.apellido}
-                                                  </button>
-                                                </td>
-
-                                                {/* Usuario */}
-                                                <td className="p-2.5 font-mono text-slate-300 text-xs">
-                                                  @{socio.usuario || 'N/A'}
-                                                </td>
-
-                                                {/* Teléfono / WA Link */}
-                                                <td className="p-2.5 text-slate-300 text-xs">
-                                                  {socio.telefono ? (
-                                                    <a
-                                                      href={`https://wa.me/${(socio.telefono || '').replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
-                                                      target="_blank"
-                                                      rel="noopener noreferrer"
-                                                      className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
-                                                      title="Abrir chat de WhatsApp"
+                                              return (
+                                                <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
+                                                  
+                                                  {/* Foto Socio */}
+                                                  <td className="p-2.5">
+                                                    <div 
+                                                      onClick={() => openFichaSocio(socio)}
+                                                      className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
+                                                      title="Ver Ficha Personal"
                                                     >
-                                                      <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                                      {socio.telefono}
-                                                    </a>
-                                                  ) : (
-                                                    <span className="text-slate-500 italic">Sin registrar</span>
-                                                  )}
-                                                </td>
+                                                      {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
+                                                        <img src={socio.fotoRostro || socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
+                                                      ) : (
+                                                        (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
+                                                      )}
+                                                    </div>
+                                                  </td>
+
+                                                  {/* Nombre y Apellido - CLICKABLE TO OPEN FICHA */}
+                                                  <td className="p-2.5">
+                                                    <button
+                                                      onClick={() => openFichaSocio(socio)}
+                                                      className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs"
+                                                      title="Haz clic para ver Ficha Personal completa"
+                                                    >
+                                                      {socio.nombre || socio.nombres} {cleanApellido}
+                                                    </button>
+                                                  </td>
+
+                                                  {/* DNI Column */}
+                                                  <td className="p-2.5 font-mono text-slate-300 text-xs font-semibold">
+                                                    {displayDni}
+                                                  </td>
+
+                                                  {/* Usuario */}
+                                                  <td className="p-2.5 font-mono text-slate-300 text-xs">
+                                                    @{socio.usuario || 'N/A'}
+                                                  </td>
+
+                                                  {/* Teléfono / WA Link */}
+                                                  <td className="p-2.5 text-slate-300 text-xs">
+                                                    {displayTel ? (
+                                                      <a
+                                                        href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
+                                                        title="Abrir chat de WhatsApp"
+                                                      >
+                                                        <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                                                        {displayTel}
+                                                      </a>
+                                                    ) : (
+                                                      <span className="text-slate-500 italic">Sin registrar</span>
+                                                    )}
+                                                  </td>
 
                                                 {/* Estado Cuenta */}
                                                 <td className="p-2.5">
@@ -754,7 +768,8 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                 </td>
 
                                               </tr>
-                                            ))}
+                                              );
+                                            })}
                                           </tbody>
                                         </table>
                                       ) : (
