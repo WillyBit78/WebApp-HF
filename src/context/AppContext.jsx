@@ -719,7 +719,6 @@ export const AppProvider = ({ children }) => {
           const dbUserPayload = {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
-            numero_socio: newUser.numeroSocio || (users.length + 201),
             nombre: newUser.nombre,
             apellido: newUser.apellido,
             usuario: newUser.usuario,
@@ -727,22 +726,28 @@ export const AppProvider = ({ children }) => {
             rol: newUser.rol || 'socio',
             categoria: newUser.categoria || 'BAFI Femenino (1ra)',
             estadoCuota: newUser.estadoCuota || 'pendiente',
-            estado_cuota: newUser.estadoCuota || 'pendiente',
             montoCuota: Number(newUser.montoCuota) || 0,
-            monto_cuota: Number(newUser.montoCuota) || 0,
             dni: newUser.dni || '',
-            telefono: newUser.telefono || '',
-            fotoRostro: newUser.fotoRostro || newUser.fotoUrl || '',
-            fotoUrl: newUser.fotoUrl || newUser.fotoRostro || '',
-            fechaNacimiento: newUser.fechaNacimiento || '',
-            hinchaDe: newUser.hinchaDe || '',
-            nombreContacto: newUser.nombreContacto || '',
-            telefonoContacto: newUser.telefonoContacto || ''
+            telefono: newUser.telefono || ''
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
           if (error) {
-            console.error("Supabase user upsert error:", error);
+            console.warn("Supabase user upsert warning:", error);
+            // Fallback for minimal column schema
+            const fallbackPayload = {
+              id: newUser.id,
+              numeroSocio: newUser.numeroSocio || (users.length + 201),
+              nombre: newUser.nombre,
+              apellido: newUser.apellido,
+              usuario: newUser.usuario,
+              clave: newUser.clave,
+              rol: newUser.rol || 'socio',
+              categoria: newUser.categoria || 'BAFI Femenino (1ra)',
+              estadoCuota: newUser.estadoCuota || 'pendiente',
+              montoCuota: Number(newUser.montoCuota) || 0
+            };
+            await supabase.from('users').upsert([fallbackPayload]).catch(console.error);
           }
         } catch (err) {
           console.warn("Supabase user insert catch error:", err);
