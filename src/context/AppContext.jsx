@@ -92,15 +92,29 @@ export const AppProvider = ({ children }) => {
     return merged;
   };
 
-  // Settings and Cuotas
-  const [cuotasPorCategoria, setCuotasPorCategoria] = useState({
-    'BAFI Femenino': 15000,
-    'EDEFI Mayores': 15000,
-    'EDEFI Baby': 15000,
-    'FUTSALA Promo': 15000,
-    'FUTSALA Masculino': 15000,
-    'BAFI Masculino': 15000
+  // Settings and Cuotas por Disciplina
+  const [cuotasPorDisciplina, setCuotasPorDisciplina] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haedo_cuotas_disciplina');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {}
+    return {
+      'Futbol Baby': 30000,
+      'Futsal Femenino': 20000,
+      'Futsal Masculino': 30000,
+      'Futsal Mayores': 15000
+    };
   });
+
+  const updateCuotaDisciplina = (nombre, monto, mesVigencia = null) => {
+    const numMonto = Number(monto) || 0;
+    setCuotasPorDisciplina(prev => {
+      const updated = { ...prev, [nombre]: numMonto };
+      try { localStorage.setItem('haedo_cuotas_disciplina', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+    registrarLog('configuracion', `Actualización de cuota para ${nombre} a $${numMonto.toLocaleString('es-AR')}${mesVigencia ? ` (Aplica en ${mesVigencia})` : ''}`);
+  };
 
   const [clubSettings, setClubSettings] = useState({
     nombreClub: 'Haedo Futsal',
@@ -1031,6 +1045,7 @@ export const AppProvider = ({ children }) => {
       vincularTransferenciaMP, sincronizarMercadoPago,
       registrarLog, clearLogs, registrarPagoEfectivoCoach,
       cuotasPorCategoria, updateCuotaCategoria,
+      cuotasPorDisciplina, updateCuotaDisciplina,
       clubSettings, setClubSettings,
       roles: MOCK_ROLES,
       uploadPaymentReceipt, updatePaymentStatus, deletePayment,

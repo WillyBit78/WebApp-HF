@@ -40,6 +40,13 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
     sincronizarMercadoPago,
     cuotasPorCategoria,
     updateCuotaCategoria,
+    cuotasPorDisciplina = {
+      'Futbol Baby': 30000,
+      'Futsal Femenino': 20000,
+      'Futsal Masculino': 30000,
+      'Futsal Mayores': 15000
+    },
+    updateCuotaDisciplina,
     deletePayment,
     updatePaymentStatus,
     auditoriaFilterStatus,
@@ -949,39 +956,45 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
         </div>
       )}
 
-      {/* Modal: Precios de Cuotas Mensuales por Categoría Madre */}
+      {/* Modal: Precios de Cuotas por Disciplina */}
       {showCuotasModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
             <div className="flex justify-between items-center border-b border-slate-800 pb-3">
               <h3 className="font-bold text-white text-base flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-amber-400" />
-                Precios de Cuotas por Categoría
+                Precios de Cuotas por Disciplina
               </h3>
               <button onClick={() => setShowCuotasModal(false)} className="text-slate-400 hover:text-white">✕</button>
             </div>
 
             <p className="text-xs text-slate-400">
-              Las sub-categorías de cada plantel heredan el valor mensual fijado para su Categoría Madre correspondiente.
+              Fijá el importe mensual por disciplina. Los cambios impactarán automáticamente en la grilla de pagos de todos los socios vinculados.
             </p>
+
+            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+              <label className="block text-[11px] text-amber-400 font-bold uppercase tracking-wider">Fecha / Mes de Impacto del Precio:</label>
+              <select className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-xs font-semibold">
+                <option value="inmediato">Inmediato (Cuota Mes Actual)</option>
+                <option value="siguiente">A partir del Próximo Mes (Agosto 2026)</option>
+                <option value="septiembre">A partir de Septiembre 2026</option>
+              </select>
+            </div>
 
             <div className="space-y-3 max-h-96 overflow-y-auto pr-1">
               {[
-                { name: 'BAFI Femenino', tipo: 'Adulto', sub: '1ra, Reserva' },
-                { name: 'EDEFI Mayores', tipo: 'Adulto', sub: '+30, +35, +42' },
-                { name: 'EDEFI Baby', tipo: 'Infantil', sub: '2013, 2014, 2015, 2016, 2017, 2018' },
-                { name: 'FUTSALA Promo', tipo: 'Infantil', sub: '2016, 2017, 2018' },
-                { name: 'FUTSALA Masculino', tipo: 'Juvenil', sub: '1ra, 3ra, 4ta, 5ta, 6ta, 7ma, 8va' },
-                { name: 'BAFI Masculino', tipo: 'Juvenil', sub: '1ra, Reserva, 3ra, 4ta, 5ta' }
-              ].map((cat) => (
-                <div key={cat.name} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
+                { name: 'Futbol Baby', defaultPrice: 30000, desc: 'Categorías EDEFI Baby (2012 a 2020)' },
+                { name: 'Futsal Femenino', defaultPrice: 20000, desc: 'Categoría BAFI Femenino (1ra, Reserva)' },
+                { name: 'Futsal Masculino', defaultPrice: 30000, desc: 'FUTSALA Promo, FUTSALA Masculino, BAFI Masculino' },
+                { name: 'Futsal Mayores', defaultPrice: 15000, desc: 'Categoría EDEFI Mayores (+30, +35, +42)' }
+              ].map((disc) => (
+                <div key={disc.name} className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between gap-3 text-xs">
                   <div>
                     <div className="font-bold text-white text-sm flex items-center gap-2">
-                      {cat.name}
-                      <span className="bg-slate-800 text-slate-300 text-[10px] px-2 py-0.5 rounded font-mono">{cat.tipo}</span>
+                      {disc.name}
                     </div>
                     <div className="text-[11px] text-slate-400 mt-0.5">
-                      Sub-categorías: <strong className="text-amber-300/80">{cat.sub}</strong>
+                      {disc.desc}
                     </div>
                   </div>
 
@@ -989,9 +1002,9 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
                     <span className="text-slate-400 font-bold">$</span>
                     <input
                       type="number"
-                      value={cuotasPorCategoria[cat.name] || 15000}
-                      onChange={(e) => updateCuotaCategoria(cat.name, e.target.value)}
-                      className="w-24 bg-slate-900 border border-slate-700 text-emerald-400 font-bold px-2.5 py-1.5 rounded-lg text-right"
+                      value={cuotasPorDisciplina[disc.name] ?? disc.defaultPrice}
+                      onChange={(e) => updateCuotaDisciplina && updateCuotaDisciplina(disc.name, e.target.value)}
+                      className="w-28 bg-slate-900 border border-slate-700 text-emerald-400 font-extrabold px-2.5 py-1.5 rounded-lg text-right"
                     />
                   </div>
                 </div>
@@ -999,8 +1012,11 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
             </div>
 
             <button
-              onClick={() => setShowCuotasModal(false)}
-              className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-red-500/20 text-xs"
+              onClick={() => {
+                setShowCuotasModal(false);
+                alert('✅ Precios de cuotas por disciplina actualizados con éxito.');
+              }}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-2.5 rounded-xl shadow-lg shadow-emerald-500/20 text-xs cursor-pointer"
             >
               Guardar Precios de Cuotas
             </button>

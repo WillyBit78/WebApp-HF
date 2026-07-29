@@ -100,36 +100,141 @@ export const DashboardSocio = () => {
           </p>
         </div>
 
-        {/* Fee Status Badge & Subir Comprobante Button */}
-        <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 w-full max-w-lg shadow-inner">
-          <div className="text-center sm:text-left space-y-1">
-            <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Cuota Social - Junio 2026</div>
-            <div className="flex items-center justify-center sm:justify-start gap-2">
-              {effectiveFeeStatus === 'al_dia' && (
-                <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA (Junio 2026)
-                </span>
-              )}
-              {effectiveFeeStatus === 'pendiente' && (
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 animate-pulse">
-                  <Clock className="w-4 h-4 text-amber-400" /> REVISIÓN EN CURSO
-                </span>
-              )}
-              {effectiveFeeStatus === 'moroso' && (
-                <span className="bg-rose-500/20 text-rose-300 border border-rose-500/30 px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4 text-rose-400" /> JUNIO 2026 - PAGO PENDIENTE
-                </span>
-              )}
-            </div>
+        {/* 4 Cuotas Mensuales del Socio */}
+        <div className="w-full space-y-3 pt-2">
+          <div className="flex items-center justify-between text-xs px-1">
+            <span className="font-extrabold text-white flex items-center gap-1.5 uppercase tracking-wider">
+              <CreditCard className="w-4 h-4 text-amber-400" /> Cuotas Mensuales Social ({currentUser.categoria || 'General'})
+            </span>
+            <span className="text-[11px] text-slate-400 font-mono">
+              Precio: <strong className="text-emerald-400">${(currentUser.montoCuota || 15000).toLocaleString('es-AR')}</strong>
+            </span>
           </div>
 
-          <button
-            onClick={() => setShowUploader(!showUploader)}
-            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-500/20 transition-all shrink-0 cursor-pointer"
-          >
-            <Upload className="w-4 h-4" />
-            {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-left">
+            {(() => {
+              const now = new Date();
+              const currentMonthIndex = now.getMonth();
+              const currentYear = now.getFullYear();
+              const isLastDayOfMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate() === now.getDate();
+
+              const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+
+              const getMonthInfo = (offset) => {
+                const date = new Date(currentYear, currentMonthIndex + offset, 1);
+                return {
+                  name: monthNames[date.getMonth()],
+                  year: date.getFullYear(),
+                  offset
+                };
+              };
+
+              const months = [
+                getMonthInfo(-1), // Mes Anterior (Junio)
+                getMonthInfo(0),  // Mes Actual (Julio)
+                getMonthInfo(1),  // Mes Siguiente (+1 Agosto)
+                getMonthInfo(2)   // Mes Sub-siguiente (+2 Septiembre)
+              ];
+
+              return months.map((m, idx) => {
+                const isPrevious = m.offset === -1;
+                const isCurrent = m.offset === 0;
+                const isNext = m.offset === 1;
+                const isFarNext = m.offset === 2;
+
+                // Estado de pagos
+                const isCurrentPaid = hasApprovedPayment || effectiveFeeStatus === 'al_dia';
+                
+                // Regla del mes siguiente: Se habilita si es el último día del mes O si el mes actual ya está PAGADO (Al día)
+                const isNextUnlocked = isNext && (isLastDayOfMonth || isCurrentPaid);
+
+                if (isPrevious) {
+                  return (
+                    <div key={idx} className="bg-slate-950/80 border border-emerald-500/40 p-4 rounded-2xl space-y-2 opacity-90 relative">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                        <span>{m.name} {m.year}</span>
+                        <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[9px]">Anterior</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-emerald-400 font-extrabold text-sm">
+                        <CheckCircle2 className="w-4 h-4 shrink-0" /> PAGADO
+                      </div>
+                      <div className="text-[10px] text-slate-400">Cuota cancelada con éxito.</div>
+                    </div>
+                  );
+                }
+
+                if (isCurrent) {
+                  return (
+                    <div key={idx} className="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-amber-500/60 p-4 rounded-2xl space-y-2 shadow-lg relative">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                        <span>{m.name} {m.year}</span>
+                        <span className="bg-amber-400/20 text-amber-300 border border-amber-400/40 px-2 py-0.5 rounded-full text-[9px] font-extrabold">En Curso</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-white font-extrabold text-sm">
+                        {effectiveFeeStatus === 'al_dia' && <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA</>}
+                        {effectiveFeeStatus === 'pendiente' && <><Clock className="w-4 h-4 text-amber-400 animate-pulse" /> EN REVISIÓN</>}
+                        {effectiveFeeStatus === 'moroso' && <><AlertTriangle className="w-4 h-4 text-rose-400" /> PENDIENTE</>}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setShowUploader(!showUploader)}
+                        className="w-full mt-1 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
+                      </button>
+                    </div>
+                  );
+                }
+
+                if (isNext) {
+                  if (isNextUnlocked) {
+                    return (
+                      <div key={idx} className="bg-slate-900 border border-amber-500/40 p-4 rounded-2xl space-y-2 shadow-md">
+                        <div className="flex justify-between items-center text-[10px] font-bold text-amber-400 uppercase tracking-wider">
+                          <span>{m.name} {m.year}</span>
+                          <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full text-[9px]">Habilitado</span>
+                        </div>
+                        <div className="text-white font-bold text-sm">Cuota Siguiente</div>
+                        <button
+                          type="button"
+                          onClick={() => setShowUploader(!showUploader)}
+                          className="w-full mt-1 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-400/30 font-bold text-[11px] flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5" /> Adelantar Pago
+                        </button>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={idx} className="bg-slate-950/40 border border-slate-800 p-4 rounded-2xl space-y-2 opacity-50 select-none grayscale pointer-events-none">
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                        <span>{m.name} {m.year}</span>
+                        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[9px]">Grisado</span>
+                      </div>
+                      <div className="text-slate-400 font-medium text-xs">Cuota Próxima</div>
+                      <div className="text-[10px] text-slate-500 leading-tight">
+                        {isCurrentPaid ? 'Se activará el último día del mes.' : 'Requiere pago de cuota actual.'}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Far next (+2 Septiembre)
+                return (
+                  <div key={idx} className="bg-slate-950/40 border border-slate-800 p-4 rounded-2xl space-y-2 opacity-40 select-none grayscale pointer-events-none">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                      <span>{m.name} {m.year}</span>
+                      <span className="bg-slate-800 text-slate-500 px-2 py-0.5 rounded text-[9px]">Grisado</span>
+                    </div>
+                    <div className="text-slate-500 font-medium text-xs">Futura Cuota</div>
+                    <div className="text-[10px] text-slate-600 leading-tight">Inactiva hasta el período correspondiente.</div>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </div>
 
       </div>
