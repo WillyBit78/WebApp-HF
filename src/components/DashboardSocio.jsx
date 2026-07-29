@@ -29,7 +29,7 @@ export const DashboardSocio = () => {
         let hasCacheFile = false;
         if ('caches' in window) {
           const cache = await caches.open('shared-receipts');
-          const matched = await cache.match('/shared-receipt.jpg');
+          const matched = await cache.match('/shared-receipt-file') || await cache.match('/shared-receipt.jpg');
           if (matched) hasCacheFile = true;
         }
         if (isSharedParam || hasCacheFile) {

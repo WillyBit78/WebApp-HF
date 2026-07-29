@@ -93,12 +93,13 @@ self.addEventListener('fetch', (event) => {
 
         if (file) {
           const cache = await caches.open('shared-receipts');
+          const mimeType = file.type || (file.name && file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
           await cache.put(
-            new Request('/shared-receipt.jpg'),
+            new Request('/shared-receipt-file'),
             new Response(file, {
               headers: {
-                'Content-Type': file.type || 'image/jpeg',
-                'Content-Length': file.size || ''
+                'Content-Type': mimeType,
+                'X-File-Name': file.name || (mimeType === 'application/pdf' ? 'comprobante.pdf' : 'comprobante.jpg')
               }
             })
           );

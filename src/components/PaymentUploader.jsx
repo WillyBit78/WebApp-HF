@@ -30,12 +30,20 @@ export const PaymentUploader = ({ onSuccess }) => {
       try {
         if ('caches' in window) {
           const cache = await caches.open('shared-receipts');
-          const response = await cache.match('/shared-receipt.jpg');
+          let response = await cache.match('/shared-receipt-file') || await cache.match('/shared-receipt.jpg');
           if (response) {
             const blob = await response.blob();
-            const sharedFile = new File([blob], 'comprobante_compartido.jpg', { type: blob.type || 'image/jpeg' });
+            const headerType = response.headers.get('Content-Type');
+            const headerName = response.headers.get('X-File-Name');
             
-            await cache.delete('/shared-receipt.jpg');
+            const isPdf = (headerType && headerType.includes('pdf')) || (blob.type && blob.type.includes('pdf')) || (headerName && headerName.toLowerCase().endsWith('.pdf'));
+            const finalMime = isPdf ? 'application/pdf' : (blob.type || 'image/jpeg');
+            const fileName = headerName || (isPdf ? 'comprobante_compartido.pdf' : 'comprobante_compartido.jpg');
+            
+            const sharedFile = new File([blob], fileName, { type: finalMime });
+            
+            await cache.delete('/shared-receipt-file').catch(() => {});
+            await cache.delete('/shared-receipt.jpg').catch(() => {});
             window.history.replaceState({}, document.title, window.location.pathname);
             
             handleFileChange({ target: { files: [sharedFile] } });
