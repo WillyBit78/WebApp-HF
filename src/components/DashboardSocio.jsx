@@ -21,6 +21,27 @@ export const DashboardSocio = () => {
     return isShared;
   });
 
+  // Auto-abrir uploader si hay un comprobante compartido desde celular pendiente en la caché
+  React.useEffect(() => {
+    const checkPendingShare = async () => {
+      try {
+        const isSharedParam = new URLSearchParams(window.location.search).get('shared') === 'true';
+        let hasCacheFile = false;
+        if ('caches' in window) {
+          const cache = await caches.open('shared-receipts');
+          const matched = await cache.match('/shared-receipt.jpg');
+          if (matched) hasCacheFile = true;
+        }
+        if (isSharedParam || hasCacheFile) {
+          setShowUploader(true);
+        }
+      } catch (err) {
+        console.warn("Error verificando caché compartida:", err);
+      }
+    };
+    checkPendingShare();
+  }, []);
+
   // Socio targeted notices
   const myNotices = getNoticesForUser ? getNoticesForUser(currentUser) : notices;
   const urgentNotice = myNotices.find(n => n.urgente);
@@ -312,7 +333,11 @@ export const DashboardSocio = () => {
                     <div className={`mt-2 p-2 rounded-lg text-[11px] font-medium leading-tight flex items-start gap-1.5 ${
                       p.estado === 'rechazado' ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300' : 'bg-amber-500/10 border border-amber-500/20 text-amber-300'
                     }`}>
-                      <span>⚠️ Motivo: {p.observaciones}</span>
+                      <span>
+                        {p.estado === 'rechazado'
+                          ? `⚠️ Reacción requerida: ${p.observaciones.includes('duplicado') ? 'Comprobante duplicado o ya registrado.' : 'Comprobante rechazado por administración.'}`
+                          : '⏳ Comprobante recibido. En proceso de verificación por Administración.'}
+                      </span>
                     </div>
                   )}
                 </div>

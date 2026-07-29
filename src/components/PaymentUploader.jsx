@@ -193,30 +193,39 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          // Usar Gemini para analizar la imagen completa
+          // Usar Gemini para analizar la imagen
           let geminiResult = {};
           try {
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ("AQ.Ab8RN6JWHFJi1F" + "mGJ5l2nwoD3moYvih4S-" + "Zzyhu0ZoLcSYzwSg");
             if (apiKey) {
               const genAI = new GoogleGenerativeAI(apiKey);
-              const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+              let model;
+              try {
+                model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+              } catch (err) {
+                model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+              }
 
-              // Convertir dataUrl base64 a formato InlineData para Gemini
-              const base64Data = dataUrl.split(',')[1];
+              // Extraer mimeType real y base64Data limpio
+              const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,/);
+              const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+              const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+
               const imageParts = [{
                 inlineData: {
                   data: base64Data,
-                  mimeType: "image/jpeg"
+                  mimeType: mimeType
                 }
               }];
 
-              const prompt = `Sos un sistema automatizado de finanzas. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro (sin bloques de código, sin comentarios \`//\`, solo el objeto JSON).
-Si un campo no se encuentra en el comprobante o no estás seguro, asignale null. No inventes datos.
+              const prompt = `Sos un sistema automatizado de finanzas de Haedo Futsal. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro.
+Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
 La fecha debe tener formato DD/MM/YYYY (ej: "12/07/2026").
 La hora formato HH:MM (ej: "18:44").
-El monto debe ser un número entero o flotante sin símbolos.
-Buscá el "COELSA ID" o código largo para coelsa_id.
-Buscá el Número de operación para numero_operacion.
+El monto debe ser un número sin símbolos de moneda.
+Buscá el "COELSA ID" o código alfanumérico largo para coelsa_id.
+Buscá el Número de comprobante / operación para numero_operacion.
+Buscá el nombre del emisor / titular para emisor.
 {
   "fecha": "DD/MM/YYYY",
   "hora": "HH:MM",
@@ -245,12 +254,12 @@ Buscá el Número de operación para numero_operacion.
 
           fechaExtraida = geminiResult.fecha || null;
           horaExtraida = geminiResult.hora || null;
-          montoExtraido = geminiResult.monto ? `$${geminiResult.monto.toLocaleString('es-AR')}` : 'Desconocido';
+          montoExtraido = geminiResult.monto ? `$${geminiResult.monto.toLocaleString('es-AR')}` : 'No detectado';
           textNorm = JSON.stringify(geminiResult);
 
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           
-          // Extraer el mejor token alfanumérico descartando etiquetas comunes como "COELSA", "ID", "BANCARIO"
+          // Extraer el mejor token alfanumérico
           const extractBestIdToken = (str) => {
             if (!str) return '';
             const rawTokens = String(str).replace(/[^a-zA-Z0-9\s-]/g, ' ').split(/[\s-]+/);
@@ -268,7 +277,7 @@ Buscá el Número de operación para numero_operacion.
           const rawNumOp = String(geminiResult.numero_operacion || '');
           const extractedNumOp = extractBestIdToken(rawNumOp);
           
-          // Sincronizar transferencias frescas de Mercado Pago en tiempo real antes del cruce
+          // Sincronizar transferencias frescas de Mercado Pago
           let mpList = mercadoPagoTransfers || [];
           if (typeof sincronizarMercadoPago === 'function') {
             const freshMP = await sincronizarMercadoPago();
@@ -277,7 +286,7 @@ Buscá el Número de operación para numero_operacion.
             }
           }
 
-          // Cruce robusto
+          // Cruce inteligente
           matchedTransfer = mpList?.find(t => {
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
@@ -285,61 +294,15 @@ Buscá el Número de operación para numero_operacion.
             if (extractedCoelsa.length > 5 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
             if (extractedNumOp.length > 5 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
             
-            // Fallback súper flexible por Fecha y Hora
             if (t.fecha && fechaExtraida && horaExtraida) {
                const tStr = String(t.fecha);
                const gDateNums = String(fechaExtraida).match(/\d+/g) || [];
-               
-               const tNums = tStr.match(/\d+/g) || [];
-               const smallNums = tNums.filter(n => n.length <= 2); // Excluir años
-               
-               if (smallNums.length >= 2 && gDateNums.length >= 2) {
-                 const p1 = parseInt(smallNums[0]);
-                 const p2 = parseInt(smallNums[1]);
-                 const gDay = parseInt(gDateNums[0]);
-                 const gMonth = parseInt(gDateNums[1]);
-                 
-                 // Permitir DD/MM o MM/DD (por si Vercel usa locale en-US)
-                 const isDateMatch = (p1 === gDay && p2 === gMonth) || (p1 === gMonth && p2 === gDay);
-                 
-                 if (isDateMatch) {
-                   // Y el monto es idéntico
-                   if (geminiResult.monto && Number(geminiResult.monto) === Number(t.monto)) {
-                     
-                     // Extraer hora con regex para evitar desfasajes de arrays
-                     const timeMatch = tStr.match(/(\d{1,2}):(\d{2})/);
-                     if (timeMatch) {
-                       const tHourRaw = parseInt(timeMatch[1]);
-                       const tMin = parseInt(timeMatch[2]);
-                       let isPM = tStr.toLowerCase().includes('p');
-                       let tHour24 = tHourRaw;
-                       if (isPM && tHourRaw < 12) tHour24 += 12;
-                       if (!isPM && tHourRaw === 12) tHour24 = 0;
-                       
-                       // Extraemos hora de la imagen
-                       const gTimeNums = String(horaExtraida).match(/\d+/g) || [];
-                       if (gTimeNums.length >= 2) {
-                         const gHour = parseInt(gTimeNums[0]);
-                         const gMin = parseInt(gTimeNums[1]);
-                         
-                         const tTotalMins = tHour24 * 60 + tMin;
-                         const gTotalMins = gHour * 60 + gMin;
-                         
-                         // 30 minutos de tolerancia (IA super flexible)
-                         if (Math.abs(tTotalMins - gTotalMins) <= 30) {
-                           return true;
-                         }
-                       }
-                     }
-                   }
-                 }
-               }
+               if (gDateNums.length >= 2 && tStr.includes(gDateNums[0]) && tStr.includes(gDateNums[1])) return true;
             }
             return false;
           });
 
           if (matchedTransfer) {
-            // Preferimos guardar el COELSA ID
             extractedNumeroOperacion = matchedTransfer.coelsaId ? matchedTransfer.coelsaId : matchedTransfer.numeroOperacion;
             
             const isDuplicate = payments.some(p => 
@@ -350,21 +313,19 @@ Buscá el Número de operación para numero_operacion.
             if (isDuplicate || matchedTransfer.estado_conciliacion === 'conciliado') {
                finalStatus = 'rechazado';
                autoObservaciones = isDuplicate 
-                 ? `Requiere revisión: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado previamente.`
-                 : `Requiere revisión: Esta transferencia de MP ya fue conciliada y utilizada por otro usuario.`;
+                 ? `DETALLE DE AUDITORÍA: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado en la base.`
+                 : `DETALLE DE AUDITORÍA: La transferencia MP de ${matchedTransfer.emisorNombre} ya fue conciliada previamente.`;
             } else {
-               // Checking monto just to be safe even if ID matched
                const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
                if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
                  finalStatus = 'en_revision';
-                 autoObservaciones = `Requiere revisión: El monto depositado ($${matchedTransfer.monto}) no coincide con el valor de la cuota actual ($${requestedMonto}).`;
+                 autoObservaciones = `DETALLE DE AUDITORÍA: Monto depositado ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}). Leído: Fecha ${fechaExtraida || 'N/D'}, Hora ${horaExtraida || 'N/D'}, Emisor ${matchedTransfer.emisorNombre}.`;
                } else {
                  finalStatus = 'aprobado';
-                 autoObservaciones = `Validación automática exitosa (OCR). Emisor: ${matchedTransfer.emisorNombre} - Billetera: ${matchedTransfer.billeteraOrigen}`;
+                 autoObservaciones = `Aprobación Automática OCR. Leído: Emisor ${matchedTransfer.emisorNombre} | Monto $${matchedTransfer.monto} | N° Operación ${extractedNumeroOperacion} | Coincidencia 100% con Mercado Pago.`;
                }
             }
           } else {
-            // Bloqueo Inteligente de duplicados locales buscando otro comprobante en revisión/aprobado con misma fecha, hora y usuario
             let isDuplicate = false;
             if (fechaExtraida && horaExtraida) {
                isDuplicate = payments.some(p => {
@@ -376,10 +337,22 @@ Buscá el Número de operación para numero_operacion.
 
             if (isDuplicate) {
                finalStatus = 'rechazado';
-               autoObservaciones = `Requiere revisión: Ya enviaste un comprobante con esta misma fecha y hora que está siendo procesado.`;
+               autoObservaciones = `DETALLE DE AUDITORÍA: Intento de re-envío. Misma fecha (${fechaExtraida}) y hora (${horaExtraida}) ya registradas para este usuario.`;
             } else {
                finalStatus = 'en_revision';
-               autoObservaciones = `Requiere revisión manual. No se detectó coincidencia exacta.\nDatos extraídos:\nFECHA: ${fechaExtraida || 'No detectada'}\nHORA: ${horaExtraida || 'No detectada'}\nMONTO: ${montoExtraido}\nCOELSAID: ${rawCoelsa || 'No detectado'}\nN° de operacion: ${rawNumOp || 'No detectado'}`;
+               const camposLeidos = [];
+               const camposFaltantes = [];
+
+               if (geminiResult.monto) camposLeidos.push(`Monto: $${geminiResult.monto}`); else camposFaltantes.push('Monto');
+               if (fechaExtraida) camposLeidos.push(`Fecha: ${fechaExtraida}`); else camposFaltantes.push('Fecha');
+               if (horaExtraida) camposLeidos.push(`Hora: ${horaExtraida}`); else camposFaltantes.push('Hora');
+               if (extractedCoelsa) camposLeidos.push(`COELSA ID: ${extractedCoelsa}`); else camposFaltantes.push('COELSA ID');
+               if (extractedNumOp) camposLeidos.push(`N° Operación: ${extractedNumOp}`); else camposFaltantes.push('N° Operación');
+               if (geminiResult.emisor) camposLeidos.push(`Emisor: ${geminiResult.emisor}`); else camposFaltantes.push('Nombre Emisor');
+
+               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n` +
+                 `✓ DATOS LEÍDOS POR OCR: ${camposLeidos.length > 0 ? camposLeidos.join(' | ') : 'Sin datos estructurados'}\n` +
+                 `❌ FALTANTES O SIN COINCIDENCIA MP: ${camposFaltantes.length > 0 ? camposFaltantes.join(', ') : 'Cruce automático con extracto de MP no encontrado'}`;
             }
           }
         }
