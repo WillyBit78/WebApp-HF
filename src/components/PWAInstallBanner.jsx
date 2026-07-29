@@ -32,9 +32,9 @@ export const PWAInstallBanner = () => {
   const handleInstall = async () => {
     if (deferredPrompt) {
       try {
-        deferredPrompt.prompt();
+        await deferredPrompt.prompt();
         const choiceResult = await deferredPrompt.userChoice;
-        if (choiceResult.outcome === 'accepted') {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
           console.log('El usuario aceptó la instalación nativa de Haedo Futsal');
         }
       } catch (err) {
@@ -44,7 +44,6 @@ export const PWAInstallBanner = () => {
         setDeferredPrompt(null);
       }
     } else {
-      // Si el navegador no tiene diferido el prompt (ej: en PC o si ya se mostró), desplegar la guía paso a paso infalible
       setShowModalGuide(true);
     }
   };
