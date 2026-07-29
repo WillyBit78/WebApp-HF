@@ -1041,19 +1041,7 @@ export const AppProvider = ({ children }) => {
       }
     })();
 
-    if (registrarLog) {
-      registrarLog(
-        'notificacion_masiva',
-        `Nuevo Comunicado: ${newNotice.titulo}`,
-        `Destino: ${newNotice.destinatarioValor} (${newNotice.destinatarioTipo}) | Urgente: ${newNotice.urgente ? 'Sí' : 'No'}`,
-        newNotice
-      );
-    }
-
-    // Return immediately — UI never waits for network
-    return { success: true, notice: newNotice, pushResult: null };
-
-
+    return { success: true, notice: newNotice };
   };
 
   const deleteNotice = async (noticeId) => {
