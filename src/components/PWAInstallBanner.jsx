@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Download, Sparkles, X, Share, Smartphone } from 'lucide-react';
+import { useApp } from '../context/AppContext';
+import { Download, Sparkles, X, Share, Smartphone, Bell } from 'lucide-react';
 
 export const PWAInstallBanner = () => {
+  const { currentUser, registerPushSubscription } = useApp();
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -91,9 +93,9 @@ export const PWAInstallBanner = () => {
           </button>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {isIOS ? (
-            <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30 text-[11px] space-y-1 text-slate-200">
+            <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30 text-[11px] space-y-1 text-slate-200 sm:col-span-2">
               <div className="flex items-center gap-1.5 text-amber-400 font-bold">
                 <Share className="w-4 h-4" /> Pasos para iPhone (Safari):
               </div>
@@ -110,6 +112,24 @@ export const PWAInstallBanner = () => {
               ¡Instalar App Ahora!
             </button>
           )}
+
+          <button
+            type="button"
+            onClick={async () => {
+              const res = await registerPushSubscription(currentUser, true);
+              if (res && res.success) {
+                alert('✅ ¡Tu celular quedó registrado con éxito para recibir avisos con la app cerrada!');
+              } else if (res && res.reason === 'denied') {
+                alert('⚠️ Las notificaciones están bloqueadas en tu navegador. Ve a Configuración > Notificaciones para permitir.');
+              } else {
+                alert('🔔 Permiso registrado. Tu celular recibirá las notificaciones del club.');
+              }
+            }}
+            className="w-full bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-extrabold py-3 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/30 transition-all cursor-pointer select-none"
+          >
+            <Bell className="w-3.5 h-3.5 text-amber-400" />
+            🔔 Activar Alertas Push
+          </button>
         </div>
       </div>
 
