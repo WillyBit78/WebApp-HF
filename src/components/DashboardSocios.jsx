@@ -663,9 +663,17 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                             {subSocios.map(socio => {
                                               const rawAp = socio.apellido || '';
                                               const apParts = rawAp.split(' | Tel: ');
-                                              const cleanApellido = apParts[0] || rawAp;
+                                              const cleanApellido = (apParts[0] || rawAp).trim();
                                               const embeddedTel = apParts[1] || '';
                                               const displayTel = socio.telefono || embeddedTel || '';
+
+                                              // Format: APELLIDO EN MAYUSCULAS, Nombre con 1ra letra mayuscula
+                                              const formattedApellido = cleanApellido.toUpperCase();
+                                              const rawNombre = (socio.nombre || socio.nombres || '').trim();
+                                              const formattedNombre = rawNombre
+                                                .split(' ')
+                                                .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
+                                                .join(' ');
 
                                               return (
                                                 <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
@@ -680,19 +688,20 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                       {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
                                                         <img src={socio.fotoRostro || socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
                                                       ) : (
-                                                        (socio.nombre || socio.nombres || 'S').charAt(0).toUpperCase()
+                                                        (formattedNombre || 'S').charAt(0).toUpperCase()
                                                       )}
                                                     </div>
                                                   </td>
 
-                                                  {/* Nombre y Apellido - CLICKABLE TO OPEN FICHA */}
+                                                  {/* Nombre y Apellido - APELLIDO (MAYUSCULAS), Nombre (Capitalizado) */}
                                                   <td className="p-2.5">
                                                     <button
                                                       onClick={() => openFichaSocio(socio)}
-                                                      className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs"
+                                                      className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs flex items-center gap-1.5"
                                                       title="Haz clic para ver Ficha Personal completa"
                                                     >
-                                                      {socio.nombre || socio.nombres} {cleanApellido}
+                                                      <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>, 
+                                                      <span className="font-semibold text-slate-200">{formattedNombre}</span>
                                                     </button>
                                                   </td>
 
