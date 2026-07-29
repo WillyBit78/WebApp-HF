@@ -662,8 +662,9 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                           <tbody className="divide-y divide-slate-800/60 text-slate-200">
                                             {subSocios.map(socio => {
                                               const rawAp = socio.apellido || '';
-                                              const apParts = rawAp.split(' | Tel: ');
-                                              const cleanApellido = (apParts[0] || rawAp).trim();
+                                              const cleanNoMeta = rawAp.split(' | META:')[0] || rawAp;
+                                              const apParts = cleanNoMeta.split(' | Tel: ');
+                                              const cleanApellido = (apParts[0] || cleanNoMeta).trim();
                                               const embeddedTel = apParts[1] || '';
                                               const displayTel = socio.telefono || embeddedTel || '';
 

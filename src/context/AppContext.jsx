@@ -769,11 +769,13 @@ export const AppProvider = ({ children }) => {
             localStorage.setItem(metaKey, JSON.stringify(fullMetadata));
           } catch (e) {}
 
+          const metaString = JSON.stringify(fullMetadata);
+
           const dbUserPayload = {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
             nombre: cleanNombre,
-            apellido: cleanApellido,
+            apellido: `${cleanApellido} | META:${metaString}`,
             usuario: cleanUsuario,
             clave: (newUser.clave || '1234').toString().slice(0, 4),
             rol: newUser.rol || 'socio',
@@ -781,17 +783,11 @@ export const AppProvider = ({ children }) => {
             estadoCuota: newUser.estadoCuota || 'pendiente',
             montoCuota: Number(newUser.montoCuota) || 0,
             dni: newUser.dni || '',
-            telefono: newUser.telefono || '',
-            fechaNacimiento: fullMetadata.fechaNacimiento,
-            hinchaDe: fullMetadata.hinchaDe,
-            nombreContacto: fullMetadata.nombreContacto,
-            telefonoContacto: fullMetadata.telefonoContacto,
-            fotoRostro: fullMetadata.fotoRostro
+            telefono: newUser.telefono || ''
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
           if (error) {
-            // Si la tabla aún no tiene las columnas extendidas, guardamos el payload estándar sin romper
             const fallbackPayload = {
               id: newUser.id,
               numeroSocio: newUser.numeroSocio || (users.length + 201),

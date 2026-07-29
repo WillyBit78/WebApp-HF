@@ -36,7 +36,17 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   const videoRef = useRef(null);
   const [cameraStream, setCameraStream] = useState(null);
 
-  // Recuperar respaldo local persistente si existe
+  // Extraer apellido limpio y bloque META grabado en Supabase
+  const rawAp = socio?.apellido || '';
+  const metaSplit = rawAp.split(' | META:');
+  const cleanAp = (metaSplit[0] || '').trim();
+  let dbMeta = {};
+  if (metaSplit[1]) {
+    try {
+      dbMeta = JSON.parse(metaSplit[1]);
+    } catch (e) {}
+  }
+
   const metaKey = `socio_meta_${socio?.dni || socio?.usuario || socio?.id}`;
   let savedMeta = {};
   try {
@@ -44,23 +54,24 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
     if (rawMeta) savedMeta = JSON.parse(rawMeta);
   } catch (e) {}
 
-  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || savedMeta.fotoRostro || '';
+  const mergedMeta = { ...savedMeta, ...dbMeta };
+  const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || mergedMeta.fotoRostro || '';
 
   const [editForm, setEditForm] = useState({
     nombre: socio?.nombre || socio?.nombres || '',
-    apellido: socio?.apellido || '',
+    apellido: cleanAp || rawAp,
     dni: socio?.dni || socio?.documentoDni || socio?.numeroDni || (socio?.id && socio?.id.includes('-') ? socio?.id.split('-').pop() : socio?.id) || '',
-    telefono: socio?.telefono || socio?.telefonoSocio || (socio?.apellido && socio?.apellido.includes(' | Tel: ') ? socio?.apellido.split(' | Tel: ')[1] : '') || '',
+    telefono: socio?.telefono || socio?.telefonoSocio || '',
     categoria: socio?.categoria || '',
     clave: (socio?.clave || '1234').toString().slice(0, 4),
     rol: socio?.rol || 'socio',
     estadoCuota: socio?.estadoCuota || 'al_dia',
     montoCuota: socio?.montoCuota || 15000,
     fotoUrl: currentPhoto,
-    fechaNacimiento: socio?.fechaNacimiento || socio?.fecha_nacimiento || savedMeta.fechaNacimiento || '',
-    hinchaDe: socio?.hinchaDe || socio?.hincha_de || savedMeta.hinchaDe || '',
-    nombreContacto: socio?.nombreContacto || socio?.nombre_contacto || savedMeta.nombreContacto || '',
-    telefonoContacto: socio?.telefonoContacto || socio?.telefono_contacto || savedMeta.telefonoContacto || ''
+    fechaNacimiento: socio?.fechaNacimiento || socio?.fecha_nacimiento || mergedMeta.fechaNacimiento || '',
+    hinchaDe: socio?.hinchaDe || socio?.hincha_de || mergedMeta.hinchaDe || '',
+    nombreContacto: socio?.nombreContacto || socio?.nombre_contacto || mergedMeta.nombreContacto || '',
+    telefonoContacto: socio?.telefonoContacto || socio?.telefono_contacto || mergedMeta.telefonoContacto || ''
   });
 
   if (!socio) return null;
