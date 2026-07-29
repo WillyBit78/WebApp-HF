@@ -75,20 +75,29 @@ export const AppProvider = ({ children }) => {
       if (lower === 'creadopor') normalized.creadoPor = obj[key];
       if (lower === 'coelsaid') normalized.coelsaId = obj[key];
       // Notice fields (Supabase uses snake_case and mensaje)
-      if (lower === 'mensaje' && obj[key]) {
-        normalized.contenido = obj[key];
-        normalized.mensaje = obj[key];
+      if (lower === 'mensaje' || lower === 'contenido') {
+        const textVal = obj.mensaje || obj.contenido || '';
+        normalized.contenido = textVal;
+        normalized.mensaje = textVal;
       }
-      if (lower === 'contenido' && obj[key]) {
-        normalized.mensaje = obj[key];
-        normalized.contenido = obj[key];
+      if (lower === 'importante' || lower === 'urgente') {
+        normalized.urgente = Boolean(obj.importante || obj.urgente);
+        normalized.importante = Boolean(obj.importante || obj.urgente);
       }
-      if (lower === 'importante') normalized.urgente = obj[key];
-      if (lower === 'destinatariotipo' || lower === 'destinatario_tipo') normalized.destinatarioTipo = obj[key];
-      if (lower === 'destinatariovalor' || lower === 'destinatario_valor') normalized.destinatarioValor = obj[key];
-      if (lower === 'filtroestadocuenta' || lower === 'filtro_estado_cuenta') normalized.filtroEstadoCuenta = obj[key];
-      if (lower === 'fechaprogramada' || lower === 'fecha_programada') normalized.fechaProgramada = obj[key];
-      if (lower === 'categoriadestino' || lower === 'categoria_destino') normalized.categoriaDestino = obj[key];
+      if (lower === 'destinatariotipo' || lower === 'destinatario_tipo') {
+        normalized.destinatarioTipo = obj.destinatarioTipo || obj.destinatario_tipo || 'todos';
+      }
+      if (lower === 'destinatariovalor' || lower === 'destinatario_valor' || lower === 'categoriadestino' || lower === 'categoria_destino') {
+        const val = obj.destinatarioValor || obj.destinatario_valor || obj.categoriaDestino || obj.categoria_destino || 'Todos';
+        normalized.destinatarioValor = val;
+        normalized.categoriaDestino = val;
+      }
+      if (lower === 'filtroestadocuenta' || lower === 'filtro_estado_cuenta') {
+        normalized.filtroEstadoCuenta = obj.filtroEstadoCuenta || obj.filtro_estado_cuenta || 'todos';
+      }
+      if (lower === 'fechaprogramada' || lower === 'fecha_programada') {
+        normalized.fechaProgramada = obj.fechaProgramada || obj.fecha_programada || '';
+      }
       // User registration & contact fields (Supabase snake_case & variations)
       if (lower === 'fotorostro' || lower === 'foto_rostro') normalized.fotoRostro = obj[key];
       if (lower === 'fotourl' || lower === 'foto_url') normalized.fotoUrl = obj[key];
@@ -228,19 +237,9 @@ export const AppProvider = ({ children }) => {
         )
         .subscribe();
 
-      // Broadcast channel — works WITHOUT needing the notices table to exist in Supabase.
-      // When any client calls addNotice(), it broadcasts to this channel.
-      // All connected clients (other devices/browsers) receive the notice immediately.
+      // Broadcast channel for notice deletion
       const bcast = supabase.channel('haedo-notices-broadcast');
       bcast
-        .on('broadcast', { event: 'notice_created' }, ({ payload }) => {
-          if (!payload?.id) return;
-          const notice = normalizeKeys(payload);
-          setNotices(prev => {
-            if (prev.some(n => n.id === notice.id)) return prev;
-            return [notice, ...prev];
-          });
-        })
         .on('broadcast', { event: 'notice_deleted' }, ({ payload }) => {
           if (!payload?.id) return;
           setNotices(prev => prev.filter(n => n.id !== payload.id));
