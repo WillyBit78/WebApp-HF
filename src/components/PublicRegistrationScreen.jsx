@@ -67,7 +67,7 @@ export const DISCIPLINAS_CONFIG = [
 ];
 
 export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onCloseModal }) => {
-  const { users, addOrUpdateUser, login } = useApp();
+  const { users, addOrUpdateUser, login, currentUser } = useApp();
 
   const [step, setStep] = useState(1); // 1: DNI, 2: Datos Personales & Cam, 3: Disciplinas, 4: Exito
 
