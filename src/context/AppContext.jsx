@@ -946,7 +946,12 @@ export const AppProvider = ({ children }) => {
   };
 
   // Notices System with Targeting and Real Push Notifications
-  const [readNoticeIds, setReadNoticeIds] = useState([]);
+  const [readNoticeIds, setReadNoticeIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haedo_read_notice_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) { return []; }
+  });
 
   const addNotice = async (noticeData) => {
     const newNotice = {
@@ -1049,15 +1054,13 @@ export const AppProvider = ({ children }) => {
       try { localStorage.setItem('haedo_notices_cache', JSON.stringify(updated)); } catch (e) {}
       return updated;
     });
+
     if (isSupabaseConfigured && supabase) {
-      await supabase.from('notices').delete().eq('id', noticeId).catch(console.error);
-      // Broadcast deletion to all connected devices
-      if (broadcastChannelRef.current) {
-        broadcastChannelRef.current.send({
-          type: 'broadcast',
-          event: 'notice_deleted',
-          payload: { id: noticeId }
-        }).catch(() => {});
+      try {
+        const { error } = await supabase.from('notices').delete().eq('id', noticeId);
+        if (error) console.warn('Supabase notice delete warning:', error);
+      } catch (err) {
+        console.error('Delete notice error:', err);
       }
     }
     registrarLog('aviso_eliminado', `Comunicado o aviso eliminado del sistema`, `ID: ${noticeId}`);
@@ -1104,6 +1107,15 @@ export const AppProvider = ({ children }) => {
 
   const markNoticeAsRead = (noticeId) => {
     setReadNoticeIds(prev => prev.includes(noticeId) ? prev : [...prev, noticeId]);
+  };
+
+  const toggleNoticeRead = (noticeId) => {
+    setReadNoticeIds(prev => {
+      const isRead = prev.includes(noticeId);
+      const updated = isRead ? prev.filter(id => id !== noticeId) : [...prev, noticeId];
+      try { localStorage.setItem('haedo_read_notice_ids', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
   };
 
   // Stats calculation
@@ -1160,7 +1172,7 @@ export const AppProvider = ({ children }) => {
       roles: MOCK_ROLES,
       uploadPaymentReceipt, updatePaymentStatus, deletePayment,
       addOrUpdateUser, deleteUser,
-      addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead,
+      addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead, toggleNoticeRead,
       stats: {
         totalRecaudado, pagosPendientesRev, sociosAlDiaCount, sociosPendientesCount, sociosMorososCount,
         totalSocios: users.length, ingresosCuotasTotal, gastosCuotasMov, saldoCajaCuotas,
