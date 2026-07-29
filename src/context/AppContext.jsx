@@ -253,10 +253,31 @@ export const AppProvider = ({ children }) => {
             supabase.from('logs').select('*').order('created_at', { ascending: false })
           ]);
           if (uRes.data && uRes.data.length > 0) {
-            setUsers(uRes.data.map(normalizeKeys));
+            const loadedUsers = uRes.data.map(normalizeKeys);
+            setUsers(loadedUsers);
+
+            // Re-bind saved user session from localStorage with fresh DB data
+            const savedSession = localStorage.getItem('haedo_current_user');
+            if (savedSession) {
+              try {
+                const parsed = JSON.parse(savedSession);
+                const matched = loadedUsers.find(u => u.id === parsed.id || (u.usuario && parsed.usuario && u.usuario.trim().toUpperCase() === parsed.usuario.trim().toUpperCase()));
+                if (matched) {
+                  setCurrentUser(matched);
+                }
+              } catch (e) {}
+            }
           } else {
             // Auto-seed base users (WILLY, POL, BOCHA, EPAZOS) if table is empty
             setUsers(MOCK_USERS);
+            const savedSession = localStorage.getItem('haedo_current_user');
+            if (savedSession) {
+              try {
+                const parsed = JSON.parse(savedSession);
+                const matched = MOCK_USERS.find(u => u.id === parsed.id || (u.usuario && parsed.usuario && u.usuario.trim().toUpperCase() === parsed.usuario.trim().toUpperCase()));
+                if (matched) setCurrentUser(matched);
+              } catch (e) {}
+            }
             if (isSupabaseConfigured && supabase) {
               const seedPayloads = MOCK_USERS.map(u => ({
                 id: u.id,
