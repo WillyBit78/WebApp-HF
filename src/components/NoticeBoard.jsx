@@ -108,11 +108,15 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
 
                 <div className="flex items-center gap-3">
                   <span className="text-xs text-slate-400 font-mono font-semibold">{notice.fecha}</span>
-                  {isAdmin && (
+                  {canPublish && (
                     <button
-                      onClick={() => deleteNotice(notice.id)}
+                      onClick={() => {
+                        if (confirm('¿Estás seguro de eliminar este comunicado de forma permanente?')) {
+                          deleteNotice(notice.id);
+                        }
+                      }}
                       className="text-slate-500 hover:text-rose-400 p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-                      title="Eliminar aviso"
+                      title="Eliminar aviso permanente"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

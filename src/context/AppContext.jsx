@@ -1014,8 +1014,8 @@ export const AppProvider = ({ children }) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: newNotice.titulo,
-            body: newNotice.contenido || newNotice.mensaje,
+            titulo: newNotice.titulo,
+            contenido: newNotice.contenido || newNotice.mensaje,
             urgente: newNotice.urgente,
             destinatarioTipo: newNotice.destinatarioTipo,
             destinatarioValor: newNotice.destinatarioValor,
