@@ -3,11 +3,14 @@
   "short_name": "Haedo Futsal",
   "description": "Sistema de gestión de socios, cuotas, entrenamientos y finanzas para Haedo Futsal.",
   "start_url": "/",
-  "id": "/",
+  "id": "com.haedofutsal.app",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#0f172a",
   "orientation": "portrait",
+  "categories": ["sports", "utilities"],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icon-192.png",
