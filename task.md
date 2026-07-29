@@ -31,26 +31,22 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
 
 ---
 
-## 1. 🗃️ ESQUEMA Y PERSISTENCIA EN SUPABASE (`users`)
+## 1. 🗃️ ESQUEMA NATIVO Y PERSISTENCIA EN SUPABASE (`users`)
 
-- **Campos Independientes en Tabla `users`**:
+- **Campos Independientes y Nativos en Tabla `users`**:
   - `id`: Formato `usr-[DNI]` (ej: `"usr-26.248.272"`).
   - `dni`: Documento DNI limpio en su propia columna (`"26.248.272"`).
   - `telefono`: Teléfono de WhatsApp en su propia columna (`"11 6740-9620"`).
   - `nombre`: Nombre capitalizado (ej: `"Guillermo"`).
-  - `apellido`: Almacena el Apellido en MAYÚSCULAS más el bloque empaquetado `META` (`"PAZOS | META:{...}"`).
+  - `apellido`: Apellido limpio en MAYÚSCULAS sin sufijos `META` (ej: `"PAZOS"`).
+  - `fecha_nacimiento`: Fecha de nacimiento en su propia columna (`"14/08/1982"`).
+  - `hincha_de`: Club del socio en su propia columna (`"Haedo Futsal"`).
+  - `nombre_contacto`: Nombre y Apellido del Tutor / Contacto (`"Tutor Guillermo"`).
+  - `telefono_contacto`: Teléfono del Tutor / Contacto (`"11 5544-3322"`).
+  - `foto_rostro`: URL o base64 de la fotografía oficial del rostro.
   - `clave`: PIN de acceso de **4 dígitos exactos** (`"1234"`).
   - `rol`: `socio`, `coach`, `contador`, `admin`.
   - `categoria`: Disciplina / Categoría asignada.
-
-- **Persistencia Física de Metadatos Extendidos (`META`)**:
-  - En la columna `apellido`, se guarda el apellido concatenado con `| META:` conteniendo un JSON con:
-    - `fechaNacimiento`: Fecha de nacimiento del socio.
-    - `hinchaDe`: Club del socio (ej: `"Haedo Futsal"`).
-    - `nombreContacto`: Nombre y Apellido del Contacto de Emergencia / Tutor.
-    - `telefonoContacto`: Teléfono de WhatsApp del Tutor.
-    - `fotoRostro`: Fotografía oficial del rostro.
-  - Además, se mantiene un respaldo local en `localStorage` bajo la clave `socio_meta_[DNI]`.
 
 ---
 
