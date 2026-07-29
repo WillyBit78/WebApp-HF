@@ -378,9 +378,14 @@ export const AppProvider = ({ children }) => {
             return combined;
           });
         }
-        // Sync notices from Supabase so all devices stay updated
+        // Sync notices from Supabase so all devices stay updated (merge preserving newly created ones)
         if (nRes.data && nRes.data.length > 0) {
-          setNotices(nRes.data.map(normalizeKeys));
+          const fetchedNotices = nRes.data.map(normalizeKeys);
+          setNotices(prev => {
+            const fetchedIds = new Set(fetchedNotices.map(n => n.id));
+            const localOnly = prev.filter(n => !fetchedIds.has(n.id));
+            return [...localOnly, ...fetchedNotices];
+          });
         }
       } catch (e) {}
     };
