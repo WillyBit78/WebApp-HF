@@ -108,6 +108,15 @@ export const AppProvider = ({ children }) => {
       if (lower === 'documentodni' || lower === 'documento_dni' || lower === 'numerodni' || lower === 'numero_dni') normalized.dni = obj[key];
     }
 
+    // Auto-limpiar apellido para evitar que el string legacy '| META:' o '| Tel:' se propague
+    if (normalized.apellido && typeof normalized.apellido === 'string') {
+      const rawAp = normalized.apellido;
+      if (rawAp.includes('| META:') || rawAp.includes('| Tel:')) {
+        normalized.apellidoRaw = rawAp;
+        normalized.apellido = rawAp.split(' | META:')[0].split(' | Tel:')[0].trim();
+      }
+    }
+
     return normalized;
   };
 
@@ -775,7 +784,7 @@ export const AppProvider = ({ children }) => {
             id: newUser.id,
             numeroSocio: newUser.numeroSocio || (users.length + 201),
             nombre: cleanNombre,
-            apellido: `${cleanApellido} | META:${metaString}`,
+            apellido: cleanApellido,
             usuario: cleanUsuario,
             clave: (newUser.clave || '1234').toString().slice(0, 4),
             rol: newUser.rol || 'socio',
@@ -783,7 +792,12 @@ export const AppProvider = ({ children }) => {
             estadoCuota: newUser.estadoCuota || 'pendiente',
             montoCuota: Number(newUser.montoCuota) || 0,
             dni: newUser.dni || '',
-            telefono: newUser.telefono || ''
+            telefono: newUser.telefono || '',
+            fecha_nacimiento: newUser.fechaNacimiento || newUser.fecha_nacimiento || '',
+            hincha_de: newUser.hinchaDe || newUser.hincha_de || 'Haedo Futsal',
+            nombre_contacto: newUser.nombreContacto || newUser.nombre_contacto || '',
+            telefono_contacto: newUser.telefonoContacto || newUser.telefono_contacto || '',
+            foto_rostro: newUser.fotoRostro || newUser.fotoUrl || newUser.foto || ''
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
@@ -802,7 +816,7 @@ export const AppProvider = ({ children }) => {
               dni: newUser.dni || '',
               telefono: newUser.telefono || ''
             };
-            await supabase.from('users').upsert([fallbackPayload]).catch(console.error);
+            await supabase.from('users').upsert([fallbackPayload]).catch(console.warn);
           }
         } catch (err) {
           console.error("Supabase user insert catch error:", err);

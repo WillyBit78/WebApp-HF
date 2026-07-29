@@ -37,6 +37,18 @@
         {
           "name": "receiptImage",
           "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+        },
+        {
+          "name": "file",
+          "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+        },
+        {
+          "name": "image",
+          "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
+        },
+        {
+          "name": "media",
+          "accept": ["image/jpeg", "image/png", "image/webp", "application/pdf"]
         }
       ]
     }

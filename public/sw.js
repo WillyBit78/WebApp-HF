@@ -80,8 +80,19 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const formData = await event.request.formData();
-        let file = formData.get('receiptImage') || formData.get('file') || formData.get('media') || formData.get('image');
-        
+        let file = null;
+
+        // Probar nombres comunes de campos de archivos usados por Personal Pay, MP, Mercado Pago, Cuenta DNI, etc.
+        const possibleKeys = ['receiptImage', 'file', 'image', 'media', 'attachment', 'document', 'pdf'];
+        for (const k of possibleKeys) {
+          const cand = formData.get(k);
+          if (cand && typeof cand === 'object' && (cand.name || cand.size)) {
+            file = cand;
+            break;
+          }
+        }
+
+        // Búsqueda exhaustiva si no se encontró con nombres comunes
         if (!file) {
           for (const [key, value] of formData.entries()) {
             if (value && typeof value === 'object' && (value.name || value.size)) {
@@ -94,18 +105,16 @@ self.addEventListener('fetch', (event) => {
         if (file) {
           const cache = await caches.open('shared-receipts');
           const mimeType = file.type || (file.name && file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg');
-          await cache.put(
-            new Request('/shared-receipt-file'),
-            new Response(file, {
-              headers: {
-                'Content-Type': mimeType,
-                'X-File-Name': file.name || (mimeType === 'application/pdf' ? 'comprobante.pdf' : 'comprobante.jpg')
-              }
-            })
-          );
+          const headers = {
+            'Content-Type': mimeType,
+            'X-File-Name': file.name || (mimeType === 'application/pdf' ? 'comprobante_compartido.pdf' : 'comprobante_compartido.jpg')
+          };
+          
+          await cache.put(new Request('/shared-receipt-file'), new Response(file, { headers }));
+          await cache.put(new Request('/shared-receipt.jpg'), new Response(file, { headers }));
         }
       } catch (err) {
-        console.error('Error procesando imagen compartida', err);
+        console.error('Error procesando comprobante compartido desde app:', err);
       }
       return Response.redirect('/?shared=true', 303);
     })());
