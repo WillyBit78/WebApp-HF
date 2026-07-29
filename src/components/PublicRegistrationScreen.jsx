@@ -390,7 +390,7 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
             HAEDO FUTSAL <span className="text-amber-400">2026</span>
           </h1>
           <p className="text-xs text-slate-400 max-w-sm mx-auto">
-            Formá parte de nuestra gran familia deportiva. Completá tus datos para obtener tu carnet y usuario.
+            Formá parte de nuestra gran familia deportiva.
           </p>
         </div>
 
@@ -834,22 +834,30 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
             </div>
 
             {/* Tarjeta de Credenciales de Acceso */}
-            <div className="bg-gradient-to-b from-slate-900 to-slate-950 p-5 rounded-2xl border-2 border-amber-400/40 shadow-2xl space-y-4 text-left relative overflow-hidden">
-              <div className="absolute top-0 right-0 bg-amber-400 text-slate-950 font-black text-[10px] px-3 py-1 rounded-bl-xl uppercase tracking-wider">
-                Credenciales de Acceso
+            <div className="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 p-6 rounded-2xl border-2 border-amber-400/50 shadow-2xl space-y-4 text-center relative overflow-hidden">
+              <div className="bg-amber-400 text-slate-950 font-black text-xs px-4 py-1.5 rounded-full inline-block uppercase tracking-wider shadow-md">
+                🔑 Tus Credenciales Oficiales de Acceso
               </div>
 
-              <div className="space-y-2 pt-1">
-                <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <span className="text-xs text-slate-400 font-medium">USUARIO GENERADO:</span>
-                  <span className="text-lg font-black text-amber-400 tracking-widest font-mono">{createdCredentials.usuario}</span>
+              <div className="space-y-3 pt-2">
+                <div className="bg-slate-950 p-4 rounded-xl border border-amber-400/30 flex flex-col items-center justify-center space-y-1 shadow-inner">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">USUARIO GENERADO:</span>
+                  <span className="text-2xl sm:text-3xl font-black text-amber-400 tracking-widest font-mono drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]">
+                    {createdCredentials.usuario}
+                  </span>
                 </div>
 
-                <div className="flex justify-between items-center bg-slate-950 p-3 rounded-xl border border-slate-800">
-                  <span className="text-xs text-slate-400 font-medium">CLAVE DE SEGURIDAD:</span>
-                  <span className="text-base font-bold text-white tracking-widest font-mono">{createdCredentials.clave}</span>
+                <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col items-center justify-center space-y-1 shadow-inner">
+                  <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">CLAVE DE SEGURIDAD INICIAL:</span>
+                  <span className="text-xl sm:text-2xl font-black text-white tracking-widest font-mono">
+                    {createdCredentials.clave}
+                  </span>
                 </div>
               </div>
+
+              <p className="text-[11px] text-amber-300/90 font-medium bg-amber-400/10 border border-amber-400/20 p-2.5 rounded-xl flex items-center justify-center gap-1.5">
+                💡 Podés cambiar tu clave personal en cualquier momento ingresando a la App desde tu Perfil.
+              </p>
             </div>
 
             <div className="space-y-2 pt-2">
