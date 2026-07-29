@@ -1,7 +1,23 @@
 # 📌 MEMORIA OFICIAL DEL PROYECTO: HAEDO FUTSAL APP
 **Última actualización:** 29 de Julio de 2026
 
-Este documento contiene las decisiones de diseño, arquitectura, esquemas de datos y funcionalidades resueltas en el proyecto. **Consultar este archivo al iniciar cualquier nueva sesión de chat.**
+Este documento contiene la arquitectura del proyecto, la memoria técnica y la **directiva oficial del modo de trabajo**. **Consultar este archivo al iniciar cualquier nueva sesión de chat.**
+
+---
+
+## 🤖 MODO DE TRABAJO OFICIAL: AGENTE ORQUESTADOR + IA LOCAL (QWEN3)
+
+- **Rol Principal de Antigravity (IA)**: **ORQUESTADOR Y ARQUITECTO**.
+- **Servidor de IA Local**: Ollama / Qwen3 configurado en la red local:
+  - **Endpoint Ollama**: `http://192.168.0.140:11434`
+  - **Modelo Local**: `qwen3` / `qwen`
+- **Flujo de Trabajo Exigido**:
+  1. El **USUARIO** entrega un requerimiento o indicación.
+  2. **ANTIGRAVITY (Orquestador)** analiza los componentes, entiende el problema y redacta la tarea técnica detallada.
+  3. **ANTIGRAVITY** envía la instrucción al servidor de IA local (`http://192.168.0.140:11434`) para generar/editar el código con **Qwen3**.
+  4. **Qwen3 (IA Local)** ejecuta el trabajo pesado de código.
+  5. **ANTIGRAVITY** revisa el resultado, compila la app (`npm run build`), verifica que todo funcione sin errores y le informa el resultado final al USUARIO.
+- **Objetivo**: Minimizar el consumo de tokens de la suscripción delegando la escritura masiva de código al servidor local de Qwen3.
 
 ---
 
@@ -80,4 +96,4 @@ Este documento contiene las decisiones de diseño, arquitectura, esquemas de dat
 ## 🚀 CÓMO INICIAR UNA NUEVA SESIÓN DE CHAT
 
 Para mantener la memoria fresca al iniciar un nuevo chat, solo escribí:
-> *"Continuemos con el proyecto Haedo Futsal App. Revisa task.md para el contexto del proyecto y avancemos con [X tarea]."*
+> *"Continuemos con el proyecto Haedo Futsal App. Revisa task.md para el contexto del proyecto y la directiva de trabajo como Orquestador con Qwen3 local."*
