@@ -45,6 +45,10 @@ export const AppProvider = ({ children }) => {
       normalized.nombre = 'Willy';
     }
 
+    if (normalized.rol) {
+      normalized.rol = String(normalized.rol).trim().toLowerCase();
+    }
+
     for (const key of Object.keys(obj)) {
       const lower = key.toLowerCase();
       if (lower === 'socioid') normalized.socioId = obj[key];

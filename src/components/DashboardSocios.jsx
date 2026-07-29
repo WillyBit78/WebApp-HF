@@ -114,9 +114,12 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   const [cashMonto, setCashMonto] = useState(15000);
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
-  // Only socio roles
+  // Only socio roles (case-insensitive)
   const socios = useMemo(() => {
-    return users.filter(u => u.rol === 'socio');
+    return users.filter(u => {
+      const r = (u.rol || 'socio').toString().toLowerCase().trim();
+      return r === 'socio' || !r;
+    });
   }, [users]);
 
   // Group socios into hierarchy
