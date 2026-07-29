@@ -7,15 +7,26 @@ export const PWAInstallBanner = () => {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [dismissed, setDismissed] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
-  const [showModalGuide, setShowModalGuide] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [hasPushPermission, setHasPushPermission] = useState(false);
 
   useEffect(() => {
+    // Detectar si es modo PWA Instalada (Standalone)
+    const standaloneMode = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    if (standaloneMode) {
+      setIsStandalone(true);
+    }
+
+    // Detectar permiso de notificaciones activado
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      setHasPushPermission(true);
+    }
+
     // Detectar si es iOS (iPhone / iPad)
     const userAgent = window.navigator.userAgent.toLowerCase();
     const iosDevice = /iphone|ipad|ipod/.test(userAgent);
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
 
-    if (iosDevice && !isStandalone) {
+    if (iosDevice && !standaloneMode) {
       setIsIOS(true);
     }
 
@@ -38,6 +49,7 @@ export const PWAInstallBanner = () => {
         const choiceResult = await deferredPrompt.userChoice;
         if (choiceResult && choiceResult.outcome === 'accepted') {
           console.log('El usuario aceptó la instalación nativa de Haedo Futsal');
+          setIsStandalone(true);
         }
       } catch (err) {
         console.warn('Error al solicitar prompt de instalación:', err);
@@ -50,7 +62,8 @@ export const PWAInstallBanner = () => {
     }
   };
 
-  if (dismissed) return null;
+  // Ocultar completamente si el usuario lo cerró, si la App ya está Instalada PWA O si ya aceptó Alertas Push
+  if (dismissed || isStandalone || hasPushPermission) return null;
 
   return (
     <>
@@ -118,6 +131,7 @@ export const PWAInstallBanner = () => {
             onClick={async () => {
               const res = await registerPushSubscription(currentUser, true);
               if (res && res.success) {
+                setHasPushPermission(true);
                 alert('✅ ¡Tu celular quedó registrado con éxito en la base de datos de Supabase para recibir avisos con la app cerrada!');
               } else if (res && res.reason === 'denied') {
                 alert('⚠️ Las notificaciones están bloqueadas en la configuración de tu celular/navegador. Actívalas en Configuración > Sitios > Notificaciones.');

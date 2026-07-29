@@ -57,6 +57,16 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
 
 ---
 
+## 📱 BANNER PWA/PUSH Y FICHA DE SOCIO (`PWAInstallBanner.jsx` & `ModalFichaSocio.jsx`)
+
+- **Ocultamiento Automático del Banner de Instalación/Push**:
+  - `PWAInstallBanner.jsx` detecta de forma nativa si la aplicación ya está instalada como PWA (`standaloneMode`) o si las notificaciones push ya fueron concedidas (`Notification.permission === 'granted'`).
+  - En cualquiera de ambos casos, el banner flotante se oculta automáticamente.
+- **Categoría/Disciplina Desplegable (Dropdown)**:
+  - En `ModalFichaSocio.jsx`, la edición de Categoría/Disciplina se realiza mediante un elemento `<select>` con opciones estructuradas (Baby, Futsal Masculino, Femenino, Mayores, Dirigencia, Finanzas), evitando errores tipográficos.
+
+---
+
 ## 1. 🗃️ ESQUEMA NATIVO Y PERSISTENCIA EN SUPABASE (`users`)
 
 - **Campos Independientes y Nativos en Tabla `users`**:

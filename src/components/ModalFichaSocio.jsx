@@ -403,12 +403,62 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
                 <div>
                   <label className="block text-slate-400 mb-1 font-semibold">Categoría / Disciplina</label>
-                  <input
-                    type="text"
+                  <select
                     value={editForm.categoria}
                     onChange={(e) => setEditForm({ ...editForm, categoria: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 focus:border-amber-400 focus:outline-none"
-                  />
+                    className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 focus:border-amber-400 focus:outline-none cursor-pointer"
+                  >
+                    <option value="Dirigencia">Dirigencia</option>
+                    <option value="Finanzas">Finanzas</option>
+                    <optgroup label="Futbol Baby">
+                      <option value="EDEFI Baby 2012">EDEFI Baby 2012</option>
+                      <option value="EDEFI Baby 2013">EDEFI Baby 2013</option>
+                      <option value="EDEFI Baby 2014">EDEFI Baby 2014</option>
+                      <option value="EDEFI Baby 2015">EDEFI Baby 2015</option>
+                      <option value="EDEFI Baby 2016">EDEFI Baby 2016</option>
+                      <option value="EDEFI Baby 2017">EDEFI Baby 2017</option>
+                      <option value="EDEFI Baby 2018">EDEFI Baby 2018</option>
+                      <option value="EDEFI Baby 2019">EDEFI Baby 2019</option>
+                      <option value="EDEFI Baby 2020">EDEFI Baby 2020</option>
+                    </optgroup>
+                    <optgroup label="Futsal Masculino">
+                      <option value="FUTSALA Promo 2016">FUTSALA Promo 2016</option>
+                      <option value="FUTSALA Promo 2017">FUTSALA Promo 2017</option>
+                      <option value="FUTSALA Promo 2018">FUTSALA Promo 2018</option>
+                      <option value="FUTSALA Masculino 1ra">FUTSALA Masculino 1ra</option>
+                      <option value="FUTSALA Masculino 3ra">FUTSALA Masculino 3ra</option>
+                      <option value="FUTSALA Masculino 4ta">FUTSALA Masculino 4ta</option>
+                      <option value="FUTSALA Masculino 5ta">FUTSALA Masculino 5ta</option>
+                      <option value="FUTSALA Masculino 6ta">FUTSALA Masculino 6ta</option>
+                      <option value="FUTSALA Masculino 7ma">FUTSALA Masculino 7ma</option>
+                      <option value="FUTSALA Masculino 8va">FUTSALA Masculino 8va</option>
+                      <option value="BAFI Masculino 1ra">BAFI Masculino 1ra</option>
+                      <option value="BAFI Masculino Reserva">BAFI Masculino Reserva</option>
+                      <option value="BAFI Masculino 3ra">BAFI Masculino 3ra</option>
+                      <option value="BAFI Masculino 4ta">BAFI Masculino 4ta</option>
+                      <option value="BAFI Masculino 5ta">BAFI Masculino 5ta</option>
+                    </optgroup>
+                    <optgroup label="Futsal Femenino">
+                      <option value="BAFI Femenino 1ra">BAFI Femenino 1ra</option>
+                      <option value="BAFI Femenino Reserva">BAFI Femenino Reserva</option>
+                    </optgroup>
+                    <optgroup label="Futsal Mayores">
+                      <option value="EDEFI Mayores (+30)">EDEFI Mayores (+30)</option>
+                      <option value="EDEFI Mayores (+35)">EDEFI Mayores (+35)</option>
+                      <option value="EDEFI Mayores (+42)">EDEFI Mayores (+42)</option>
+                    </optgroup>
+                    {/* Preservar opción previa si fuera personalizada */}
+                    {editForm.categoria && ![
+                      'Dirigencia', 'Finanzas',
+                      'EDEFI Baby 2012', 'EDEFI Baby 2013', 'EDEFI Baby 2014', 'EDEFI Baby 2015', 'EDEFI Baby 2016', 'EDEFI Baby 2017', 'EDEFI Baby 2018', 'EDEFI Baby 2019', 'EDEFI Baby 2020',
+                      'FUTSALA Promo 2016', 'FUTSALA Promo 2017', 'FUTSALA Promo 2018', 'FUTSALA Masculino 1ra', 'FUTSALA Masculino 3ra', 'FUTSALA Masculino 4ta', 'FUTSALA Masculino 5ta', 'FUTSALA Masculino 6ta', 'FUTSALA Masculino 7ma', 'FUTSALA Masculino 8va',
+                      'BAFI Masculino 1ra', 'BAFI Masculino Reserva', 'BAFI Masculino 3ra', 'BAFI Masculino 4ta', 'BAFI Masculino 5ta',
+                      'BAFI Femenino 1ra', 'BAFI Femenino Reserva',
+                      'EDEFI Mayores (+30)', 'EDEFI Mayores (+35)', 'EDEFI Mayores (+42)'
+                    ].includes(editForm.categoria) && (
+                      <option value={editForm.categoria}>{editForm.categoria}</option>
+                    )}
+                  </select>
                 </div>
 
                 <div>
