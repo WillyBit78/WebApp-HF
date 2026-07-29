@@ -653,7 +653,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                             <tr>
                                               <th className="p-2.5 rounded-l-lg">Foto</th>
                                               <th className="p-2.5">Nombre y Apellido</th>
-                                              <th className="p-2.5">DNI</th>
                                               <th className="p-2.5">Usuario</th>
                                               <th className="p-2.5">Teléfono</th>
                                               <th className="p-2.5">Estado Cuenta</th>
@@ -667,7 +666,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                               const cleanApellido = apParts[0] || rawAp;
                                               const embeddedTel = apParts[1] || '';
                                               const displayTel = socio.telefono || embeddedTel || '';
-                                              const displayDni = socio.dni || (socio.id && socio.id.startsWith('usr-') ? socio.id.replace('usr-', '') : '') || 'N/A';
 
                                               return (
                                                 <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
@@ -696,11 +694,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                     >
                                                       {socio.nombre || socio.nombres} {cleanApellido}
                                                     </button>
-                                                  </td>
-
-                                                  {/* DNI Column */}
-                                                  <td className="p-2.5 font-mono text-slate-300 text-xs font-semibold">
-                                                    {displayDni}
                                                   </td>
 
                                                   {/* Usuario */}

@@ -471,7 +471,9 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
                   <div className="flex justify-between items-center">
                     <span className="text-slate-500">Documento DNI:</span>
-                    <span className="font-mono font-bold text-slate-200">{socio.dni || socio.documentoDni || socio.numeroDni || 'Sin registrar'}</span>
+                    <span className="font-mono font-bold text-slate-200">
+                      {socio.dni || (socio.id && socio.id.startsWith('usr-') && !isNaN(socio.id.replace('usr-', '')) ? socio.id.replace('usr-', '') : '') || 'Sin registrar'}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center">
@@ -501,20 +503,22 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                     <span className="text-slate-500 flex items-center gap-1">
                       <Phone className="w-3.5 h-3.5 text-emerald-400" /> Teléfono / WA Socio:
                     </span>
-                    {socio.telefono ? (
-                      waLink ? (
-                        <a
-                          href={waLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition-all"
-                          title="Enviar WhatsApp al socio"
-                        >
-                          <MessageCircle className="w-3 h-3 text-emerald-400" /> {socio.telefono}
-                        </a>
-                      ) : (
-                        <span className="text-slate-200">{socio.telefono}</span>
-                      )
+                    {(socio.telefono || (socio.apellido && socio.apellido.includes(' | Tel: ') ? socio.apellido.split(' | Tel: ')[1] : null)) ? (
+                      (() => {
+                        const telStr = socio.telefono || socio.apellido.split(' | Tel: ')[1];
+                        const waFormatted = `https://wa.me/${telStr.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`;
+                        return (
+                          <a
+                            href={waFormatted}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded transition-all"
+                            title="Enviar WhatsApp al socio"
+                          >
+                            <MessageCircle className="w-3 h-3 text-emerald-400" /> {telStr}
+                          </a>
+                        );
+                      })()
                     ) : (
                       <span className="text-slate-600 italic">No especificado</span>
                     )}
@@ -555,9 +559,11 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                   {canManage && (
                     <div className="flex justify-between items-center pt-1 border-t border-slate-900">
                       <span className="text-slate-500 flex items-center gap-1">
-                        <Key className="w-3.5 h-3.5 text-amber-400" /> PIN Acceso:
+                        <Key className="w-3.5 h-3.5 text-amber-400" /> PIN Acceso (4 dígitos):
                       </span>
-                      <span className="font-mono text-amber-400 font-bold tracking-widest">{socio.clave || '****'}</span>
+                      <span className="font-mono text-amber-400 font-bold tracking-widest">
+                        {(socio.clave || '1234').toString().slice(0, 4)}
+                      </span>
                     </div>
                   )}
                 </div>
