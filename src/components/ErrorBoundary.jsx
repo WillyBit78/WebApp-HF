@@ -36,8 +36,7 @@ export class ErrorBoundary extends React.Component {
         for (const name of names) { await caches.delete(name); }
       } catch (e) {}
     }
-    this.setState({ hasError: false, error: null });
-    window.location.href = window.location.origin + window.location.pathname + '?reset=' + Date.now();
+    window.location.href = window.location.origin + window.location.pathname + '?clean=' + Date.now();
   };
 
   render() {
