@@ -369,19 +369,24 @@ export const PaymentUploader = ({ onSuccess }) => {
             }
           }
 
-          // Cruce inteligente
+          // Cruce inteligente estricto por ID de Operación, COELSA ID, o Fecha Completa (Día, Mes, Año) + Hora + Monto
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           matchedTransfer = mpList?.find(t => {
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
             
-            if (extractedCoelsa.length > 5 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
-            if (extractedNumOp.length > 5 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
+            if (extractedCoelsa && extractedCoelsa.length >= 8 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
+            if (extractedNumOp && extractedNumOp.length >= 8 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
             
-            if (t.fecha && fechaExtraida && horaExtraida) {
+            if (t.fecha && fechaExtraida && horaExtraida && Number(t.monto) === Number(montoExtraido)) {
                const tStr = String(t.fecha);
                const gDateNums = String(fechaExtraida).match(/\d+/g) || [];
-               if (gDateNums.length >= 2 && tStr.includes(gDateNums[0]) && tStr.includes(gDateNums[1])) return true;
+               if (gDateNums.length >= 3) {
+                 const dayStr = gDateNums[0].padStart(2, '0');
+                 const monthStr = gDateNums[1].padStart(2, '0');
+                 const yearStr = gDateNums[2].slice(-2);
+                 if (tStr.includes(dayStr) && tStr.includes(monthStr) && tStr.includes(yearStr)) return true;
+               }
             }
             return false;
           });
@@ -443,23 +448,6 @@ export const PaymentUploader = ({ onSuccess }) => {
         }
       }
 
-      const parseDateAR = (str) => {
-        if (!str) return null;
-        const parts = str.split(/[\/\-]/);
-        if (parts.length >= 2) {
-          const day = parseInt(parts[0], 10);
-          const month = parseInt(parts[1], 10) - 1;
-          let year = new Date().getFullYear();
-          if (parts.length === 3) {
-            year = parseInt(parts[2], 10);
-            if (year < 100) year += 2000;
-          }
-          const d = new Date(year, month, day);
-          if (!isNaN(d.getTime())) return d.toISOString();
-        }
-        return null;
-      };
-
       const detectWalletFromText = (rawText) => {
         const txt = (rawText || '').toLowerCase();
         if (txt.includes('personal pay') || txt.includes('personalpay')) return 'Personal Pay';
@@ -478,13 +466,22 @@ export const PaymentUploader = ({ onSuccess }) => {
 
       const finalWallet = detectWalletFromText((ocrClientResult.rawText || '') + ' ' + (geminiResult.rawText || ''));
 
+      let formattedFechaStr = '';
+      if (fechaExtraida) {
+        formattedFechaStr = fechaExtraida + (horaExtraida ? `, ${horaExtraida}` : '');
+      } else if (matchedTransfer) {
+        formattedFechaStr = matchedTransfer.fecha;
+      } else {
+        formattedFechaStr = new Date().toLocaleDateString('es-AR') + ', ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      }
+
       const parsedData = sampleOverride || {
         monto: montoExtraido || clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: extractedNumeroOperacion,
         coelsaId: extractedCoelsa,
         billeteraOrigen: finalWallet,
         emisorNombre: emisorExtraido || (matchedTransfer ? matchedTransfer.emisorNombre : `${targetSocio.nombre} ${targetSocio.apellido}`),
-        fechaTransferencia: matchedTransfer ? matchedTransfer.fecha : parseDateAR(fechaExtraida),
+        fechaTransferencia: formattedFechaStr,
         observaciones: autoObservaciones
       };
 

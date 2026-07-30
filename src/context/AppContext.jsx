@@ -665,13 +665,14 @@ export const AppProvider = ({ children }) => {
           if (pCoelsa && txOp && (pCoelsa === txOp || pCoelsa.includes(txOp) || txOp.includes(pCoelsa))) return true;
           if (pOp && txCoelsa && (pOp === txCoelsa || pOp.includes(txCoelsa) || txCoelsa.includes(pOp))) return true;
 
-          // 2. Coincidencia por Monto EXACTO + Fecha (Día/Mes)
+          // 2. Coincidencia por Monto EXACTO + Fecha Completa (Día, Mes y Año)
           if (pMonto > 0 && txMonto > 0 && pMonto === txMonto) {
             const pDateNums = String(p.fechaTransferencia || p.observaciones || '').match(/\d+/g) || [];
-            if (pDateNums.length >= 2) {
+            if (pDateNums.length >= 3) {
               const dayStr = pDateNums[0].padStart(2, '0');
               const monthStr = pDateNums[1].padStart(2, '0');
-              if (txFechaStr.includes(dayStr) && txFechaStr.includes(monthStr)) return true;
+              const yearStr = pDateNums[2].slice(-2);
+              if (txFechaStr.includes(dayStr) && txFechaStr.includes(monthStr) && txFechaStr.includes(yearStr)) return true;
             }
           }
 
