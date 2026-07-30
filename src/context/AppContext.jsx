@@ -866,15 +866,16 @@ export const AppProvider = ({ children }) => {
   };
 
   // Payments
-  const uploadPaymentReceipt = async (receiptData) => {
+  const uploadPaymentReceipt = async (receiptData, targetSocioOverride = null) => {
+    const targetUser = targetSocioOverride || currentUser;
     const newPayment = {
       id: `pay-${Date.now()}`,
-      socioId: currentUser.id,
-      socioNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+      socioId: targetUser.id,
+      socioNombre: `${targetUser.nombre} ${targetUser.apellido}`,
       numeroOperacion: receiptData.numeroOperacion || `MANUAL-SYS-${Date.now()}`,
       monto: Number(receiptData.monto) || 15000,
       billeteraOrigen: receiptData.billeteraOrigen || 'Mercado Pago',
-      emisorNombre: receiptData.emisorNombre || `${currentUser.nombre}`,
+      emisorNombre: receiptData.emisorNombre || `${targetUser.nombre}`,
       fechaTransferencia: receiptData.fechaTransferencia || new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
       comprobanteUrl: receiptData.comprobanteUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
       estado: receiptData.estado || 'en_revision',
@@ -884,20 +885,20 @@ export const AppProvider = ({ children }) => {
     setPayments(prev => [newPayment, ...prev]);
     
     // Check if socio already has an approved payment to protect AL DIA status
-    const hasApprovedAlready = payments.some(p => p.socioId === currentUser.id && p.estado === 'aprobado');
+    const hasApprovedAlready = payments.some(p => p.socioId === targetUser.id && p.estado === 'aprobado');
     const newSocioStatus = hasApprovedAlready 
       ? 'al_dia' 
-      : (newPayment.estado === 'aprobado' ? 'al_dia' : (newPayment.estado === 'en_revision' ? 'pendiente' : (currentUser.estadoCuota || 'moroso')));
+      : (newPayment.estado === 'aprobado' ? 'al_dia' : (newPayment.estado === 'en_revision' ? 'pendiente' : (targetUser.estadoCuota || 'moroso')));
     
-    const updatedUser = { ...currentUser, estadoCuota: newSocioStatus };
-    setUsers(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
-    setCurrentUser(updatedUser);
+    const updatedUser = { ...targetUser, estadoCuota: newSocioStatus };
+    setUsers(prev => prev.map(u => u.id === targetUser.id ? updatedUser : u));
+    if (currentUser && currentUser.id === targetUser.id) setCurrentUser(updatedUser);
 
     if (isSupabaseConfigured && supabase) {
       try {
         await Promise.all([
           supabase.from('payments').insert([newPayment]),
-          supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', currentUser.id)
+          supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', targetUser.id)
         ]);
       } catch (err) {
         console.warn("Supabase payment insert error:", err);
@@ -907,11 +908,11 @@ export const AppProvider = ({ children }) => {
     if (newPayment.estado === 'rechazado') {
       registrarLog(
         'comprobante_rechazado_duplicado', 
-        `Comprobante rechazado por duplicado (${currentUser.nombre})`,
+        `Comprobante rechazado por duplicado (${targetUser.nombre})`,
         `N° Op: ${newPayment.numeroOperacion} - ${newPayment.observaciones}`
       );
     } else {
-      registrarLog('comprobante_recibido', `Comprobante subido por ${currentUser.nombre}`, `N° Op: ${newPayment.numeroOperacion}`);
+      registrarLog('comprobante_recibido', `Comprobante subido por ${targetUser.nombre}`, `N° Op: ${newPayment.numeroOperacion}`);
     }
     return newPayment;
   };

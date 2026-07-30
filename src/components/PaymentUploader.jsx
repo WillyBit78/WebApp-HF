@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock } from 'lucide-react';
+import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock, User } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as pdfjsLib from 'pdfjs-dist';
 
@@ -12,6 +12,8 @@ export const PaymentUploader = ({ onSuccess }) => {
     uploadPaymentReceipt, 
     clubSettings, 
     currentUser, 
+    users = [],
+    logout,
     mercadoPagoTransfers, 
     payments, 
     vincularTransferenciaMP, 
@@ -19,6 +21,9 @@ export const PaymentUploader = ({ onSuccess }) => {
     registrarLog 
   } = useApp();
   
+  const [selectedSocioId, setSelectedSocioId] = useState(currentUser?.id);
+  const targetSocio = users.find(u => u.id === selectedSocioId) || currentUser;
+
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [parsing, setParsing] = useState(false);
@@ -399,7 +404,7 @@ Buscá el nombre del emisor / titular para emisor.
         estado: finalStatus,
         observaciones: autoObservaciones,
         comprobanteUrl: dataUrl
-      });
+      }, targetSocio);
       
       // Conciliar transferencia si fue un éxito total
       if (finalStatus === 'aprobado' && matchedTransfer && paymentData?.id) {
@@ -426,11 +431,11 @@ Buscá el nombre del emisor / titular para emisor.
         monto: clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: `MANUAL-${Date.now().toString().slice(-6)}`,
         billeteraOrigen: 'Desconocida',
-        emisorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
+        emisorNombre: `${targetSocio.nombre} ${targetSocio.apellido}`,
         observaciones: 'Comprobante recibido para revisión manual.',
         estado: 'en_revision',
         comprobanteUrl: dataUrl
-      }).catch(console.warn);
+      }, targetSocio).catch(console.warn);
 
       setParsing(false);
       setStep(3);
@@ -476,10 +481,43 @@ Buscá el nombre del emisor / titular para emisor.
             </div>
           </div>
 
+          {/* Seleccionar Socio Destino para Acreditación */}
+          <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+              <span className="flex items-center gap-1.5">
+                <User className="w-4 h-4 text-amber-400" />
+                Acreditar este comprobante a:
+              </span>
+              {logout && (
+                <button 
+                  type="button" 
+                  onClick={() => logout()}
+                  className="text-[11px] text-red-400 hover:text-red-300 font-semibold underline cursor-pointer"
+                >
+                  🔒 Cambiar de Usuario
+                </button>
+              )}
+            </div>
+            <select
+              value={selectedSocioId}
+              onChange={(e) => setSelectedSocioId(e.target.value)}
+              className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+            >
+              {users.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
+                </option>
+              ))}
+            </select>
+            <p className="text-[10px] text-slate-400 font-medium">
+              💡 Si pagás la cuota de un familiar o hijo/a, podés elegir su cuenta en este desplegable antes de enviar el comprobante.
+            </p>
+          </div>
+
           <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-xl text-center">
-             <div className="text-slate-400 font-medium mb-1">Monto a Pagar:</div>
+             <div className="text-slate-400 font-medium mb-1">Monto a Pagar ({targetSocio.nombre}):</div>
              <div className="text-4xl font-black text-emerald-400">
-               ${(currentUser.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
+               ${(targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
              </div>
           </div>
 
