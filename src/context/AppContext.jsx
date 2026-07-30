@@ -651,13 +651,30 @@ export const AppProvider = ({ children }) => {
 
         const txOp = cleanStr(tx.numeroOperacion);
         const txCoelsa = cleanStr(tx.coelsaId);
+        const txMonto = Number(tx.monto);
+        const txFechaStr = String(tx.fecha || '');
 
         const match = approvedPayments.find(p => {
           const pOp = cleanStr(p.numeroOperacion);
           const pCoelsa = cleanStr(p.coelsaId);
+          const pMonto = Number(p.monto);
+
+          // 1. Coincidencia por ID de Operación o COELSA ID
           if (pOp && txOp && (pOp === txOp || pOp.includes(txOp) || txOp.includes(pOp))) return true;
           if (pCoelsa && txCoelsa && (pCoelsa === txCoelsa || pCoelsa.includes(txCoelsa) || txCoelsa.includes(pCoelsa))) return true;
           if (pCoelsa && txOp && (pCoelsa === txOp || pCoelsa.includes(txOp) || txOp.includes(pCoelsa))) return true;
+          if (pOp && txCoelsa && (pOp === txCoelsa || pOp.includes(txCoelsa) || txCoelsa.includes(pOp))) return true;
+
+          // 2. Coincidencia por Monto EXACTO + Fecha (Día/Mes)
+          if (pMonto > 0 && txMonto > 0 && pMonto === txMonto) {
+            const pDateNums = String(p.fechaTransferencia || p.observaciones || '').match(/\d+/g) || [];
+            if (pDateNums.length >= 2) {
+              const dayStr = pDateNums[0].padStart(2, '0');
+              const monthStr = pDateNums[1].padStart(2, '0');
+              if (txFechaStr.includes(dayStr) && txFechaStr.includes(monthStr)) return true;
+            }
+          }
+
           return false;
         });
 

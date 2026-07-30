@@ -23,7 +23,9 @@ import {
   Link,
   ShieldCheck,
   Search,
-  Share2
+  Share2,
+  EyeOff,
+  RotateCcw
 } from 'lucide-react';
 
 export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_financiero' }) => {
@@ -73,6 +75,38 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
   const [selectedReceipt, setSelectedReceipt] = useState(null);
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
+  const [mpFilter, setMpFilter] = useState('sin_conciliar');
+  const [descartadosIds, setDescartadosIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haedo_mp_descartados');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+  const [selectedMpTxIds, setSelectedMpTxIds] = useState([]);
+
+  const toggleDescartarMp = (txId) => {
+    setDescartadosIds(prev => {
+      const next = prev.includes(txId) ? prev.filter(id => id !== txId) : [...prev, txId];
+      try { localStorage.setItem('haedo_mp_descartados', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+  };
+
+  const handleBulkDescartarMp = () => {
+    if (selectedMpTxIds.length === 0) return;
+    setDescartadosIds(prev => {
+      const next = Array.from(new Set([...prev, ...selectedMpTxIds]));
+      try { localStorage.setItem('haedo_mp_descartados', JSON.stringify(next)); } catch (e) {}
+      return next;
+    });
+    setSelectedMpTxIds([]);
+  };
+
+  const toggleMpTxSelection = (txId) => {
+    setSelectedMpTxIds(prev => prev.includes(txId) ? prev.filter(id => id !== txId) : [...prev, txId]);
+  };
 
   const filterStatus = (auditoriaFilterStatus && typeof auditoriaFilterStatus === 'object') ? auditoriaFilterStatus.status : (auditoriaFilterStatus || 'en_revision');
   
@@ -575,89 +609,200 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
               </div>
             )}
 
-            {/* MP Transfer List */}
-            <div className="space-y-3 mt-4">
-              {mercadoPagoTransfers.map((tx) => {
-                const cleanTxNum = cleanStr(tx.numeroOperacion);
-                const cleanTxCoelsa = cleanStr(tx.coelsaId);
+            {/* Filter bar for MP Transfers */}
+            {(() => {
+              const cleanStrLocal = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+
+              const getTxStatusInfo = (tx) => {
+                const cleanTxNum = cleanStrLocal(tx.numeroOperacion);
+                const cleanTxCoelsa = cleanStrLocal(tx.coelsaId);
 
                 const matchedApprovedPayment = payments.find(p => 
                   p.estado === 'aprobado' && (
-                    (cleanTxNum && cleanStr(p.numeroOperacion) === cleanTxNum) ||
-                    (cleanTxCoelsa && cleanStr(p.numeroOperacion) === cleanTxCoelsa) ||
+                    (cleanTxNum && cleanStrLocal(p.numeroOperacion) === cleanTxNum) ||
+                    (cleanTxCoelsa && cleanStrLocal(p.numeroOperacion) === cleanTxCoelsa) ||
+                    (cleanTxCoelsa && cleanStrLocal(p.coelsaId) === cleanTxCoelsa) ||
                     (p.observaciones && p.observaciones.includes(tx.numeroOperacion))
                   )
                 );
 
-                const isConciliado = tx.estado === 'conciliado' || Boolean(matchedApprovedPayment);
+                const isConciliado = tx.estado === 'conciliado' || tx.estado_conciliacion === 'conciliado' || Boolean(matchedApprovedPayment);
+                const isDescartado = tx.descartado || descartadosIds.includes(tx.id) || descartadosIds.includes(tx.numeroOperacion);
                 const socioNombreConciliado = tx.socioNombre || matchedApprovedPayment?.socioNombre || 'Socio Acreditado';
-                const isScanning = scanningId === tx.id;
 
-                return (
-                  <div 
-                    key={tx.id}
-                    className={`bg-slate-950 border p-4 rounded-xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
-                      isConciliado ? 'border-emerald-500/30 bg-slate-950/40' : 'border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2.5 rounded-xl text-xs font-bold ${
-                        isConciliado ? 'bg-emerald-500/20 text-emerald-400' : 'bg-sky-500/20 text-sky-400'
-                      }`}>
-                        <DollarSign className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-extrabold text-white text-base">{tx.emisorNombre}</span>
-                          <span className="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                            {tx.billeteraOrigen}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-400 mt-0.5">
-                          N° Operación MP: <strong className="font-mono text-slate-200">{tx.numeroOperacion}</strong> • {tx.fecha}
-                        </div>
-                        {isConciliado && (
-                          <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-                            <CheckCheck className="w-3.5 h-3.5" /> Conciliado con socio: {socioNombreConciliado}
-                          </div>
-                        )}
-                      </div>
+                return { isConciliado, isDescartado, socioNombreConciliado };
+              };
+
+              const sinConciliarCount = mercadoPagoTransfers.filter(tx => !getTxStatusInfo(tx).isConciliado && !getTxStatusInfo(tx).isDescartado).length;
+              const conciliadasCount = mercadoPagoTransfers.filter(tx => getTxStatusInfo(tx).isConciliado).length;
+              const descartadasCount = mercadoPagoTransfers.filter(tx => getTxStatusInfo(tx).isDescartado).length;
+
+              const visibleList = mercadoPagoTransfers.filter(tx => {
+                const { isConciliado, isDescartado } = getTxStatusInfo(tx);
+                if (mpFilter === 'sin_conciliar') return !isConciliado && !isDescartado;
+                if (mpFilter === 'conciliado') return isConciliado;
+                if (mpFilter === 'descartado') return isDescartado;
+                return true;
+              });
+
+              return (
+                <>
+                  <div className="flex flex-wrap items-center justify-between gap-3 my-4 pb-3 border-b border-slate-800/80">
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'sin_conciliar', label: `Sin Conciliar (${sinConciliarCount})` },
+                        { id: 'conciliado', label: `Conciliadas (${conciliadasCount})` },
+                        { id: 'descartado', label: `Descartadas / No Cuotas (${descartadasCount})` },
+                        { id: 'todos', label: `Todas (${mercadoPagoTransfers.length})` }
+                      ].map(t => (
+                        <button
+                          key={t.id}
+                          onClick={() => setMpFilter(t.id)}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            mpFilter === t.id 
+                              ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20 font-extrabold scale-105' 
+                              : 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
                     </div>
 
-                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
-                      <div className="text-right">
-                        <div className="text-lg font-black text-emerald-400">${Number(tx.monto).toLocaleString('es-AR')}</div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
-                          isConciliado ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'
-                        }`}>
-                          {isConciliado ? 'Acreditado' : 'Sin Vincular'}
-                        </span>
-                      </div>
-
-                      {!isConciliado && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            disabled={isScanning}
-                            onClick={() => handleAutoMatch(tx)}
-                            className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 disabled:opacity-50"
-                          >
-                            <Zap className={`w-3.5 h-3.5 ${isScanning ? 'animate-bounce' : ''}`} />
-                            {isScanning ? 'Comparando...' : 'Comparar & Conciliar'}
-                          </button>
-                          <button
-                            onClick={() => setSelectedTxForManualLink(tx)}
-                            className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 border border-slate-700 transition-all"
-                            title="Vincular manualmente seleccionando a un socio"
-                          >
-                            <Link className="w-3.5 h-3.5 text-amber-400" /> Manual
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    {selectedMpTxIds.length > 0 && (
+                      <button
+                        onClick={handleBulkDescartarMp}
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 flex items-center gap-1.5 cursor-pointer shadow-lg"
+                      >
+                        <EyeOff className="w-3.5 h-3.5 text-amber-400" /> Ignorar Seleccionadas ({selectedMpTxIds.length})
+                      </button>
+                    )}
                   </div>
-                );
-              })}
-            </div>
+
+                  <div className="space-y-3 mt-4">
+                    {visibleList.length === 0 ? (
+                      <div className="bg-slate-950 border border-slate-800/80 rounded-2xl p-10 text-center text-slate-400">
+                        <FileCheck className="w-10 h-10 text-slate-600 mx-auto mb-2" />
+                        <div className="font-bold text-white text-sm">No hay transferencias en esta sección</div>
+                        <p className="text-xs text-slate-500 mt-1">Usa los filtros de arriba para ver las conciliadas, descartadas o todas.</p>
+                      </div>
+                    ) : (
+                      visibleList.map((tx) => {
+                        const { isConciliado, isDescartado, socioNombreConciliado } = getTxStatusInfo(tx);
+                        const isScanning = scanningId === tx.id;
+                        const isChecked = selectedMpTxIds.includes(tx.id);
+
+                        return (
+                          <div 
+                            key={tx.id}
+                            className={`bg-slate-950 border p-4 rounded-xl transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${
+                              isConciliado ? 'border-emerald-500/30 bg-slate-950/40' :
+                              isDescartado ? 'border-slate-800/60 opacity-60 bg-slate-950/20' :
+                              'border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {!isConciliado && (
+                                <div className="pt-1">
+                                  <input 
+                                    type="checkbox"
+                                    checked={isChecked}
+                                    onChange={() => toggleMpTxSelection(tx.id)}
+                                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-sky-500 focus:ring-sky-500 focus:ring-offset-slate-950 cursor-pointer"
+                                  />
+                                </div>
+                              )}
+                              <div className={`p-2.5 rounded-xl text-xs font-bold shrink-0 ${
+                                isConciliado ? 'bg-emerald-500/20 text-emerald-400' :
+                                isDescartado ? 'bg-slate-800 text-slate-500' :
+                                'bg-sky-500/20 text-sky-400'
+                              }`}>
+                                <DollarSign className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-extrabold text-white text-base">{tx.emisorNombre}</span>
+                                  <span className="text-[11px] font-medium text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
+                                    {tx.billeteraOrigen}
+                                  </span>
+                                  {isDescartado && (
+                                    <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                                      Ignorada / No es Cuota
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-slate-400 mt-0.5">
+                                  N° Operación MP: <strong className="font-mono text-slate-200">{tx.numeroOperacion}</strong> • {tx.fecha}
+                                </div>
+                                {isConciliado && (
+                                  <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
+                                    <CheckCheck className="w-3.5 h-3.5" /> Conciliado con socio: {socioNombreConciliado}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-800">
+                              <div className="text-right">
+                                <div className="text-lg font-black text-emerald-400">${Number(tx.monto).toLocaleString('es-AR')}</div>
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-0.5 ${
+                                  isConciliado ? 'bg-emerald-500/20 text-emerald-300' :
+                                  isDescartado ? 'bg-slate-800 text-slate-400' :
+                                  'bg-amber-500/20 text-amber-300'
+                                }`}>
+                                  {isConciliado ? 'Acreditado' : isDescartado ? 'Ignorada' : 'Sin Vincular'}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                {!isConciliado && !isDescartado && (
+                                  <>
+                                    <button
+                                      disabled={isScanning}
+                                      onClick={() => handleAutoMatch(tx)}
+                                      className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20 disabled:opacity-50 cursor-pointer"
+                                    >
+                                      <Zap className={`w-3.5 h-3.5 ${isScanning ? 'animate-bounce' : ''}`} />
+                                      {isScanning ? 'Comparando...' : 'Comparar'}
+                                    </button>
+
+                                    <button
+                                      onClick={() => setSelectedTxForManualLink(tx)}
+                                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 border border-slate-700 transition-all cursor-pointer"
+                                      title="Vincular manualmente seleccionando a un socio"
+                                    >
+                                      <Link className="w-3.5 h-3.5 text-amber-400" /> Manual
+                                    </button>
+
+                                    <button
+                                      onClick={() => toggleDescartarMp(tx.id)}
+                                      className="bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 font-bold px-2.5 py-2 rounded-xl text-xs flex items-center gap-1 border border-slate-800 transition-all cursor-pointer"
+                                      title="Ignorar de la lista de cuotas (ej: transferencias de $1.000.000 u otros gastos)"
+                                    >
+                                      <EyeOff className="w-3.5 h-3.5 text-slate-500" /> Ignorar
+                                    </button>
+                                  </>
+                                )}
+
+                                {isDescartado && (
+                                  <button
+                                    onClick={() => toggleDescartarMp(tx.id)}
+                                    className="bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold px-3 py-2 rounded-xl text-xs flex items-center gap-1 border border-amber-500/30 transition-all cursor-pointer"
+                                    title="Restaurar a la lista de Sin Conciliar"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" /> Restaurar
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
