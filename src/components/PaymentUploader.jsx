@@ -401,7 +401,7 @@ export const PaymentUploader = ({ onSuccess }) => {
 
             if (isDuplicate || matchedTransfer.estado_conciliacion === 'conciliado') {
                finalStatus = 'rechazado';
-               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o ya conciliado.`;
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o transferencia ya conciliada.`;
             } else {
                const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
                if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
@@ -409,7 +409,7 @@ export const PaymentUploader = ({ onSuccess }) => {
                  autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ REVISIÓN: El monto MP ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}).`;
                } else {
                  finalStatus = 'aprobado';
-                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO: Coincidencia 100% con Mercado Pago (Emisor: ${matchedTransfer.emisorNombre}).`;
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO Y CONCILIADO: Coincidencia 100% con transferencia en Mercado Pago (Emisor: ${matchedTransfer.emisorNombre}).`;
                }
             }
           } else {
@@ -428,18 +428,13 @@ export const PaymentUploader = ({ onSuccess }) => {
               errNote = `\n⚠️ DATO ERRÓNEO: Monto leído ($${montoExtraido.toLocaleString('es-AR')}) no coincide con el valor de la cuota ($${requestedMonto.toLocaleString('es-AR')}).`;
             }
 
-            const isCompleteOCR = montoExtraido && Number(montoExtraido) >= Number(requestedMonto) && (extractedNumOp || extractedCoelsa) && fechaExtraida && faltantes.length === 0;
-
             if (isDuplicate) {
                finalStatus = 'rechazado';
                autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
-            } else if (isCompleteOCR) {
-               finalStatus = 'aprobado';
-               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO AUTOMÁTICAMENTE: Todos los datos del comprobante fueron leídos y verificados con éxito.`;
             } else {
                finalStatus = 'en_revision';
                if (faltantes.length === 0) {
-                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}${errNote || '\n⚠️ REVISIÓN: Requiere verificación visual en extracto.'}`;
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n⚠️ REVISIÓN: Datos del comprobante leídos pero la transferencia NO fue encontrada aún en la cuenta del club. Requiere verificación manual.`;
                } else {
                  autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}${errNote}`;
                }

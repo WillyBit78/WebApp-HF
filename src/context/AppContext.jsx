@@ -1052,8 +1052,25 @@ export const AppProvider = ({ children }) => {
       setMercadoPagoTransfers(prev => prev.map(t => {
         const opNorm = cleanStr(t.numeroOperacion);
         const coelsaNorm = cleanStr(t.coelsaId);
-        const matches = (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
-                        (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa)));
+        const txMonto = Number(t.monto);
+        const pMonto = Number(targetPayment.monto);
+        const txFechaStr = String(t.fecha || '');
+        const pDateNums = String(targetPayment.fechaTransferencia || targetPayment.observaciones || '').match(/\d+/g) || [];
+
+        let matchesDate = false;
+        if (pMonto > 0 && txMonto > 0 && pMonto === txMonto && pDateNums.length >= 3) {
+          const dayStr = pDateNums[0].padStart(2, '0');
+          const monthStr = pDateNums[1].padStart(2, '0');
+          const yearStr = pDateNums[2].slice(-2);
+          if (txFechaStr.includes(dayStr) && txFechaStr.includes(monthStr) && txFechaStr.includes(yearStr)) {
+            matchesDate = true;
+          }
+        }
+
+        const matches = t.asociadoAPagoId === paymentId ||
+                        (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
+                        (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa))) ||
+                        matchesDate;
         if (matches) {
           return { ...t, estado: 'conciliado', estado_conciliacion: 'conciliado', asociadoAPagoId: paymentId, socioId: targetPayment.socioId, socioNombre: targetPayment.socioNombre };
         }
