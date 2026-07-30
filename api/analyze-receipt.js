@@ -47,17 +47,25 @@ export default async function handler(req, res) {
     }];
 
     const prompt = `Analizá la imagen de este comprobante bancario o billetera virtual de Argentina (Personal Pay, Mercado Pago, Cuenta DNI, Banco Galicia, Santander, BBVA, Brubank, etc.).
-Extraé con 100% de precisión y en JSON puro los datos:
+Reglas de extracción estrictas:
+1. "fecha": Formato DD/MM/YYYY (ej: 25/07/2026 o 29/07/2026).
+2. "hora": Formato HH:MM hs. (ej: 15:47 hs. o 20:57 hs.).
+3. "monto": Número entero o decimal (ej: 15000 o 30000).
+4. "numero_operacion": El número de comprobante u operación oficial (8 a 12 dígitos, ej: 2897797408 o 171148585644). IMPORTANTE: NO confundir con el DNI/CUIL de 8 dígitos del titular (ej: 26248272 o 29900782).
+5. "coelsa_id": Código alfanumérico largo (14 a 32 caracteres, ej: 7L8GYKNX40Z81P7KNMPRZ5). Si es un comprobante interno de Mercado Pago y no tiene COELSA ID, retornar null.
+6. "emisor": Nombre completo y apellido del pagador (ej: "Pazos, Guillermo Pablo"). IMPORTANTE: NO incluir fechas, meses (ej: "julio de"), ni palabras como "Desde", "Recibe", "Transferencia".
+7. "billetera": Nombre de la billetera origen (ej: "Personal Pay", "Mercado Pago", "Cuenta DNI").
+
+Retorná ÚNICAMENTE en JSON puro con la estructura:
 {
   "fecha": "DD/MM/YYYY",
   "hora": "HH:MM hs.",
   "monto": 15000,
-  "coelsa_id": "código alfanumérico largo o null (ej: 7L8GYKNX40Z81P7KNMPRZ5)",
-  "numero_operacion": "número de comprobante/operación o null (ej: 2897797408)",
-  "emisor": "Nombre del pagador/titular de origen (ej: Pazos, Guillermo Pablo)",
-  "billetera": "Nombre de la billetera o banco (ej: Personal Pay)"
-}
-Asegúrate de retornar únicamente el JSON puro sin formato markdown ni texto adicional.`;
+  "coelsa_id": "código alfanumérico o null",
+  "numero_operacion": "número de operación o null",
+  "emisor": "Nombre completo o null",
+  "billetera": "Nombre de billetera"
+}`;
 
     const result = await model.generateContent([prompt, ...imageParts]);
     const response = await result.response;

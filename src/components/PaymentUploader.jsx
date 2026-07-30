@@ -19,7 +19,8 @@ export const PaymentUploader = ({ onSuccess }) => {
     payments, 
     vincularTransferenciaMP, 
     sincronizarMercadoPago,
-    registrarLog 
+    registrarLog,
+    cuotasPorDisciplina 
   } = useApp();
   
   const cardRef = React.useRef(null);
@@ -176,7 +177,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
 
-          const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
           setPreviewUrl(dataUrl);
           setPendingDataUrl(dataUrl);
         };
@@ -421,7 +422,15 @@ export const PaymentUploader = ({ onSuccess }) => {
                finalStatus = 'rechazado';
                autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o transferencia ya conciliada.`;
             } else {
-               const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
+               const getCuotaSocio = (socio) => {
+                 if (!socio) return clubSettings.montoCuotaGeneral || 15000;
+                 const cat = socio.categoria || socio.disciplina || '';
+                 if (cuotasPorDisciplina && cuotasPorDisciplina[cat]) {
+                   return Number(cuotasPorDisciplina[cat]);
+                 }
+                 return Number(socio.montoCuota || clubSettings.montoCuotaGeneral || 15000);
+               };
+               const requestedMonto = getCuotaSocio(targetSocio);
                if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
                  finalStatus = 'en_revision';
                  autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ REVISIÓN: El monto MP ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}).`;
@@ -440,7 +449,15 @@ export const PaymentUploader = ({ onSuccess }) => {
                });
             }
 
-            const requestedMonto = targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000;
+            const getCuotaSocio = (socio) => {
+              if (!socio) return clubSettings.montoCuotaGeneral || 15000;
+              const cat = socio.categoria || socio.disciplina || '';
+              if (cuotasPorDisciplina && cuotasPorDisciplina[cat]) {
+                return Number(cuotasPorDisciplina[cat]);
+              }
+              return Number(socio.montoCuota || clubSettings.montoCuotaGeneral || 15000);
+            };
+            const requestedMonto = getCuotaSocio(targetSocio);
             let errNote = '';
             if (montoExtraido && Number(montoExtraido) !== Number(requestedMonto)) {
               errNote = `\n⚠️ DATO ERRÓNEO: Monto leído ($${montoExtraido.toLocaleString('es-AR')}) no coincide con el valor de la cuota ($${requestedMonto.toLocaleString('es-AR')}).`;
