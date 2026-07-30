@@ -635,6 +635,50 @@ export const AppProvider = ({ children }) => {
     sincronizarMercadoPago();
   }, []);
 
+  // Conciliador automático global entre Payments (Comprobantes) y Transferencias Mercado Pago
+  useEffect(() => {
+    if (!Array.isArray(payments) || payments.length === 0 || !Array.isArray(mercadoPagoTransfers) || mercadoPagoTransfers.length === 0) return;
+
+    const cleanStr = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const approvedPayments = payments.filter(p => p.estado === 'aprobado');
+
+    if (approvedPayments.length === 0) return;
+
+    setMercadoPagoTransfers(prevTransfers => {
+      let changed = false;
+      const nextList = prevTransfers.map(tx => {
+        if (tx.estado === 'conciliado' || tx.estado_conciliacion === 'conciliado') return tx;
+
+        const txOp = cleanStr(tx.numeroOperacion);
+        const txCoelsa = cleanStr(tx.coelsaId);
+
+        const match = approvedPayments.find(p => {
+          const pOp = cleanStr(p.numeroOperacion);
+          const pCoelsa = cleanStr(p.coelsaId);
+          if (pOp && txOp && (pOp === txOp || pOp.includes(txOp) || txOp.includes(pOp))) return true;
+          if (pCoelsa && txCoelsa && (pCoelsa === txCoelsa || pCoelsa.includes(txCoelsa) || txCoelsa.includes(pCoelsa))) return true;
+          if (pCoelsa && txOp && (pCoelsa === txOp || pCoelsa.includes(txOp) || txOp.includes(pCoelsa))) return true;
+          return false;
+        });
+
+        if (match) {
+          changed = true;
+          return {
+            ...tx,
+            estado: 'conciliado',
+            estado_conciliacion: 'conciliado',
+            asociadoAPagoId: match.id,
+            socioId: match.socioId,
+            socioNombre: match.socioNombre
+          };
+        }
+        return tx;
+      });
+
+      return changed ? nextList : prevTransfers;
+    });
+  }, [payments]);
+
   const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState({ status: 'en_revision', ts: Date.now() });
   const [viewedNotifications, setViewedNotifications] = useState({
     aprobado: 0,

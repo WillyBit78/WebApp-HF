@@ -24,7 +24,7 @@ export const PaymentUploader = ({ onSuccess }) => {
   
   const cardRef = React.useRef(null);
 
-  // Obtener usuarios: los del dispositivo primero, y luego todos los del club con su categoría
+  // Obtener usuarios del dispositivo que tengan rol 'socio'
   const getDeviceUsers = () => {
     let deviceUserIds = [];
     try {
@@ -35,15 +35,25 @@ export const PaymentUploader = ({ onSuccess }) => {
       }
     } catch (e) {}
 
-    const deviceList = users.filter(u => deviceUserIds.includes(u.id));
-    const otherList = users.filter(u => !deviceUserIds.includes(u.id));
+    // SOLO desplegar usuarios que hayan iniciado sesión en este dispositivo Y tengan rol 'socio'
+    const deviceSocios = users.filter(u => {
+      const isDeviceUser = deviceUserIds.includes(u.id);
+      const isSocio = !u.rol || u.rol === 'socio';
+      return isDeviceUser && isSocio;
+    });
 
-    const combined = [...deviceList, ...otherList];
-    return combined.length > 0 ? combined : [currentUser];
+    if (deviceSocios.length > 0) return deviceSocios;
+
+    const mySurname = (currentUser?.apellido || '').trim().toLowerCase();
+    const familySocios = users.filter(u => (!u.rol || u.rol === 'socio') && (u.apellido || '').trim().toLowerCase() === mySurname);
+    if (familySocios.length > 0) return familySocios;
+
+    const allSocios = users.filter(u => !u.rol || u.rol === 'socio');
+    return allSocios.length > 0 ? allSocios : [currentUser];
   };
 
   const deviceUsersList = getDeviceUsers();
-  const defaultUser = deviceUsersList.find(u => u.id === localStorage.getItem('haedo_last_user_id')) || currentUser;
+  const defaultUser = deviceUsersList.find(u => u.id === localStorage.getItem('haedo_last_user_id')) || deviceUsersList[0] || currentUser;
   
   const [selectedSocioId, setSelectedSocioId] = useState(defaultUser?.id || currentUser?.id);
   const targetSocio = users.find(u => u.id === selectedSocioId) || currentUser;
@@ -222,13 +232,18 @@ export const PaymentUploader = ({ onSuccess }) => {
     setParsing(true);
     
     try {
-      let finalStatus = 'en_revision';
-      let autoObservaciones = 'Comprobante subido desde app.';
-      let extractedNumeroOperacion = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+      let finalStatus = 'en_revision'; 
+      let autoObservaciones = '';
       let matchedTransfer = null;
+      let extractedNumeroOperacion = null;
       let fechaExtraida = null;
       let horaExtraida = null;
       let montoExtraido = null;
+      let extractedCoelsa = null;
+      let extractedNumOp = null;
+      let emisorExtraido = null;
+      let ocrClientResult = {};
+      let geminiResult = {};
 
       if (sampleOverride) {
         extractedNumeroOperacion = sampleOverride.numeroOperacion;
@@ -245,8 +260,8 @@ export const PaymentUploader = ({ onSuccess }) => {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          let geminiResult = {};
-          let ocrClientResult = {};
+          geminiResult = {};
+          ocrClientResult = {};
 
           // 1. Ejecutar OCR Cliente (Tesseract en navegador + Regex)
           try {
@@ -440,11 +455,30 @@ export const PaymentUploader = ({ onSuccess }) => {
         return null;
       };
 
+      const detectWalletFromText = (rawText) => {
+        const txt = (rawText || '').toLowerCase();
+        if (txt.includes('personal pay') || txt.includes('personalpay')) return 'Personal Pay';
+        if (txt.includes('mercado pago') || txt.includes('mercadopago')) return 'Mercado Pago';
+        if (txt.includes('cuenta dni') || txt.includes('cuentadni') || txt.includes('banco provincia')) return 'Cuenta DNI';
+        if (txt.includes('galicia')) return 'Banco Galicia';
+        if (txt.includes('bbva')) return 'BBVA';
+        if (txt.includes('santander')) return 'Santander';
+        if (txt.includes('brubank')) return 'Brubank';
+        if (txt.includes('ualá') || txt.includes('uala')) return 'Ualá';
+        if (txt.includes('naranja x') || txt.includes('naranjax')) return 'Naranja X';
+        if (txt.includes('lemon')) return 'Lemon Cash';
+        if (txt.includes('modo')) return 'MODO';
+        return matchedTransfer ? matchedTransfer.billeteraOrigen : 'Comprobante Transferencia';
+      };
+
+      const finalWallet = detectWalletFromText((ocrClientResult.rawText || '') + ' ' + (geminiResult.rawText || ''));
+
       const parsedData = sampleOverride || {
         monto: montoExtraido || clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: extractedNumeroOperacion,
-        billeteraOrigen: matchedTransfer ? matchedTransfer.billeteraOrigen : 'Desconocida',
-        emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${targetSocio.nombre} ${targetSocio.apellido}`,
+        coelsaId: extractedCoelsa,
+        billeteraOrigen: finalWallet,
+        emisorNombre: emisorExtraido || (matchedTransfer ? matchedTransfer.emisorNombre : `${targetSocio.nombre} ${targetSocio.apellido}`),
         fechaTransferencia: matchedTransfer ? matchedTransfer.fecha : parseDateAR(fechaExtraida),
         observaciones: autoObservaciones
       };

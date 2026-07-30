@@ -710,7 +710,12 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
                   ? p.billeteraOrigen 
                   : 'Comprobante';
 
-                const isSameEmisor = !p.emisorNombre || (
+                const isGenericEmisor = !p.emisorNombre || (
+                  p.emisorNombre.toLowerCase().includes('transferencia') ||
+                  p.emisorNombre.toLowerCase().includes('desconocid')
+                );
+
+                const isSameEmisor = isGenericEmisor || (
                   p.emisorNombre.trim().toLowerCase() === (p.socioNombre || '').trim().toLowerCase() ||
                   p.emisorNombre.toLowerCase().includes('titular')
                 );

@@ -69,11 +69,22 @@ export async function fetchMercadoPagoTransfers(accessToken) {
         p.metadata?.e2e_id ||
         null;
 
+      let emisor = '';
+      if (p.payer?.first_name || p.payer?.last_name) {
+        emisor = `${p.payer.first_name || ''} ${p.payer.last_name || ''}`.trim();
+      } else if (p.payer?.identification?.number) {
+        emisor = `CUIL/CUIT ${p.payer.identification.number}`;
+      } else if (p.point_of_interaction?.transaction_data?.bank_info?.origin?.name) {
+        emisor = p.point_of_interaction.transaction_data.bank_info.origin.name;
+      } else {
+        emisor = 'Transferencia bancaria / MP';
+      }
+
       return {
         id: `mp-tx-${p.id}`,
         numeroOperacion: String(p.id),
         coelsaId: rawCoelsa ? String(rawCoelsa).trim() : null,
-        emisorNombre: p.payer ? `${p.payer.first_name || ''} ${p.payer.last_name || 'Transferencia Recibida'}`.trim() : 'Transferencia Recibida',
+        emisorNombre: emisor,
         billeteraOrigen: p.payment_method_id ? p.payment_method_id.toUpperCase() : (p.point_of_interaction?.type || 'Billetera Virtual / Banco'),
         monto: p.transaction_amount || 0,
         fecha: new Date(p.date_created).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
