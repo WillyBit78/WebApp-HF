@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { fetchMercadoPagoTransfers } from '../services/mercadopago';
-import { MOCK_ROLES } from '../mockData/initialData';
+import { MOCK_ROLES, MOCK_USERS } from '../mockData/initialData';
 
 const AppContext = createContext();
 
@@ -742,7 +742,7 @@ export const AppProvider = ({ children }) => {
       dni: userDni || userData.dni || '',
       telefono: userData.telefono || '',
       estadoCuota: userData.estadoCuota || 'pendiente',
-      montoCuota: Number(userData.montoCuota) || (DISCIPLINAS_CONFIG[userData.categoria]?.monto || 15000),
+      montoCuota: Number(userData.montoCuota) || (cuotasPorCategoria[userData.categoria] || 15000),
       numeroSocio: userData.numeroSocio || (users.length + 201)
     };
 

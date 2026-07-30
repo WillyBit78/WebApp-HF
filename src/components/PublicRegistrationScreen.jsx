@@ -900,7 +900,7 @@ export const PublicRegistrationScreen = ({ onBackToLogin, isModal = false, onClo
                         fotoRostro: null
                       });
                       setSelectedDiscIds(['baby']);
-                      setSelectedSubcategorias({});
+                      setSelectedCategoryMap({});
                       setStep(1);
                     }}
                     className="w-full bg-slate-800 hover:bg-slate-700 text-amber-400 border border-amber-400/30 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer"
