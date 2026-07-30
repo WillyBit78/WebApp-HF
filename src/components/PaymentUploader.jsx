@@ -272,30 +272,47 @@ export const PaymentUploader = ({ onSuccess }) => {
             console.warn("Error en OCR cliente:", errOcr);
           }
 
-          // 2. Ejecutar Gemini si hay API Key disponible
+          // 2. Ejecutar Gemini Vision (vía Vercel Serverless Function o SDK Cliente)
           try {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-            if (apiKey) {
-              const genAI = new GoogleGenerativeAI(apiKey);
-              let model;
-              try {
-                model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-              } catch (err) {
-                model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const apiRes = await fetch('/api/analyze-receipt', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ dataUrl })
+            });
+            if (apiRes.ok) {
+              const apiJson = await apiRes.json();
+              if (apiJson.success && apiJson.data) {
+                geminiResult = apiJson.data;
               }
+            }
+          } catch (errApi) {
+            console.warn("API Serverless Gemini no disponible, intentando cliente:", errApi);
+          }
 
-              const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,/);
-              const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
-              const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
-
-              const imageParts = [{
-                inlineData: {
-                  data: base64Data,
-                  mimeType: mimeType
+          if (!geminiResult || !geminiResult.monto) {
+            try {
+              const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+              if (apiKey) {
+                const genAI = new GoogleGenerativeAI(apiKey);
+                let model;
+                try {
+                  model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                } catch (err) {
+                  model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
                 }
-              }];
 
-              const prompt = `Analizá la imagen de este comprobante bancario / billetera virtual y extraé en JSON puro los datos:
+                const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,/);
+                const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+                const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
+
+                const imageParts = [{
+                  inlineData: {
+                    data: base64Data,
+                    mimeType: mimeType
+                  }
+                }];
+
+                const prompt = `Analizá la imagen de este comprobante bancario / billetera virtual y extraé en JSON puro los datos:
 {
   "fecha": "DD/MM/YYYY",
   "hora": "HH:MM",
@@ -305,33 +322,35 @@ export const PaymentUploader = ({ onSuccess }) => {
   "emisor": "Nombre del pagador/titular de origen"
 }`;
 
-              const result = await model.generateContent([prompt, ...imageParts]);
-              const response = await result.response;
-              let text = response.text();
-              
-              let cleanedText = text.replace(/```json/gi, '').replace(/```/g, '').replace(/\/\/.*$/gm, '').trim();
-              const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
-              if (jsonMatch) {
-                geminiResult = JSON.parse(jsonMatch[0]);
-              } else {
-                geminiResult = JSON.parse(cleanedText);
+                const result = await model.generateContent([prompt, ...imageParts]);
+                const response = await result.response;
+                let text = response.text();
+                
+                let cleanedText = text.replace(/```json/gi, '').replace(/```/g, '').replace(/\/\/.*$/gm, '').trim();
+                const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                  geminiResult = JSON.parse(jsonMatch[0]);
+                } else {
+                  geminiResult = JSON.parse(cleanedText);
+                }
               }
+            } catch (e) {
+              console.warn("Gemini OCR cliente no disponible:", e);
             }
-          } catch (e) {
-            console.warn("Gemini OCR no disponible:", e);
           }
 
-          // Fusionar resultados (Gemini con mayor prioridad, Tesseract como respaldo sólido)
+          // Combinar resultados (Dando prioridad a Gemini Vision cuando esté activo, luego a Tesseract OCR)
           fechaExtraida = geminiResult.fecha || ocrClientResult.fecha || null;
           horaExtraida = geminiResult.hora || ocrClientResult.hora || null;
           montoExtraido = geminiResult.monto ? Number(geminiResult.monto) : (ocrClientResult.monto ? Number(ocrClientResult.monto) : null);
+          extractedCoelsa = geminiResult.coelsa_id || ocrClientResult.coelsa_id || '';
+          extractedNumOp = geminiResult.numero_operacion || ocrClientResult.numero_operacion || '';
+          emisorExtraido = geminiResult.emisor || ocrClientResult.emisor || null;
           
-          let extractedCoelsa = ocrClientResult.coelsa_id || geminiResult.coelsa_id || '';
           if (extractedCoelsa && (!/[A-Z]/i.test(extractedCoelsa) || !/[0-9]/.test(extractedCoelsa))) {
             extractedCoelsa = ''; // El COELSA ID debe ser ALFANUMÉRICO (no únicamente numérico como CBU)
           }
 
-          let extractedNumOp = geminiResult.numero_operacion || ocrClientResult.numero_operacion || '';
           if (extractedNumOp) {
             const numOnly = String(extractedNumOp).replace(/[^0-9]/g, '');
             if (numOnly.length >= 7 && numOnly.length <= 14) {
@@ -341,7 +360,9 @@ export const PaymentUploader = ({ onSuccess }) => {
             }
           }
 
-          let emisorExtraido = geminiResult.emisor || ocrClientResult.emisor || null;
+          if (!emisorExtraido) {
+            emisorExtraido = ocrClientResult.emisor || null;
+          }
           if (emisorExtraido) {
             emisorExtraido = String(emisorExtraido).replace(/\s+(CUIL|CUIT|DNI|Desde|Recibe|Personal|Mercado|Banco|Billetera).*$/i, '').trim();
           }
