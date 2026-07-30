@@ -9,9 +9,9 @@ export default {
   build: {
     rollupOptions: {
       output: {
-        entryFileNames: `assets/[name]-[hash]-v25.js`,
-        chunkFileNames: `assets/[name]-[hash]-v25.js`,
-        assetFileNames: `assets/[name]-[hash]-v25.[ext]`
+        entryFileNames: `assets/[name]-[hash]-v26.js`,
+        chunkFileNames: `assets/[name]-[hash]-v26.js`,
+        assetFileNames: `assets/[name]-[hash]-v26.[ext]`
       }
     }
   }

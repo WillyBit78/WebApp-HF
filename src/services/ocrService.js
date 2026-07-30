@@ -130,8 +130,15 @@ export const ocrService = {
 
   parseDate(text) {
     if (!text) return null;
-    const match = text.match(/\b(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})\b/);
-    if (match) return match[1];
+    // Permite espacios opcionales alrededor de las barras/guiones: ej. "25 / 07 / 2026"
+    const match = text.match(/\b(\d{1,2})\s*[\/\.-]\s*(\d{1,2})\s*[\/\.-]\s*(\d{2,4})\b/);
+    if (match) {
+      const day = match[1].padStart(2, '0');
+      const month = match[2].padStart(2, '0');
+      let year = match[3];
+      if (year.length === 2) year = `20${year}`;
+      return `${day}/${month}/${year}`;
+    }
 
     const monthMap = { 
       ene: '01', enero: '01', feb: '02', febrero: '02', mar: '03', marzo: '03', 
@@ -157,8 +164,14 @@ export const ocrService = {
 
   parseTime(text) {
     if (!text) return null;
-    const match = text.match(/\b(\d{1,2}:\d{2}(?:\s?[ap]\.?m\.?|\s?hs\.?)?)\b/i);
-    return match ? match[1] : null;
+    // Permite espacios alrededor de los dos puntos: ej. "15 : 47" o "15:47 hs."
+    const match = text.match(/\b(\d{1,2})\s*[:\.]\s*(\d{2})\s*(?:[ap]\.?m\.?|hs\.?)?\b/i);
+    if (match) {
+      const h = match[1].padStart(2, '0');
+      const m = match[2];
+      return `${h}:${m} hs.`;
+    }
+    return null;
   },
 
   parseOperationId(text) {
@@ -168,7 +181,7 @@ export const ocrService = {
     const match = text.match(opRegex);
     if (match) return match[1];
 
-    const numMatches = text.match(/\b(\d{10,14})\b/g);
+    const numMatches = text.match(/\b(\d{8,14})\b/g);
     if (numMatches) {
       for (const nm of numMatches) {
         if (!nm.startsWith('0000') && !nm.startsWith('20') && !nm.startsWith('27') && !nm.startsWith('30')) {
@@ -183,8 +196,8 @@ export const ocrService = {
     if (!text) return null;
     
     // COELSA ID en Argentina es siempre ALFANUMÉRICO (letras + números, ej: 7L8GYKNX40Z81P7KNMPRZ5)
-    // NUNCA debe ser puramente numérico (eso es CBU/CVU de 22 dígitos)
-    const coelsaRegex = /(?:COELSA|CoelsaID|Referencia|Id Bancario)[:\s]+([A-Z0-9]{14,35})/i;
+    // Permite saltos de línea \n o dos puntos entre "CoelsaID" y el código
+    const coelsaRegex = /(?:COELSA|CoelsaID|Referencia|Id Bancario)[\s\w\n\r]*?[:\s\n\r]+([A-Z0-9]{14,35})/i;
     const match = text.match(coelsaRegex);
     if (match) {
       const token = match[1].replace(/[^A-Z0-9]/gi, '').toUpperCase();

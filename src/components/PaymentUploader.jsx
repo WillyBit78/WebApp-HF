@@ -464,7 +464,7 @@ export const PaymentUploader = ({ onSuccess }) => {
       } else if (matchedTransfer) {
         formattedFechaStr = matchedTransfer.fecha;
       } else {
-        formattedFechaStr = new Date().toLocaleDateString('es-AR') + ', ' + new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+        formattedFechaStr = 'Fecha no detectada';
       }
 
       const parsedData = sampleOverride || {
