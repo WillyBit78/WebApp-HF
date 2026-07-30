@@ -5,5 +5,14 @@ export default {
   server: {
     port: 3000,
     host: true
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        entryFileNames: `assets/[name]-[hash]-v10.js`,
+        chunkFileNames: `assets/[name]-[hash]-v10.js`,
+        assetFileNames: `assets/[name]-[hash]-v10.[ext]`
+      }
+    }
   }
 };

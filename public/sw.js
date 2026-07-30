@@ -1,5 +1,5 @@
-// Service Worker v9 - Network Only + Push Notifications + WebAPK Splash Fix
-const CACHE_NAME = 'haedo-futsal-v9-webapk-fix';
+// Service Worker v10 - Network First + Push Notifications + WebAPK Splash Fix
+const CACHE_NAME = 'haedo-futsal-v10-nuclear-purge';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -15,6 +15,12 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
 });
 
 // Push Notification Event Handler (Celular Cerrado / Bloqueado)
@@ -177,9 +183,9 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network Only fallback
+  // Network Only / Network First for JS, HTML and CSS assets
   event.respondWith(
-    fetch(event.request).catch(() => {
+    fetch(event.request, { cache: 'no-store' }).catch(() => {
       return caches.match(event.request);
     })
   );
