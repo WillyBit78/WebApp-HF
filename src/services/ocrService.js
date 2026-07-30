@@ -258,5 +258,34 @@ export const ocrService = {
     }
 
     return true;
+  },
+
+  isCoelsaMatch(id1, id2) {
+    if (!id1 || !id2) return false;
+    const s1 = String(id1).toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const s2 = String(id2).toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+    if (s1 === s2) return true;
+    if (s1.length >= 8 && s2.length >= 8 && (s1.includes(s2) || s2.includes(s1))) return true;
+
+    // Normalización de caracteres OCR confusos (Z <-> 7, O <-> 0, I/L <-> 1, B <-> 8)
+    const norm = (s) => s.replace(/Z/g, '7').replace(/O/g, '0').replace(/[IL]/g, '1').replace(/B/g, '8');
+    const n1 = norm(s1);
+    const n2 = norm(s2);
+
+    if (n1 === n2 || (n1.length >= 8 && n2.length >= 8 && (n1.includes(n2) || n2.includes(n1)))) return true;
+
+    // Distancia de diferencia mínima (hasta 2 caracteres en IDs alfanuméricos largos)
+    if (s1.length >= 15 && s2.length >= 15 && Math.abs(s1.length - s2.length) <= 2) {
+      let diffs = 0;
+      const len = Math.min(s1.length, s2.length);
+      for (let i = 0; i < len; i++) {
+        if (s1[i] !== s2[i] && n1[i] !== n2[i]) diffs++;
+        if (diffs > 2) return false;
+      }
+      return diffs <= 2;
+    }
+
+    return false;
   }
 };

@@ -732,7 +732,9 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
                                   )}
                                 </div>
                                 <div className="text-xs text-slate-400 mt-0.5">
-                                  N° Operación MP: <strong className="font-mono text-slate-200">{tx.numeroOperacion}</strong> • {tx.fecha}
+                                  N° Operación MP: <strong className="font-mono text-slate-200">{tx.numeroOperacion}</strong>
+                                  {tx.coelsaId && <> • COELSA ID: <strong className="font-mono text-sky-300">{tx.coelsaId}</strong></>}
+                                  • {tx.fecha}
                                 </div>
                                 {isConciliado && (
                                   <div className="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">

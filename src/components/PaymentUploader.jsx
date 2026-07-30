@@ -369,7 +369,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             }
           }
 
-          // Cruce inteligente estricto (últimos 60 días) por ID de Operación, COELSA ID, o Fecha/Hora exacta (24h/12h) + Monto
+          // Cruce inteligente estricto (últimos 60 días) por ID de Operación, COELSA ID (tolerante a OCR Z/7), o Fecha/Hora exacta (24h/12h) + Monto
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           matchedTransfer = mpList?.find(t => {
             if (typeof ocrService.isWithin60Days === 'function' && !ocrService.isWithin60Days(t.fecha)) return false;
@@ -377,6 +377,7 @@ export const PaymentUploader = ({ onSuccess }) => {
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
             
+            if (extractedCoelsa && typeof ocrService.isCoelsaMatch === 'function' && ocrService.isCoelsaMatch(extractedCoelsa, t.coelsaId || t.numeroOperacion)) return true;
             if (extractedCoelsa && extractedCoelsa.length >= 8 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
             if (extractedNumOp && extractedNumOp.length >= 8 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
             

@@ -661,7 +661,8 @@ export const AppProvider = ({ children }) => {
           const pCoelsa = cleanStr(p.coelsaId);
           const pMonto = Number(p.monto);
 
-          // 1. Coincidencia por ID de Operación o COELSA ID
+          // 1. Coincidencia por COELSA ID (con tolerancia OCR Z/7) o ID de Operación
+          if (p.coelsaId && typeof ocrService.isCoelsaMatch === 'function' && ocrService.isCoelsaMatch(p.coelsaId, tx.coelsaId || tx.numeroOperacion)) return true;
           if (pOp && txOp && (pOp === txOp || pOp.includes(txOp) || txOp.includes(pOp))) return true;
           if (pCoelsa && txCoelsa && (pCoelsa === txCoelsa || pCoelsa.includes(txCoelsa) || txCoelsa.includes(pCoelsa))) return true;
           if (pCoelsa && txOp && (pCoelsa === txOp || pCoelsa.includes(txOp) || txOp.includes(pCoelsa))) return true;
@@ -1064,6 +1065,7 @@ export const AppProvider = ({ children }) => {
         }
 
         const matches = t.asociadoAPagoId === paymentId ||
+                        (targetPayment.coelsaId && typeof ocrService.isCoelsaMatch === 'function' && ocrService.isCoelsaMatch(targetPayment.coelsaId, t.coelsaId || t.numeroOperacion)) ||
                         (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
                         (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa))) ||
                         matchesDate;
