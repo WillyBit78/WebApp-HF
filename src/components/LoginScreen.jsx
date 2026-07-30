@@ -14,6 +14,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [showIOSInstructions, setShowIOSInstructions] = useState(false);
+  const [hasSharedReceipt, setHasSharedReceipt] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -25,6 +26,18 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
 
       if (iosDevice && !standalone) {
         setIsIOS(true);
+      }
+
+      // Detectar comprobante compartido pendiente
+      const isSharedParam = new URLSearchParams(window.location.search).get('shared') === 'true';
+      if (isSharedParam) {
+        setHasSharedReceipt(true);
+      } else if ('caches' in window) {
+        caches.open('shared-receipts').then(cache => {
+          return cache.match('/shared-receipt-file').then(matched => {
+            if (matched) setHasSharedReceipt(true);
+          });
+        }).catch(() => {});
       }
 
       const handleBeforeInstallPrompt = (e) => {
@@ -113,6 +126,16 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
 
         <form onSubmit={handleSubmit} className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
           <div className="space-y-4">
+            {hasSharedReceipt && (
+              <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3.5 rounded-xl flex items-center gap-3 text-xs font-semibold animate-fadeIn shadow-lg shadow-emerald-500/5">
+                <Sparkles className="w-5 h-5 shrink-0 text-emerald-400 animate-pulse" />
+                <div>
+                  <div className="font-bold text-emerald-300">📥 ¡Comprobante recibido desde tu billetera!</div>
+                  <div className="text-[11px] text-emerald-400/90 font-normal mt-0.5">Ingresá con tu usuario para procesarlo automáticamente en tu cuenta.</div>
+                </div>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex items-center gap-2 text-sm font-medium animate-pulse">
                 <AlertCircle className="w-5 h-5 shrink-0" />

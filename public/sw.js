@@ -1,5 +1,5 @@
-// Service Worker v7 - Network Only + Push Notifications
-const CACHE_NAME = 'haedo-futsal-v7-push-enabled';
+// Service Worker v8 - Network Only + Push Notifications + Share Target Fix
+const CACHE_NAME = 'haedo-futsal-v8-share-fix';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -110,13 +110,18 @@ self.addEventListener('fetch', (event) => {
             'X-File-Name': file.name || (mimeType === 'application/pdf' ? 'comprobante_compartido.pdf' : 'comprobante_compartido.jpg')
           };
           
-          await cache.put(new Request('/shared-receipt-file'), new Response(file, { headers }));
-          await cache.put(new Request('/shared-receipt.jpg'), new Response(file, { headers }));
+          const fileReq = new Request(new URL('/shared-receipt-file', self.location.origin).href);
+          const jpgReq = new Request(new URL('/shared-receipt.jpg', self.location.origin).href);
+
+          await cache.put(fileReq, new Response(file, { headers }));
+          await cache.put(jpgReq, new Response(file, { headers }));
         }
       } catch (err) {
         console.error('Error procesando comprobante compartido desde app:', err);
       }
-      return Response.redirect('/?shared=true', 303);
+      
+      const redirectUrl = new URL('/?shared=true', self.location.origin).href;
+      return Response.redirect(redirectUrl, 303);
     })());
     return;
   }

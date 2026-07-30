@@ -374,7 +374,14 @@ export const AppProvider = ({ children }) => {
       } catch (e) {}
     };
 
-    loadData();
+    // Safety fallback timer for DB loading state (max 3.5s)
+    const dbLoadingSafetyTimer = setTimeout(() => {
+      setLoadingDb(false);
+    }, 3500);
+
+    loadData().finally(() => {
+      clearTimeout(dbLoadingSafetyTimer);
+    });
 
     // Auto-sincronización en segundo plano cada 5 segundos para actualización instantánea sin F5
     const syncInterval = setInterval(() => {

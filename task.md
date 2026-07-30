@@ -121,8 +121,13 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
 ## 4. 💳 LECTOR DE COMPROBANTES Y PWA SHARE TARGET (`PaymentUploader.jsx` & `sw.js`)
 
 - **Web Share Target de Android (`sw.js`)**:
-  - Intercepta solicitudes `POST /share-receipt` al compartir imágenes o comprobantes en PDF desde apps bancarias o billeteras virtuales (Mercado Pago, Cuenta DNI, BNA, etc.).
-  - Inspecciona todos los campos de `FormData` y guarda la respuesta en la caché con la clave `/shared-receipt-file` preservando el `Content-Type` exacto (`application/pdf` o `image/*`).
+  - Intercepta solicitudes `POST /share-receipt` al compartir imágenes o comprobantes en PDF desde apps bancarias o billeteras virtuales (Mercado Pago, Personal Pay, Cuenta DNI, BNA, etc.).
+  - Guarda la respuesta en la caché con la clave `/shared-receipt-file` preservando el `Content-Type` exacto (`application/pdf` o `image/*`).
+  - **Redireccionamiento Seguro (`Response.redirect`)**: Utiliza `new URL('/?shared=true', self.location.origin).href` para evitar excepciones por URL relativa en Service Workers de Android/Chrome.
+- **Seguridad de Carga DB (`AppContext.jsx`)**:
+  - Incluye un temporizador de seguridad (max 3.5s) que garantiza la transición de la pantalla del logo inicial incluso ante latencias de red móvil al compartir.
+- **Cartel Informativo en Login (`LoginScreen.jsx`)**:
+  - Si el usuario abre la app mediante `?shared=true` sin estar logueado, se muestra un banner verde informando: `📥 ¡Comprobante recibido desde tu billetera! Ingresá con tu usuario para procesarlo automáticamente.`
 - **Lector Híbrido OCR (Gemini + PDF.js)**:
   - Soporta **Archivos PDF** (mediante `PDF.js` convirtiendo a Canvas) e **Imágenes** (JPG, PNG, WEBP).
   - Consulta los modelos `gemini-1.5-flash` / `gemini-2.0-flash`.
