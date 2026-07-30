@@ -1075,16 +1075,48 @@ export const AppProvider = ({ children }) => {
     if (!targetPayment) return;
     
     setPayments(prev => prev.filter(p => p.id !== paymentId));
-    
-    if (isSupabaseConfigured) {
-      const { error } = await supabase.from('payments').delete().eq('id', paymentId);
-      if (error) {
-        console.error('Supabase Delete Error:', error);
-        alert('Error al borrar de la base de datos: ' + JSON.stringify(error));
+
+    // Deshacer la conciliación en mercadoPagoTransfers
+    const cleanStr = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const targetOp = cleanStr(targetPayment.numeroOperacion);
+    const targetCoelsa = cleanStr(targetPayment.coelsaId);
+
+    setMercadoPagoTransfers(prev => prev.map(t => {
+      const isAssociated = t.asociadoAPagoId === paymentId;
+      const opNorm = cleanStr(t.numeroOperacion);
+      const coelsaNorm = cleanStr(t.coelsaId);
+      const matches = isAssociated ||
+                      (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
+                      (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa)));
+      if (matches) {
+        return {
+          ...t,
+          estado: 'sin_vincular',
+          estado_conciliacion: 'sin_vincular',
+          asociadoAPagoId: null,
+          socioId: null,
+          socioNombre: null
+        };
+      }
+      return t;
+    }));
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        await Promise.all([
+          supabase.from('payments').delete().eq('id', paymentId),
+          targetOp ? supabase.from('mp_transfers').update({ 
+            estado_conciliacion: 'sin_vincular', 
+            payment_id: null, 
+            socio_id: null 
+          }).eq('payment_id', paymentId) : Promise.resolve()
+        ]);
+      } catch (err) {
+        console.error('Supabase Delete Error:', err);
       }
     }
     
-    registrarLog('comprobante_eliminado', `Comprobante de ${targetPayment.socioNombre} eliminado por administrador`);
+    registrarLog('comprobante_eliminado', `Comprobante N° ${targetPayment.numeroOperacion} de ${targetPayment.socioNombre} eliminado y des-conciliado`);
   };
 
   const registrarPagoEfectivoCoach = async (socioId, monto = 15000, concepto = 'Cuota en efectivo') => {

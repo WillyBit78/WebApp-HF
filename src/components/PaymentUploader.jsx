@@ -423,9 +423,14 @@ export const PaymentUploader = ({ onSuccess }) => {
               errNote = `\n⚠️ DATO ERRÓNEO: Monto leído ($${montoExtraido.toLocaleString('es-AR')}) no coincide con el valor de la cuota ($${requestedMonto.toLocaleString('es-AR')}).`;
             }
 
+            const isCompleteOCR = montoExtraido && Number(montoExtraido) >= Number(requestedMonto) && (extractedNumOp || extractedCoelsa) && fechaExtraida && faltantes.length === 0;
+
             if (isDuplicate) {
                finalStatus = 'rechazado';
                autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
+            } else if (isCompleteOCR) {
+               finalStatus = 'aprobado';
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO AUTOMÁTICAMENTE: Todos los datos del comprobante fueron leídos y verificados con éxito.`;
             } else {
                finalStatus = 'en_revision';
                if (faltantes.length === 0) {

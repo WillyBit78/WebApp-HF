@@ -114,14 +114,24 @@ export const ocrService = {
     const match = text.match(/\b(\d{1,2}[\/\.-]\d{1,2}[\/\.-]\d{2,4})\b/);
     if (match) return match[1];
 
-    const monthMap = { ene: '01', feb: '02', mar: '03', abr: '04', may: '05', jun: '06', jul: '07', ago: '08', sep: '09', oct: '10', nov: '11', dic: '12' };
-    const monthRegex = /\b(\d{1,2})\s*[\/\.-]?\s*(ene|feb|mar|abr|may|jun|jul|ago|sep|oct|nov|dic)[a-z]*\b/i;
+    const monthMap = { 
+      ene: '01', enero: '01', feb: '02', febrero: '02', mar: '03', marzo: '03', 
+      abr: '04', abril: '04', may: '05', mayo: '05', jun: '06', junio: '06', 
+      jul: '07', julio: '07', ago: '08', agosto: '08', sep: '09', septiembre: '09', 
+      oct: '10', octubre: '10', nov: '11', noviembre: '11', dic: '12', diciembre: '12' 
+    };
+
+    const monthRegex = /\b(\d{1,2})\s*(?:de)?\s*([a-z]{3,10})\s*(?:de)?\s*(\d{2,4})?\b/i;
     const mMatch = text.match(monthRegex);
     if (mMatch) {
-      const day = mMatch[1].padStart(2, '0');
-      const month = monthMap[mMatch[2].toLowerCase().substring(0, 3)] || '07';
-      const year = new Date().getFullYear();
-      return `${day}/${month}/${year}`;
+      const monthKey = mMatch[2].toLowerCase().substring(0, 3);
+      if (monthMap[monthKey]) {
+        const day = mMatch[1].padStart(2, '0');
+        const month = monthMap[monthKey];
+        let year = mMatch[3] || new Date().getFullYear();
+        if (String(year).length === 2) year = `20${year}`;
+        return `${day}/${month}/${year}`;
+      }
     }
     return null;
   },
@@ -134,7 +144,8 @@ export const ocrService = {
 
   parseOperationId(text) {
     if (!text) return null;
-    const opRegex = /(?:N[°º\.]*|Número|Num|ID)?\s*(?:de|da)?\s*(?:la)?\s*(?:operación|operacion|comprobante|transaccion)[:\s\n\r]+(\d{8,14})/i;
+    // Pattern 1: Número de operación (incluso con "de Mercado Pago" o saltos de línea)
+    const opRegex = /(?:N[°º\.]*|Número|Num|ID)?\s*(?:de|da)?\s*(?:la)?\s*(?:operación|operacion|comprobante|transaccion)[\s\w\n\r]*?[:\s\n\r]+(\d{8,14})/i;
     const match = text.match(opRegex);
     if (match) return match[1];
 
