@@ -45,9 +45,6 @@ export const ocrService = {
 
   async extractPaymentData(imageUrl) {
     try {
-      let rawText = '';
-      const processedUrl = await this.preprocessImage(imageUrl);
-
       if (!window.Tesseract && typeof document !== 'undefined') {
         await new Promise((resolve) => {
           const script = document.createElement('script');
@@ -58,33 +55,55 @@ export const ocrService = {
         });
       }
 
+      let rawTextPass1 = '';
+      let rawTextPass2 = '';
+
       if (window.Tesseract) {
-        const { data } = await window.Tesseract.recognize(processedUrl, 'spa', {
-          logger: m => console.log('Tesseract OCR:', m.status, m.progress)
+        // Pass 1: Raw Original Image (óptimo para comprobantes digitales limpios, PDFs y capturas nativas de celular)
+        const res1 = await window.Tesseract.recognize(imageUrl, 'spa', {
+          logger: m => console.log('Tesseract OCR Pass 1 (Raw):', m.status, m.progress)
         });
-        rawText = data?.text || '';
+        rawTextPass1 = res1?.data?.text || '';
+
+        const dataPass1 = {
+          fecha: this.parseDate(rawTextPass1),
+          hora: this.parseTime(rawTextPass1),
+          monto: this.parseAmount(rawTextPass1),
+          numero_operacion: this.parseOperationId(rawTextPass1),
+          coelsa_id: this.parseCoelsaId(rawTextPass1),
+          emisor: this.parseEmisor(rawTextPass1),
+          rawText: rawTextPass1
+        };
+
+        // Si el Pase 1 leyó todos los datos completos, retornar inmediatamente
+        if (dataPass1.monto && dataPass1.fecha && (dataPass1.numero_operacion || dataPass1.coelsa_id)) {
+          return dataPass1;
+        }
+
+        // Pass 2: Preprocessed Canvas Image (óptimo para fotos tomadas a pantallas con brillo/muaré)
+        const processedUrl = await this.preprocessImage(imageUrl);
+        const res2 = await window.Tesseract.recognize(processedUrl, 'spa', {
+          logger: m => console.log('Tesseract OCR Pass 2 (Preprocessed):', m.status, m.progress)
+        });
+        rawTextPass2 = res2?.data?.text || '';
+
+        const combinedText = rawTextPass1 + '\n' + rawTextPass2;
+
+        return {
+          fecha: dataPass1.fecha || this.parseDate(rawTextPass2),
+          hora: dataPass1.hora || this.parseTime(rawTextPass2),
+          monto: dataPass1.monto || this.parseAmount(rawTextPass2),
+          numero_operacion: dataPass1.numero_operacion || this.parseOperationId(rawTextPass2),
+          coelsa_id: dataPass1.coelsa_id || this.parseCoelsaId(rawTextPass2),
+          emisor: dataPass1.emisor || this.parseEmisor(rawTextPass2),
+          rawText: combinedText
+        };
       }
-      
-      return {
-        fecha: this.parseDate(rawText),
-        hora: this.parseTime(rawText),
-        monto: this.parseAmount(rawText),
-        numero_operacion: this.parseOperationId(rawText),
-        coelsa_id: this.parseCoelsaId(rawText),
-        emisor: this.parseEmisor(rawText),
-        rawText: rawText
-      };
+
+      return { fecha: null, hora: null, monto: null, numero_operacion: null, coelsa_id: null, emisor: null, rawText: '' };
     } catch (error) {
       console.warn('Error en ocrService fallback:', error);
-      return {
-        fecha: null,
-        hora: null,
-        monto: null,
-        numero_operacion: null,
-        coelsa_id: null,
-        emisor: null,
-        rawText: ''
-      };
+      return { fecha: null, hora: null, monto: null, numero_operacion: null, coelsa_id: null, emisor: null, rawText: '' };
     }
   },
 
