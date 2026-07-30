@@ -51,7 +51,7 @@ Reglas de extracción estrictas:
 1. "fecha": Formato DD/MM/YYYY (ej: 25/07/2026 o 29/07/2026).
 2. "hora": Formato HH:MM hs. (ej: 15:47 hs. o 20:57 hs.).
 3. "monto": Número entero o decimal (ej: 15000 o 30000).
-4. "numero_operacion": El número de comprobante u operación oficial (8 a 12 dígitos, ej: 2897797408 o 171148585644). IMPORTANTE: NO confundir con el DNI/CUIL de 8 dígitos del titular (ej: 26248272 o 29900782).
+4. "numero_operacion": El número de comprobante u operación oficial (de 8 a 14 dígitos, típicamente de 10, 11 o 12 dígitos como 171148585644 o 2897797408) ubicado al pie del comprobante bajo "Número de operación de Mercado Pago" o "N° de la operación". ATENCIÓN: NUNCA tomar el DNI/CUIL de 8 dígitos del titular (ej: 26248272 o 29900782).
 5. "coelsa_id": Código alfanumérico largo (14 a 32 caracteres, ej: 7L8GYKNX40Z81P7KNMPRZ5). Si es un comprobante interno de Mercado Pago y no tiene COELSA ID, retornar null.
 6. "emisor": Nombre completo y apellido del pagador (ej: "Pazos, Guillermo Pablo"). IMPORTANTE: NO incluir fechas, meses (ej: "julio de"), ni palabras como "Desde", "Recibe", "Transferencia".
 7. "billetera": Nombre de la billetera origen (ej: "Personal Pay", "Mercado Pago", "Cuenta DNI").
