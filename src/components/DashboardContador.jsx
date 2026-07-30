@@ -86,6 +86,8 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
       setActiveTab('auditoria');
       const targetStatus = typeof auditoriaFilterStatus === 'object' ? auditoriaFilterStatus.status : auditoriaFilterStatus;
       if (markNotificationsAsViewed) markNotificationsAsViewed(targetStatus);
+    } else {
+      setActiveTab('control_financiero');
     }
   }, [auditoriaFilterStatus]);
 

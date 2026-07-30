@@ -24,27 +24,22 @@ export const PaymentUploader = ({ onSuccess }) => {
   
   const cardRef = React.useRef(null);
 
-  // Obtener únicamente los usuarios que han iniciado sesión en este dispositivo
+  // Obtener usuarios: los del dispositivo primero, y luego todos los del club con su categoría
   const getDeviceUsers = () => {
+    let deviceUserIds = [];
     try {
       const stored = localStorage.getItem('haedo_device_users');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          const userIds = parsed.map(p => p.id);
-          const filtered = users.filter(u => userIds.includes(u.id));
-          if (filtered.length > 0) return filtered;
-        }
+        if (Array.isArray(parsed)) deviceUserIds = parsed.map(p => p.id);
       }
     } catch (e) {}
 
-    // Fallback: Si aún no hay registro, mostrar el usuario actual + familiares del mismo apellido
-    const mySurname = (currentUser?.apellido || '').trim().toLowerCase();
-    if (mySurname && users.length > 0) {
-      const family = users.filter(u => (u.apellido || '').trim().toLowerCase() === mySurname);
-      if (family.length > 0) return family;
-    }
-    return users.length > 0 ? users : [currentUser];
+    const deviceList = users.filter(u => deviceUserIds.includes(u.id));
+    const otherList = users.filter(u => !deviceUserIds.includes(u.id));
+
+    const combined = [...deviceList, ...otherList];
+    return combined.length > 0 ? combined : [currentUser];
   };
 
   const deviceUsersList = getDeviceUsers();
@@ -246,12 +241,23 @@ export const PaymentUploader = ({ onSuccess }) => {
            autoObservaciones = 'Validación automática exitosa (Simulación).';
         }
       } else {
-        // LÓGICA OCR REAL Y PARSER ESTRUCTURADO
         if (dataUrl.includes('application/pdf')) {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
           let geminiResult = {};
+          let ocrClientResult = {};
+
+          // 1. Ejecutar OCR Cliente (Tesseract en navegador + Regex)
+          try {
+            if (ocrService && typeof ocrService.extractPaymentData === 'function') {
+              ocrClientResult = await ocrService.extractPaymentData(dataUrl);
+            }
+          } catch (errOcr) {
+            console.warn("Error en OCR cliente:", errOcr);
+          }
+
+          // 2. Ejecutar Gemini si hay API Key disponible
           try {
             const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
             if (apiKey) {
@@ -297,13 +303,13 @@ export const PaymentUploader = ({ onSuccess }) => {
               }
             }
           } catch (e) {
-            console.warn("Gemini OCR no disponible. Usando parser de patrones:", e);
-            geminiResult = {};
+            console.warn("Gemini OCR no disponible:", e);
           }
 
-          fechaExtraida = geminiResult.fecha || null;
-          horaExtraida = geminiResult.hora || null;
-          montoExtraido = geminiResult.monto ? Number(geminiResult.monto) : null;
+          // Fusionar resultados (Gemini con mayor prioridad, Tesseract como respaldo sólido)
+          fechaExtraida = geminiResult.fecha || ocrClientResult.fecha || null;
+          horaExtraida = geminiResult.hora || ocrClientResult.hora || null;
+          montoExtraido = geminiResult.monto ? Number(geminiResult.monto) : (ocrClientResult.monto ? Number(ocrClientResult.monto) : null);
           
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           const extractBestIdToken = (str) => {
@@ -317,10 +323,11 @@ export const PaymentUploader = ({ onSuccess }) => {
             return validTokens[0] ? cleanStr(validTokens[0]) : cleanStr(str);
           };
 
-          const rawCoelsa = String(geminiResult.coelsa_id || '');
+          const rawCoelsa = String(geminiResult.coelsa_id || ocrClientResult.coelsa_id || '');
           const extractedCoelsa = extractBestIdToken(rawCoelsa);
-          const rawNumOp = String(geminiResult.numero_operacion || '');
+          const rawNumOp = String(geminiResult.numero_operacion || ocrClientResult.numero_operacion || '');
           const extractedNumOp = extractBestIdToken(rawNumOp);
+          const emisorExtraido = geminiResult.emisor || ocrClientResult.emisor || null;
 
           // Armar Informe de Auditoría Detallado
           const leidos = [];
@@ -331,7 +338,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           if (horaExtraida) leidos.push(`Hora: ${horaExtraida}`); else faltantes.push('Hora');
           if (extractedCoelsa) leidos.push(`COELSA ID: ${extractedCoelsa}`); else faltantes.push('COELSA ID');
           if (extractedNumOp) leidos.push(`N° Operación: ${extractedNumOp}`); else faltantes.push('N° Operación');
-          if (geminiResult.emisor) leidos.push(`Nombre Emisor: ${geminiResult.emisor}`); else faltantes.push('Nombre Emisor');
+          if (emisorExtraido) leidos.push(`Nombre Emisor: ${emisorExtraido}`); else faltantes.push('Nombre Emisor');
 
           const leidosTxt = leidos.length > 0 ? leidos.join(' | ') : 'Sin datos estructurados';
           const faltantesTxt = faltantes.length > 0 ? faltantes.join(', ') : 'Ninguno';
@@ -497,7 +504,7 @@ export const PaymentUploader = ({ onSuccess }) => {
                 </div>
               )}
 
-              {/* Selector de Socio Destino (Solo Usuarios que Iniciaron Sesión en este Dispositivo) */}
+              {/* Selector de Socio Destino con Categoría para Identificarlo */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-400">
                   <span className="flex items-center gap-1.5">
@@ -521,7 +528,7 @@ export const PaymentUploader = ({ onSuccess }) => {
                 >
                   {deviceUsersList.map(u => (
                     <option key={u.id} value={u.id}>
-                      {u.nombre} {u.apellido}
+                      {u.nombre} {u.apellido} {u.categoria ? `(${u.categoria})` : (u.rol ? `(${u.rol})` : '(Socio)')}
                     </option>
                   ))}
                 </select>
@@ -566,7 +573,7 @@ export const PaymentUploader = ({ onSuccess }) => {
                 </div>
               </div>
 
-              {/* Selector de Socio Destino */}
+              {/* Selector de Socio Destino con Categoría */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-400">
                   <span className="flex items-center gap-1.5">
@@ -590,7 +597,7 @@ export const PaymentUploader = ({ onSuccess }) => {
                 >
                   {deviceUsersList.map(u => (
                     <option key={u.id} value={u.id}>
-                      {u.nombre} {u.apellido}
+                      {u.nombre} {u.apellido} {u.categoria ? `(${u.categoria})` : (u.rol ? `(${u.rol})` : '(Socio)')}
                     </option>
                   ))}
                 </select>

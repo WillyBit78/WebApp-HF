@@ -1,4 +1,5 @@
 import React from 'react';
+import { useApp } from '../context/AppContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -13,6 +14,14 @@ import {
 } from 'lucide-react';
 
 export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
+  const { setAuditoriaFilterStatus } = useApp();
+
+  const handleItemClick = (id) => {
+    if (id === 'finance' && setAuditoriaFilterStatus) {
+      setAuditoriaFilterStatus(null);
+    }
+    setCurrentTab(id);
+  };
   const menuGroups = [
     {
       label: 'General',
@@ -76,7 +85,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setCurrentTab(item.id)}
+                    onClick={() => handleItemClick(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                       isActive 
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' 

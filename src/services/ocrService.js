@@ -6,8 +6,20 @@ export const ocrService = {
   async extractPaymentData(imageUrl) {
     try {
       let rawText = '';
+      if (!window.Tesseract && typeof document !== 'undefined') {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+          script.onload = resolve;
+          script.onerror = resolve; // Continue on error
+          document.head.appendChild(script);
+        });
+      }
+
       if (window.Tesseract) {
-        const { data } = await window.Tesseract.recognize(imageUrl, 'spa');
+        const { data } = await window.Tesseract.recognize(imageUrl, 'spa', {
+          logger: m => console.log('Tesseract OCR:', m.status, m.progress)
+        });
         rawText = data?.text || '';
       }
       

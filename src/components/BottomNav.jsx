@@ -1,7 +1,16 @@
 import React from 'react';
+import { useApp } from '../context/AppContext';
 import { Users, Calendar, Bell, Wallet, Settings, Home, ShoppingBag } from 'lucide-react';
 
 export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
+  const { setAuditoriaFilterStatus } = useApp();
+
+  const handleNavClick = (id) => {
+    if (id === 'finance' && setAuditoriaFilterStatus) {
+      setAuditoriaFilterStatus(null);
+    }
+    setCurrentTab(id);
+  };
   const allNavItems = [
     { 
       id: 'users', 
@@ -60,7 +69,7 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
           return (
             <button
               key={item.id}
-              onClick={() => setCurrentTab(item.id)}
+              onClick={() => handleNavClick(item.id)}
               className={`flex flex-col items-center gap-1 px-1.5 py-1 rounded-xl transition-all cursor-pointer ${
                 isActive 
                   ? 'text-amber-400 font-bold scale-105' 
