@@ -26,6 +26,9 @@ export const PaymentUploader = ({ onSuccess }) => {
 
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [pendingDataUrl, setPendingDataUrl] = useState(null);
+  const [pendingSample, setPendingSample] = useState(null);
+  const [isSharedReceipt, setIsSharedReceipt] = useState(false);
   const [parsing, setParsing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // 'aprobado' | 'en_revision'
   const [step, setStep] = useState(1); // 1: upload/sample, 3: success (step 2 removed)
@@ -51,7 +54,8 @@ export const PaymentUploader = ({ onSuccess }) => {
             await cache.delete('/shared-receipt.jpg').catch(() => {});
             window.history.replaceState({}, document.title, window.location.pathname);
             
-            handleFileChange({ target: { files: [sharedFile] } });
+            setIsSharedReceipt(true);
+            handlePrepareFile(sharedFile);
           }
         }
       } catch (e) {
@@ -105,74 +109,81 @@ export const PaymentUploader = ({ onSuccess }) => {
     }
   };
 
+  const handlePrepareFile = (selectedFile) => {
+    if (!selectedFile) return;
+    setFile(selectedFile);
+    setPendingSample(null);
+    
+    if (selectedFile.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 1200; // Un buen ancho para mantener legibilidad sin exagerar
+          let width = img.width;
+          let height = img.height;
+
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
+          
+          setPreviewUrl(dataUrl);
+          setPendingDataUrl(dataUrl);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(selectedFile);
+    } else if (selectedFile.type === 'application/pdf') {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const arrayBuffer = reader.result;
+        const result = await convertPdfToImage(arrayBuffer);
+        
+        if (result && result.dataUrl) {
+          setPreviewUrl(result.dataUrl);
+          setPendingDataUrl(result.dataUrl);
+        } else {
+          const fallbackReader = new FileReader();
+          fallbackReader.onloadend = () => {
+            setPreviewUrl(fallbackReader.result);
+            setPendingDataUrl(fallbackReader.result);
+          };
+          fallbackReader.readAsDataURL(selectedFile);
+        }
+      };
+      reader.readAsArrayBuffer(selectedFile);
+    } else {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+        setPendingDataUrl(reader.result);
+      };
+      reader.readAsDataURL(selectedFile);
+    }
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      setFile(selectedFile);
-      
-      if (selectedFile.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 1200; // Un buen ancho para mantener legibilidad sin exagerar
-            let width = img.width;
-            let height = img.height;
-
-            if (width > MAX_WIDTH) {
-              height *= MAX_WIDTH / width;
-              width = MAX_WIDTH;
-            }
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-            
-            // Para Gemini, solo necesitamos pasar la imagen original sin recortes.
-            setPreviewUrl(dataUrl);
-            processReceipt(dataUrl, null);
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(selectedFile);
-      } else if (selectedFile.type === 'application/pdf') {
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          setParsing(true);
-          const arrayBuffer = reader.result;
-          const result = await convertPdfToImage(arrayBuffer);
-          
-          if (result && result.dataUrl) {
-            setPreviewUrl(result.dataUrl);
-            processReceipt(result.dataUrl, null);
-          } else {
-            const fallbackReader = new FileReader();
-            fallbackReader.onloadend = () => {
-              setPreviewUrl(fallbackReader.result);
-              processReceipt(fallbackReader.result, null);
-            };
-            fallbackReader.readAsDataURL(selectedFile);
-          }
-        };
-        reader.readAsArrayBuffer(selectedFile);
-      } else {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewUrl(reader.result);
-          processReceipt(reader.result, null);
-        };
-        reader.readAsDataURL(selectedFile);
-      }
+      setIsSharedReceipt(false);
+      handlePrepareFile(selectedFile);
     }
   };
 
   const handleSelectSample = (sample) => {
     setFile({ name: `${sample.billeteraOrigen}_Comprobante.jpg` });
-    setPreviewUrl('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80');
-    processReceipt('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80', sample);
+    const sampleUrl = 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80';
+    setPreviewUrl(sampleUrl);
+    setPendingDataUrl(sampleUrl);
+    setPendingSample(sample);
   };
 
   const processReceipt = async (dataUrl, sampleOverride, ocrDataUrl = null) => {
@@ -343,7 +354,7 @@ Buscá el nombre del emisor / titular para emisor.
                isDuplicate = payments.some(p => {
                  if (p.estado !== 'aprobado' && p.estado !== 'en_revision') return false;
                  const obsText = (p.observaciones || '').toLowerCase();
-                 return obsText.includes(fechaExtraida) && obsText.includes(horaExtraida) && p.socioId === currentUser.id;
+                 return obsText.includes(fechaExtraida) && obsText.includes(horaExtraida) && p.socioId === targetSocio.id;
                });
             }
 
@@ -392,7 +403,7 @@ Buscá el nombre del emisor / titular para emisor.
         monto: clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: extractedNumeroOperacion,
         billeteraOrigen: matchedTransfer ? matchedTransfer.billeteraOrigen : 'Desconocida',
-        emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${currentUser.nombre} ${currentUser.apellido}`,
+        emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${targetSocio.nombre} ${targetSocio.apellido}`,
         fechaTransferencia: matchedTransfer ? matchedTransfer.fecha : parseDateAR(fechaExtraida),
         observaciones: 'Cuota procesada vía OCR'
       };
@@ -460,80 +471,167 @@ Buscá el nombre del emisor / titular para emisor.
 
       {step === 1 && (
         <div className="space-y-4">
-          {/* Botones de simulación para pruebas rápidas */}
-          <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
-            <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-              <span>⚡ Pruebas Rápidad / Simulador de Comprobantes</span>
-              <span className="text-[10px] text-slate-500 font-mono">Modo Dev</span>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {sampleReceipts.map((s, i) => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => handleSelectSample(s)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-xs font-bold text-left border border-slate-700 flex items-center justify-between group transition-all cursor-pointer"
-                >
-                  <span className="truncate">{s.name}</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Seleccionar Socio Destino para Acreditación */}
-          <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between text-xs font-bold text-amber-400">
-              <span className="flex items-center gap-1.5">
-                <User className="w-4 h-4 text-amber-400" />
-                Acreditar este comprobante a:
-              </span>
-              {logout && (
-                <button 
-                  type="button" 
-                  onClick={() => logout()}
-                  className="text-[11px] text-red-400 hover:text-red-300 font-semibold underline cursor-pointer"
-                >
-                  🔒 Cambiar de Usuario
-                </button>
+          {pendingDataUrl ? (
+            <div className="space-y-4 animate-fadeIn">
+              {isSharedReceipt && (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3.5 rounded-xl flex items-center gap-3 text-xs font-semibold shadow-lg shadow-emerald-500/5">
+                  <Sparkles className="w-5 h-5 shrink-0 text-emerald-400 animate-pulse" />
+                  <div>
+                    <div className="font-bold text-emerald-300">📥 ¡Comprobante recibido desde tu billetera!</div>
+                    <div className="text-[11px] text-emerald-400/90 font-normal mt-0.5">Revisá la cuenta asignada abajo y confirmá antes de procesar.</div>
+                  </div>
+                </div>
               )}
-            </div>
-            <select
-              value={selectedSocioId}
-              onChange={(e) => setSelectedSocioId(e.target.value)}
-              className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
-            >
-              {users.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
-                </option>
-              ))}
-            </select>
-            <p className="text-[10px] text-slate-400 font-medium">
-              💡 Si pagás la cuota de un familiar o hijo/a, podés elegir su cuenta en este desplegable antes de enviar el comprobante.
-            </p>
-          </div>
 
-          <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-xl text-center">
-             <div className="text-slate-400 font-medium mb-1">Monto a Pagar ({targetSocio.nombre}):</div>
-             <div className="text-4xl font-black text-emerald-400">
-               ${(targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
-             </div>
-          </div>
+              {/* Vista Previa del comprobante recibido */}
+              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center gap-4">
+                {pendingDataUrl.includes('application/pdf') ? (
+                  <div className="w-16 h-20 bg-slate-900 rounded-lg border border-slate-700 flex flex-col items-center justify-center text-[10px] font-bold text-amber-400">
+                    <span>PDF</span>
+                  </div>
+                ) : (
+                  <img src={pendingDataUrl} alt="Comprobante" className="w-16 h-20 object-cover rounded-lg border border-slate-700 shadow-md shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-white text-xs truncate">{file?.name || 'comprobante_compartido.jpg'}</div>
+                  <div className="text-[11px] text-slate-400 mt-0.5">Listo para analizar con OCR</div>
+                  <button 
+                    type="button" 
+                    onClick={() => { setPendingDataUrl(null); setFile(null); setPreviewUrl(null); setPendingSample(null); setIsSharedReceipt(false); }}
+                    className="text-[11px] text-red-400 hover:text-red-300 font-semibold mt-1 cursor-pointer"
+                  >
+                    🗑️ Elegir otro comprobante
+                  </button>
+                </div>
+              </div>
 
-          <label className="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-950/40 group">
-            <input 
-              type="file" 
-              accept="image/*,application/pdf" 
-              onChange={handleFileChange} 
-              className="hidden" 
-            />
-            <div className="p-4 bg-slate-800 rounded-full group-hover:bg-amber-500/20 group-hover:text-amber-400 text-slate-400 mb-3 transition-all">
-              <Upload className="w-8 h-8" />
+              {/* Selector de Socio Destino */}
+              <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-amber-400" />
+                    Acreditar este comprobante a:
+                  </span>
+                  {logout && (
+                    <button 
+                      type="button" 
+                      onClick={() => logout()}
+                      className="text-[11px] text-red-400 hover:text-red-300 font-semibold underline cursor-pointer"
+                    >
+                      🔒 Cambiar de Usuario
+                    </button>
+                  )}
+                </div>
+                <select
+                  value={selectedSocioId}
+                  onChange={(e) => setSelectedSocioId(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  💡 Podés seleccionar la cuenta de cualquier socio/familiar de la lista antes de confirmar.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 border border-slate-700/80 p-5 rounded-xl text-center">
+                 <div className="text-slate-400 text-xs font-medium mb-1">Monto a Acreditar ({targetSocio.nombre}):</div>
+                 <div className="text-3xl font-black text-emerald-400">
+                   ${(targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
+                 </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => processReceipt(pendingDataUrl, pendingSample)}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black py-4 rounded-2xl shadow-xl shadow-emerald-500/20 text-sm flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
+              >
+                <Sparkles className="w-5 h-5 fill-slate-950" />
+                Confirmar y Procesar Comprobante para {targetSocio.nombre}
+              </button>
             </div>
-            <span className="font-bold text-base text-slate-200">Subir Comprobante (Imagen o PDF)</span>
-            <span className="text-xs text-slate-500 mt-2 text-center max-w-[220px]">Soporta capturas JPG, PNG, WEBP y comprobantes en PDF de Mercado Pago o Bancos</span>
-          </label>
+          ) : (
+            <>
+              {/* Botones de simulación para pruebas rápidas */}
+              <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
+                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
+                  <span>⚡ Pruebas Rápidad / Simulador de Comprobantes</span>
+                  <span className="text-[10px] text-slate-500 font-mono">Modo Dev</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {sampleReceipts.map((s, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleSelectSample(s)}
+                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-xs font-bold text-left border border-slate-700 flex items-center justify-between group transition-all cursor-pointer"
+                    >
+                      <span className="truncate">{s.name}</span>
+                      <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Seleccionar Socio Destino para Acreditación */}
+              <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold text-amber-400">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-4 h-4 text-amber-400" />
+                    Acreditar este comprobante a:
+                  </span>
+                  {logout && (
+                    <button 
+                      type="button" 
+                      onClick={() => logout()}
+                      className="text-[11px] text-red-400 hover:text-red-300 font-semibold underline cursor-pointer"
+                    >
+                      🔒 Cambiar de Usuario
+                    </button>
+                  )}
+                </div>
+                <select
+                  value={selectedSocioId}
+                  onChange={(e) => setSelectedSocioId(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                >
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>
+                      {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-slate-400 font-medium">
+                  💡 Si pagás la cuota de un familiar o hijo/a, podés elegir su cuenta en este desplegable antes de enviar el comprobante.
+                </p>
+              </div>
+
+              <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-xl text-center">
+                 <div className="text-slate-400 font-medium mb-1">Monto a Pagar ({targetSocio.nombre}):</div>
+                 <div className="text-4xl font-black text-emerald-400">
+                   ${(targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
+                 </div>
+              </div>
+
+              <label className="border-2 border-dashed border-slate-700 hover:border-amber-500/60 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-950/40 group">
+                <input 
+                  type="file" 
+                  accept="image/*,application/pdf" 
+                  onChange={handleFileChange} 
+                  className="hidden" 
+                />
+                <div className="p-4 bg-slate-800 rounded-full group-hover:bg-amber-500/20 group-hover:text-amber-400 text-slate-400 mb-3 transition-all">
+                  <Upload className="w-8 h-8" />
+                </div>
+                <span className="font-bold text-base text-slate-200">Subir Comprobante (Imagen o PDF)</span>
+                <span className="text-xs text-slate-500 mt-2 text-center max-w-[220px]">Soporta capturas JPG, PNG, WEBP y comprobantes en PDF de Mercado Pago o Bancos</span>
+              </label>
+            </>
+          )}
         </div>
       )}
 
@@ -566,7 +664,7 @@ Buscá el nombre del emisor / titular para emisor.
                 Analizando Comprobante
               </h4>
               <p className="text-xs text-slate-400 mt-1.5 leading-relaxed">
-                Verificando la validez del comprobante y conciliando tu cuota social...
+                Verificando la validez del comprobante y conciliando la cuota de <strong>{targetSocio.nombre}</strong>...
               </p>
             </div>
 
@@ -584,7 +682,7 @@ Buscá el nombre del emisor / titular para emisor.
           </div>
           <h4 className="font-black text-2xl text-emerald-400 tracking-tight">¡Aceptada y Verificada!</h4>
           <p className="text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
-            Hemos validado tu pago automáticamente con éxito. Tu cuenta corriente se ha actualizado a estado <strong>Al Día</strong>.
+            Hemos validado el pago automáticamente con éxito. La cuenta corriente de <strong>{targetSocio.nombre}</strong> se ha actualizado a estado <strong>Al Día</strong>.
           </p>
         </div>
       )}
@@ -596,7 +694,7 @@ Buscá el nombre del emisor / titular para emisor.
           </div>
           <h4 className="font-black text-2xl text-amber-400 tracking-tight">En Revisión</h4>
           <p className="text-sm text-slate-300 max-w-sm mx-auto leading-relaxed">
-            Hemos recibido tu comprobante, pero necesita ser verificado manualmente por finanzas. Te notificaremos cuando se apruebe.
+            Hemos recibido el comprobante para <strong>{targetSocio.nombre}</strong>. Necesita ser verificado manualmente por finanzas.
           </p>
         </div>
       )}
