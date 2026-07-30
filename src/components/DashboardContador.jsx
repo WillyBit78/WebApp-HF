@@ -74,7 +74,7 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const filterStatus = typeof auditoriaFilterStatus === 'object' ? auditoriaFilterStatus.status : (auditoriaFilterStatus || 'en_revision');
+  const filterStatus = (auditoriaFilterStatus && typeof auditoriaFilterStatus === 'object') ? auditoriaFilterStatus.status : (auditoriaFilterStatus || 'en_revision');
   
   const setFilterStatus = (status) => {
     if (setAuditoriaFilterStatus) setAuditoriaFilterStatus(status);
@@ -84,8 +84,8 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
   useEffect(() => {
     if (auditoriaFilterStatus) {
       setActiveTab('auditoria');
-      const targetStatus = typeof auditoriaFilterStatus === 'object' ? auditoriaFilterStatus.status : auditoriaFilterStatus;
-      if (markNotificationsAsViewed) markNotificationsAsViewed(targetStatus);
+      const targetStatus = (auditoriaFilterStatus && typeof auditoriaFilterStatus === 'object') ? auditoriaFilterStatus.status : auditoriaFilterStatus;
+      if (markNotificationsAsViewed && targetStatus) markNotificationsAsViewed(targetStatus);
     } else {
       setActiveTab('control_financiero');
     }
@@ -665,8 +665,8 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
       {/* TAB 3: AUDITORÍA DE COMPROBANTES MERCADO PAGO */}
       {activeTab === 'auditoria' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+            <div className="flex flex-wrap gap-2">
               {[
                 { id: 'en_revision', label: `Pendientes de Revisión (${pendientesRevCount})` },
                 { id: 'aprobado', label: 'Aprobados' },
@@ -676,115 +676,138 @@ export const DashboardContador = ({ onOpenModalUser, initialTab = 'control_finan
                 <button
                   key={tab.id}
                   onClick={() => setFilterStatus(tab.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer ${
                     filterStatus === tab.id 
-                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' 
-                      : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-105' 
+                      : 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
                   }`}
                 >
                   {tab.label}
                 </button>
               ))}
-              
-              {selectedPayments.length > 0 && (
-                <button
-                  onClick={handleBulkDelete}
-                  className="ml-auto px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/20 flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" /> Eliminar ({selectedPayments.length})
-                </button>
-              )}
             </div>
+
+            {selectedPayments.length > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                className="px-4 py-2 rounded-xl text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-500/20 flex items-center gap-2 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" /> Eliminar ({selectedPayments.length})
+              </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
             {filteredPayments.length === 0 ? (
-              <div className="col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
+              <div className="col-span-full bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
                 <FileCheck className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                 <div className="font-bold text-white">No hay comprobantes en esta sección</div>
                 <p className="text-xs text-slate-500 mt-1">Todos los comprobantes reportados han sido procesados.</p>
               </div>
             ) : (
-              filteredPayments.map(p => (
-                <div 
-                  key={p.id}
-                  className={`bg-slate-900 border rounded-2xl p-5 shadow-xl transition-all relative overflow-hidden ${
-                    p.estado === 'en_revision' ? 'border-amber-500/40 bg-slate-900/90' : 'border-slate-800'
-                  }`}
-                >
-                  <div className="flex justify-between items-start mb-3 gap-3">
-                    <div className="pt-1">
-                      <input 
-                        type="checkbox" 
-                        checked={selectedPayments.includes(p.id)}
-                        onChange={() => togglePaymentSelection(p.id)}
-                        className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900 cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                        {p.billeteraOrigen} • N° {p.numeroOperacion}
+              filteredPayments.map(p => {
+                const walletLabel = (p.billeteraOrigen && p.billeteraOrigen.toLowerCase() !== 'desconocida') 
+                  ? p.billeteraOrigen 
+                  : 'Comprobante';
+
+                const isSameEmisor = !p.emisorNombre || (
+                  p.emisorNombre.trim().toLowerCase() === (p.socioNombre || '').trim().toLowerCase() ||
+                  p.emisorNombre.toLowerCase().includes('titular')
+                );
+
+                return (
+                  <div 
+                    key={p.id}
+                    className={`bg-slate-900 border rounded-2xl p-5 shadow-xl transition-all relative overflow-hidden flex flex-col justify-between ${
+                      p.estado === 'en_revision' ? 'border-amber-500/40 bg-slate-900/90' : 'border-slate-800'
+                    }`}
+                  >
+                    <div>
+                      <div className="flex justify-between items-start mb-3 gap-3">
+                        <div className="pt-1">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedPayments.includes(p.id)}
+                            onChange={() => togglePaymentSelection(p.id)}
+                            className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900 cursor-pointer"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider truncate">
+                            {walletLabel} • N° {p.numeroOperacion}
+                          </div>
+                          <div className="font-extrabold text-base sm:text-lg text-white mt-0.5 truncate">{p.socioNombre}</div>
+                          {!isSameEmisor && (
+                            <div className="text-[11px] text-amber-400/90 font-medium truncate">
+                              Pagado por: {p.emisorNombre}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <div className="text-lg sm:text-xl font-black text-emerald-400">${Number(p.monto).toLocaleString('es-AR')}</div>
+                          <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full inline-block mt-1 ${
+                            p.estado === 'aprobado' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
+                            p.estado === 'en_revision' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
+                            'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                          }`}>
+                            {p.estado === 'aprobado' ? 'Aprobado' : p.estado === 'en_revision' ? 'Pendiente' : 'Rechazado'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="font-extrabold text-base text-white mt-0.5">{p.socioNombre}</div>
-                      <div className="text-[11px] text-slate-400">Emisor: {p.emisorNombre}</div>
-                    </div>
 
-                    <div className="text-right">
-                      <div className="text-lg font-black text-emerald-400">${Number(p.monto).toLocaleString('es-AR')}</div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mt-1 ${
-                        p.estado === 'aprobado' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' :
-                        p.estado === 'en_revision' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30 animate-pulse' :
-                        'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                      }`}>
-                        {p.estado === 'aprobado' ? 'Aprobado' : p.estado === 'en_revision' ? 'Pendiente' : 'Rechazado'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 text-xs mb-4">
-                    <div className="text-slate-400 text-[10px]">Fecha de Transferencia: {p.fechaTransferencia}</div>
-                    <div className="text-slate-200 mt-1 font-medium italic">"{p.observaciones}"</div>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-2 border-t border-slate-800">
-                    <button
-                      onClick={() => setSelectedReceipt(p.comprobanteUrl)}
-                      className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1.5"
-                    >
-                      <Eye className="w-3.5 h-3.5" /> Ver Captura
-                    </button>
-                    
-                    <button
-                      onClick={() => {
-                        if (window.confirm('¿Estás seguro de eliminar este comprobante para siempre? Esta acción restará el dinero del balance si estaba aprobado.')) {
-                          deletePayment(p.id);
-                        }
-                      }}
-                      className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-1.5"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" /> Eliminar
-                    </button>
-
-                    {p.estado === 'en_revision' && (
-                      <div className="flex gap-2 ml-auto">
-                        <button
-                          onClick={() => updatePaymentStatus(p.id, 'rechazado', 'N° de Operación no encontrado en Mercado Pago')}
-                          className="px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-semibold flex items-center gap-1"
-                        >
-                          <XCircle className="w-3.5 h-3.5" /> Rechazar
-                        </button>
-
-                        <button
-                          onClick={() => updatePaymentStatus(p.id, 'aprobado', 'Verificado y acreditado en Mercado Pago')}
-                          className="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-500/20"
-                        >
-                          <CheckCircle2 className="w-4 h-4" /> Aprobar y Acreditar
-                        </button>
+                      <div className="bg-slate-950/70 p-3.5 rounded-xl border border-slate-800/80 text-xs mb-4 space-y-1">
+                        <div className="text-slate-400 text-[11px] font-semibold">Fecha de Transferencia: {p.fechaTransferencia}</div>
+                        <div className="text-slate-200 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">
+                          {p.observaciones}
+                        </div>
                       </div>
-                    )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-800 w-full">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedReceipt(p.comprobanteUrl)}
+                        className="w-full px-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4 text-amber-400 shrink-0" /> Ver Captura
+                      </button>
+                      
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('¿Estás seguro de eliminar este comprobante para siempre? Esta acción restará el dinero del balance si estaba aprobado.')) {
+                            deletePayment(p.id);
+                          }
+                        }}
+                        className="w-full px-2 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Trash2 className="w-4 h-4 shrink-0" /> Eliminar
+                      </button>
+
+                      {p.estado === 'en_revision' && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => updatePaymentStatus(p.id, 'rechazado', 'N° de Operación o datos no verificados')}
+                            className="w-full px-2 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-extrabold flex items-center justify-center gap-1 transition-all cursor-pointer"
+                          >
+                            <XCircle className="w-4 h-4 shrink-0" /> Rechazar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => updatePaymentStatus(p.id, 'aprobado', 'Verificado y acreditado manualmente')}
+                            className="w-full px-2 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs flex items-center justify-center gap-1 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+                          >
+                            <CheckCircle2 className="w-4 h-4 shrink-0" /> Aprobar
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

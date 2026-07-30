@@ -946,6 +946,34 @@ export const AppProvider = ({ children }) => {
     setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, estado: newStatus, observaciones: obs || p.observaciones } : p));
     setUsers(userList => userList.map(u => u.id === targetPayment.socioId ? { ...u, estadoCuota: newSocioStatus } : u));
 
+    // Conciliar automáticamente transferencia de Mercado Pago al aprobar
+    if (newStatus === 'aprobado') {
+      const cleanStr = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+      const targetOp = cleanStr(targetPayment.numeroOperacion);
+      const targetCoelsa = cleanStr(targetPayment.coelsaId);
+
+      setMercadoPagoTransfers(prev => prev.map(t => {
+        const opNorm = cleanStr(t.numeroOperacion);
+        const coelsaNorm = cleanStr(t.coelsaId);
+        const matches = (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
+                        (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa)));
+        if (matches) {
+          return { ...t, estado: 'conciliado', estado_conciliacion: 'conciliado', asociadoAPagoId: paymentId, socioId: targetPayment.socioId, socioNombre: targetPayment.socioNombre };
+        }
+        return t;
+      }));
+
+      if (isSupabaseConfigured && supabase && targetOp) {
+        try {
+          await supabase.from('mp_transfers').update({ 
+            estado_conciliacion: 'conciliado', 
+            payment_id: paymentId, 
+            socio_id: targetPayment.socioId 
+          }).or(`numero_operacion.eq.${targetPayment.numeroOperacion},coelsa_id.eq.${targetPayment.numeroOperacion}`);
+        } catch (e) {}
+      }
+    }
+
     if (isSupabaseConfigured && supabase) {
       try {
         await Promise.all([

@@ -402,12 +402,22 @@ export const PaymentUploader = ({ onSuccess }) => {
                });
             }
 
+            const requestedMonto = targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000;
+            let errNote = '';
+            if (montoExtraido && Number(montoExtraido) !== Number(requestedMonto)) {
+              errNote = `\n⚠️ DATO ERRÓNEO: Monto leído ($${montoExtraido.toLocaleString('es-AR')}) no coincide con el valor de la cuota ($${requestedMonto.toLocaleString('es-AR')}).`;
+            }
+
             if (isDuplicate) {
                finalStatus = 'rechazado';
-               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
             } else {
                finalStatus = 'en_revision';
-               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}`;
+               if (faltantes.length === 0) {
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}${errNote || '\n⚠️ REVISIÓN: Requiere verificación visual en extracto.'}`;
+               } else {
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}${errNote}`;
+               }
             }
           }
         }
