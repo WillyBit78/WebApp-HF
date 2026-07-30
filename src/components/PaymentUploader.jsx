@@ -369,24 +369,20 @@ export const PaymentUploader = ({ onSuccess }) => {
             }
           }
 
-          // Cruce inteligente estricto por ID de Operación, COELSA ID, o Fecha Completa (Día, Mes, Año) + Hora + Monto
+          // Cruce inteligente estricto (últimos 60 días) por ID de Operación, COELSA ID, o Fecha/Hora exacta (24h/12h) + Monto
           const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           matchedTransfer = mpList?.find(t => {
+            if (typeof ocrService.isWithin60Days === 'function' && !ocrService.isWithin60Days(t.fecha)) return false;
+
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
             
             if (extractedCoelsa && extractedCoelsa.length >= 8 && coelsaNorm && (coelsaNorm.includes(extractedCoelsa) || extractedCoelsa.includes(coelsaNorm))) return true;
             if (extractedNumOp && extractedNumOp.length >= 8 && numOpNorm && (numOpNorm.includes(extractedNumOp) || extractedNumOp.includes(numOpNorm))) return true;
             
-            if (t.fecha && fechaExtraida && horaExtraida && Number(t.monto) === Number(montoExtraido)) {
-               const tStr = String(t.fecha);
-               const gDateNums = String(fechaExtraida).match(/\d+/g) || [];
-               if (gDateNums.length >= 3) {
-                 const dayStr = gDateNums[0].padStart(2, '0');
-                 const monthStr = gDateNums[1].padStart(2, '0');
-                 const yearStr = gDateNums[2].slice(-2);
-                 if (tStr.includes(dayStr) && tStr.includes(monthStr) && tStr.includes(yearStr)) return true;
-               }
+            if (t.fecha && fechaExtraida && Number(t.monto) === Number(montoExtraido)) {
+               const ocrFullDate = fechaExtraida + (horaExtraida ? ` ${horaExtraida}` : '');
+               if (typeof ocrService.isSameTransactionDate === 'function' && ocrService.isSameTransactionDate(ocrFullDate, t.fecha)) return true;
             }
             return false;
           });

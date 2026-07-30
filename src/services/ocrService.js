@@ -205,5 +205,58 @@ export const ocrService = {
       }
     }
     return null;
+  },
+
+  isWithin60Days(txDateStr) {
+    if (!txDateStr) return true;
+    try {
+      const nums = String(txDateStr).match(/\d+/g) || [];
+      if (nums.length >= 3) {
+        const day = parseInt(nums[0], 10);
+        const month = parseInt(nums[1], 10) - 1;
+        let year = parseInt(nums[2], 10);
+        if (year < 100) year += 2000;
+        const txTime = new Date(year, month, day).getTime();
+        const now = Date.now();
+        const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+        return (now - txTime) <= sixtyDaysMs;
+      }
+    } catch (e) {}
+    return true;
+  },
+
+  isSameTransactionDate(str1, str2) {
+    if (!str1 || !str2) return false;
+
+    const extractNums = (s) => (String(s).match(/\d+/g) || []).map(Number);
+    const n1 = extractNums(str1);
+    const n2 = extractNums(str2);
+
+    if (n1.length < 2 || n2.length < 2) return false;
+
+    const day1 = n1[0], month1 = n1[1];
+    const day2 = n2[0], month2 = n2[1];
+
+    if (day1 !== day2 || month1 !== month2) return false;
+
+    if (n1.length >= 3 && n2.length >= 3) {
+      const y1 = n1[2] > 100 ? n1[2] % 100 : n1[2];
+      const y2 = n2[2] > 100 ? n2[2] % 100 : n2[2];
+      if (y1 !== y2) return false;
+    }
+
+    const t1 = n1.slice(n1.length >= 3 && n1[2] > 100 ? 3 : 2);
+    const t2 = n2.slice(n2.length >= 3 && n2[2] > 100 ? 3 : 2);
+
+    if (t1.length >= 2 && t2.length >= 2) {
+      const h1 = t1[0] % 12;
+      const h2 = t2[0] % 12;
+      const m1 = t1[1];
+      const m2 = t2[1];
+
+      if (h1 !== h2 || Math.abs(m1 - m2) > 3) return false;
+    }
+
+    return true;
   }
 };
