@@ -9,7 +9,19 @@ export const AppProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const savedUser = localStorage.getItem('haedo_current_user');
-      return savedUser ? JSON.parse(savedUser) : null;
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed?.id) {
+          localStorage.setItem('haedo_last_user_id', parsed.id);
+          const deviceUsers = JSON.parse(localStorage.getItem('haedo_device_users') || '[]');
+          if (!deviceUsers.some(u => u.id === parsed.id)) {
+            deviceUsers.push({ id: parsed.id, nombre: parsed.nombre, apellido: parsed.apellido });
+            localStorage.setItem('haedo_device_users', JSON.stringify(deviceUsers));
+          }
+          return parsed;
+        }
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -511,7 +523,15 @@ export const AppProvider = ({ children }) => {
 
     if (targetUser) {
       setCurrentUser(targetUser);
-      try { localStorage.setItem('haedo_current_user', JSON.stringify(targetUser)); } catch (e) {}
+      try { 
+        localStorage.setItem('haedo_current_user', JSON.stringify(targetUser)); 
+        localStorage.setItem('haedo_last_user_id', targetUser.id);
+        const deviceUsers = JSON.parse(localStorage.getItem('haedo_device_users') || '[]');
+        if (!deviceUsers.some(u => u.id === targetUser.id)) {
+          deviceUsers.push({ id: targetUser.id, nombre: targetUser.nombre, apellido: targetUser.apellido });
+          localStorage.setItem('haedo_device_users', JSON.stringify(deviceUsers));
+        }
+      } catch (e) {}
       registrarLog('login_usuario', `Inicio de sesión exitoso`, `Rol: ${targetUser.rol.toUpperCase()}`, targetUser);
       registerPushSubscription(targetUser);
       return true;

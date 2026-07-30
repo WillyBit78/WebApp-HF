@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock, User } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ocrService } from '../services/ocrService';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurar el worker de PDF.js usando CDN para evitar problemas de Vite
@@ -21,7 +22,35 @@ export const PaymentUploader = ({ onSuccess }) => {
     registrarLog 
   } = useApp();
   
-  const [selectedSocioId, setSelectedSocioId] = useState(currentUser?.id);
+  const cardRef = React.useRef(null);
+
+  // Obtener únicamente los usuarios que han iniciado sesión en este dispositivo
+  const getDeviceUsers = () => {
+    try {
+      const stored = localStorage.getItem('haedo_device_users');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const userIds = parsed.map(p => p.id);
+          const filtered = users.filter(u => userIds.includes(u.id));
+          if (filtered.length > 0) return filtered;
+        }
+      }
+    } catch (e) {}
+
+    // Fallback: Si aún no hay registro, mostrar el usuario actual + familiares del mismo apellido
+    const mySurname = (currentUser?.apellido || '').trim().toLowerCase();
+    if (mySurname && users.length > 0) {
+      const family = users.filter(u => (u.apellido || '').trim().toLowerCase() === mySurname);
+      if (family.length > 0) return family;
+    }
+    return users.length > 0 ? users : [currentUser];
+  };
+
+  const deviceUsersList = getDeviceUsers();
+  const defaultUser = deviceUsersList.find(u => u.id === localStorage.getItem('haedo_last_user_id')) || currentUser;
+  
+  const [selectedSocioId, setSelectedSocioId] = useState(defaultUser?.id || currentUser?.id);
   const targetSocio = users.find(u => u.id === selectedSocioId) || currentUser;
 
   const [file, setFile] = useState(null);
@@ -32,6 +61,16 @@ export const PaymentUploader = ({ onSuccess }) => {
   const [parsing, setParsing] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState(null); // 'aprobado' | 'en_revision'
   const [step, setStep] = useState(1); // 1: upload/sample, 3: success (step 2 removed)
+
+  // Auto-scroll centrado al montar o recibir un comprobante
+  React.useEffect(() => {
+    if (cardRef.current) {
+      const timer = setTimeout(() => {
+        cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDataUrl, step]);
 
   React.useEffect(() => {
     const checkSharedFile = async () => {
@@ -69,7 +108,7 @@ export const PaymentUploader = ({ onSuccess }) => {
     {
       name: 'Comprobante MP (Simular Aprobado)',
       monto: 15000,
-      numeroOperacion: '9841029481', // Simularemos que esta existe
+      numeroOperacion: '9841029481',
       billeteraOrigen: 'Mercado Pago',
       emisorNombre: `${currentUser.nombre} ${currentUser.apellido}`,
       observaciones: 'Pago mensual de cuota de socio Haedo Futsal'
@@ -88,7 +127,7 @@ export const PaymentUploader = ({ onSuccess }) => {
     try {
       const pdf = await pdfjsLib.getDocument({ data: fileBuffer }).promise;
       const page = await pdf.getPage(1);
-      const viewport = page.getViewport({ scale: 2.0 }); // alta calidad
+      const viewport = page.getViewport({ scale: 2.0 });
       
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
@@ -101,7 +140,6 @@ export const PaymentUploader = ({ onSuccess }) => {
       }).promise;
 
       const fullDataUrl = canvas.toDataURL('image/jpeg', 1.0);
-      
       return { dataUrl: fullDataUrl, ocrDataUrl: fullDataUrl };
     } catch (err) {
       console.error("Error convirtiendo PDF a imagen:", err);
@@ -120,7 +158,7 @@ export const PaymentUploader = ({ onSuccess }) => {
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 1200; // Un buen ancho para mantener legibilidad sin exagerar
+          const MAX_WIDTH = 1200;
           let width = img.width;
           let height = img.height;
 
@@ -134,7 +172,6 @@ export const PaymentUploader = ({ onSuccess }) => {
           ctx.drawImage(img, 0, 0, width, height);
 
           const dataUrl = canvas.toDataURL('image/jpeg', 1.0);
-          
           setPreviewUrl(dataUrl);
           setPendingDataUrl(dataUrl);
         };
@@ -194,13 +231,11 @@ export const PaymentUploader = ({ onSuccess }) => {
       let autoObservaciones = 'Comprobante subido desde app.';
       let extractedNumeroOperacion = `${Math.floor(1000000000 + Math.random() * 9000000000)}`;
       let matchedTransfer = null;
-      let textNorm = '';
       let fechaExtraida = null;
       let horaExtraida = null;
       let montoExtraido = null;
 
       if (sampleOverride) {
-        // Lógica de simulación
         extractedNumeroOperacion = sampleOverride.numeroOperacion;
         matchedTransfer = mercadoPagoTransfers?.find(t => 
           t.numeroOperacion === sampleOverride.numeroOperacion || 
@@ -211,15 +246,14 @@ export const PaymentUploader = ({ onSuccess }) => {
            autoObservaciones = 'Validación automática exitosa (Simulación).';
         }
       } else {
-        // LÓGICA OCR REAL
+        // LÓGICA OCR REAL Y PARSER ESTRUCTURADO
         if (dataUrl.includes('application/pdf')) {
           finalStatus = 'en_revision';
           autoObservaciones = 'Comprobante en formato PDF. Requiere revisión manual visual.';
         } else {
-          // Usar Gemini para analizar la imagen
           let geminiResult = {};
           try {
-            const apiKey = import.meta.env.VITE_GEMINI_API_KEY || ("AQ.Ab8RN6JWHFJi1F" + "mGJ5l2nwoD3moYvih4S-" + "Zzyhu0ZoLcSYzwSg");
+            const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
             if (apiKey) {
               const genAI = new GoogleGenerativeAI(apiKey);
               let model;
@@ -229,7 +263,6 @@ export const PaymentUploader = ({ onSuccess }) => {
                 model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
               }
 
-              // Extraer mimeType real y base64Data limpio
               const mimeMatch = dataUrl.match(/^data:(image\/[a-zA-Z]+);base64,/);
               const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
               const base64Data = dataUrl.includes(',') ? dataUrl.split(',')[1] : dataUrl;
@@ -241,21 +274,14 @@ export const PaymentUploader = ({ onSuccess }) => {
                 }
               }];
 
-              const prompt = `Sos un sistema automatizado de finanzas de Haedo Futsal. Analizá esta imagen de comprobante de transferencia y extraé exactamente los siguientes datos en formato JSON puro.
-Si un campo no se encuentra en el comprobante o no estás seguro, asignale null.
-La fecha debe tener formato DD/MM/YYYY (ej: "12/07/2026").
-La hora formato HH:MM (ej: "18:44").
-El monto debe ser un número sin símbolos de moneda.
-Buscá el "COELSA ID" o código alfanumérico largo para coelsa_id.
-Buscá el Número de comprobante / operación para numero_operacion.
-Buscá el nombre del emisor / titular para emisor.
+              const prompt = `Analizá la imagen de este comprobante bancario / billetera virtual y extraé en JSON puro los datos:
 {
   "fecha": "DD/MM/YYYY",
   "hora": "HH:MM",
   "monto": 15000,
-  "coelsa_id": "texto o null",
-  "numero_operacion": "texto o null",
-  "emisor": "Nombre Apellido"
+  "coelsa_id": "código alfanumérico largo o null",
+  "numero_operacion": "número de comprobante/operación o null",
+  "emisor": "Nombre del pagador/titular de origen"
 }`;
 
               const result = await model.generateContent([prompt, ...imageParts]);
@@ -271,18 +297,15 @@ Buscá el nombre del emisor / titular para emisor.
               }
             }
           } catch (e) {
-            console.warn("Gemini OCR no disponible o error de clave. Usando modo de revisión manual:", e);
+            console.warn("Gemini OCR no disponible. Usando parser de patrones:", e);
             geminiResult = {};
           }
 
           fechaExtraida = geminiResult.fecha || null;
           horaExtraida = geminiResult.hora || null;
-          montoExtraido = geminiResult.monto ? `$${geminiResult.monto.toLocaleString('es-AR')}` : 'No detectado';
-          textNorm = JSON.stringify(geminiResult);
-
-          const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+          montoExtraido = geminiResult.monto ? Number(geminiResult.monto) : null;
           
-          // Extraer el mejor token alfanumérico
+          const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           const extractBestIdToken = (str) => {
             if (!str) return '';
             const rawTokens = String(str).replace(/[^a-zA-Z0-9\s-]/g, ' ').split(/[\s-]+/);
@@ -296,10 +319,23 @@ Buscá el nombre del emisor / titular para emisor.
 
           const rawCoelsa = String(geminiResult.coelsa_id || '');
           const extractedCoelsa = extractBestIdToken(rawCoelsa);
-          
           const rawNumOp = String(geminiResult.numero_operacion || '');
           const extractedNumOp = extractBestIdToken(rawNumOp);
-          
+
+          // Armar Informe de Auditoría Detallado
+          const leidos = [];
+          const faltantes = [];
+
+          if (montoExtraido) leidos.push(`Monto: $${montoExtraido.toLocaleString('es-AR')}`); else faltantes.push('Monto');
+          if (fechaExtraida) leidos.push(`Fecha: ${fechaExtraida}`); else faltantes.push('Fecha');
+          if (horaExtraida) leidos.push(`Hora: ${horaExtraida}`); else faltantes.push('Hora');
+          if (extractedCoelsa) leidos.push(`COELSA ID: ${extractedCoelsa}`); else faltantes.push('COELSA ID');
+          if (extractedNumOp) leidos.push(`N° Operación: ${extractedNumOp}`); else faltantes.push('N° Operación');
+          if (geminiResult.emisor) leidos.push(`Nombre Emisor: ${geminiResult.emisor}`); else faltantes.push('Nombre Emisor');
+
+          const leidosTxt = leidos.length > 0 ? leidos.join(' | ') : 'Sin datos estructurados';
+          const faltantesTxt = faltantes.length > 0 ? faltantes.join(', ') : 'Ninguno';
+
           // Sincronizar transferencias frescas de Mercado Pago
           let mpList = mercadoPagoTransfers || [];
           if (typeof sincronizarMercadoPago === 'function') {
@@ -335,17 +371,15 @@ Buscá el nombre del emisor / titular para emisor.
 
             if (isDuplicate || matchedTransfer.estado_conciliacion === 'conciliado') {
                finalStatus = 'rechazado';
-               autoObservaciones = isDuplicate 
-                 ? `DETALLE DE AUDITORÍA: Comprobante duplicado. El N° de operación ${extractedNumeroOperacion} ya fue registrado en la base.`
-                 : `DETALLE DE AUDITORÍA: La transferencia MP de ${matchedTransfer.emisorNombre} ya fue conciliada previamente.`;
+               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o ya conciliado.`;
             } else {
                const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
                if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
                  finalStatus = 'en_revision';
-                 autoObservaciones = `DETALLE DE AUDITORÍA: Monto depositado ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}). Leído: Fecha ${fechaExtraida || 'N/D'}, Hora ${horaExtraida || 'N/D'}, Emisor ${matchedTransfer.emisorNombre}.`;
+                 autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ REVISIÓN: El monto de MP ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}).`;
                } else {
                  finalStatus = 'aprobado';
-                 autoObservaciones = `Aprobación Automática OCR. Leído: Emisor ${matchedTransfer.emisorNombre} | Monto $${matchedTransfer.monto} | N° Operación ${extractedNumeroOperacion} | Coincidencia 100% con Mercado Pago.`;
+                 autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO: Coincidencia 100% con Mercado Pago (Emisor: ${matchedTransfer.emisorNombre}).`;
                }
             }
           } else {
@@ -360,28 +394,15 @@ Buscá el nombre del emisor / titular para emisor.
 
             if (isDuplicate) {
                finalStatus = 'rechazado';
-               autoObservaciones = `DETALLE DE AUDITORÍA: Intento de re-envío. Misma fecha (${fechaExtraida}) y hora (${horaExtraida}) ya registradas para este usuario.`;
+               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
             } else {
                finalStatus = 'en_revision';
-               const camposLeidos = [];
-               const camposFaltantes = [];
-
-               if (geminiResult.monto) camposLeidos.push(`Monto: $${geminiResult.monto}`); else camposFaltantes.push('Monto');
-               if (fechaExtraida) camposLeidos.push(`Fecha: ${fechaExtraida}`); else camposFaltantes.push('Fecha');
-               if (horaExtraida) camposLeidos.push(`Hora: ${horaExtraida}`); else camposFaltantes.push('Hora');
-               if (extractedCoelsa) camposLeidos.push(`COELSA ID: ${extractedCoelsa}`); else camposFaltantes.push('COELSA ID');
-               if (extractedNumOp) camposLeidos.push(`N° Operación: ${extractedNumOp}`); else camposFaltantes.push('N° Operación');
-               if (geminiResult.emisor) camposLeidos.push(`Emisor: ${geminiResult.emisor}`); else camposFaltantes.push('Nombre Emisor');
-
-               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n` +
-                 `✓ DATOS LEÍDOS POR OCR: ${camposLeidos.length > 0 ? camposLeidos.join(' | ') : 'Sin datos estructurados'}\n` +
-                 `❌ FALTANTES O SIN COINCIDENCIA MP: ${camposFaltantes.length > 0 ? camposFaltantes.join(', ') : 'Cruce automático con extracto de MP no encontrado'}`;
+               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}`;
             }
           }
         }
       }
 
-      // Función para parsear '24/7/26' a un string válido para la base de datos
       const parseDateAR = (str) => {
         if (!str) return null;
         const parts = str.split(/[\/\-]/);
@@ -400,12 +421,12 @@ Buscá el nombre del emisor / titular para emisor.
       };
 
       const parsedData = sampleOverride || {
-        monto: clubSettings.montoCuotaGeneral || 15000,
+        monto: montoExtraido || clubSettings.montoCuotaGeneral || 15000,
         numeroOperacion: extractedNumeroOperacion,
         billeteraOrigen: matchedTransfer ? matchedTransfer.billeteraOrigen : 'Desconocida',
         emisorNombre: matchedTransfer ? matchedTransfer.emisorNombre : `${targetSocio.nombre} ${targetSocio.apellido}`,
         fechaTransferencia: matchedTransfer ? matchedTransfer.fecha : parseDateAR(fechaExtraida),
-        observaciones: 'Cuota procesada vía OCR'
+        observaciones: autoObservaciones
       };
 
       setPaymentStatus(finalStatus);
@@ -417,7 +438,6 @@ Buscá el nombre del emisor / titular para emisor.
         comprobanteUrl: dataUrl
       }, targetSocio);
       
-      // Conciliar transferencia si fue un éxito total
       if (finalStatus === 'aprobado' && matchedTransfer && paymentData?.id) {
          if (typeof vincularTransferenciaMP === 'function') {
            vincularTransferenciaMP(matchedTransfer.id, paymentData.id, matchedTransfer);
@@ -443,7 +463,7 @@ Buscá el nombre del emisor / titular para emisor.
         numeroOperacion: `MANUAL-${Date.now().toString().slice(-6)}`,
         billeteraOrigen: 'Desconocida',
         emisorNombre: `${targetSocio.nombre} ${targetSocio.apellido}`,
-        observaciones: 'Comprobante recibido para revisión manual.',
+        observaciones: 'INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: Sin datos estructurados\n❌ FALTANTES O SIN COINCIDENCIA MP: Monto, Fecha, Hora, COELSA ID, N° Operación, Nombre Emisor',
         estado: 'en_revision',
         comprobanteUrl: dataUrl
       }, targetSocio).catch(console.warn);
@@ -454,17 +474,14 @@ Buscá el nombre del emisor / titular para emisor.
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 text-white shadow-2xl">
+    <div ref={cardRef} className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 text-white shadow-2xl transition-all">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className="p-2.5 bg-red-500/20 text-red-500 rounded-xl border border-red-500/30">
             <CreditCard className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-white">Reportar Pago de Cuota</h3>
-            <p className="text-xs text-slate-400">
-              Sube tu comprobante. Nuestro sistema inteligente lo procesará automáticamente.
-            </p>
+            <h3 className="font-extrabold text-lg text-white">Reportar Pago de Cuota</h3>
           </div>
         </div>
       </div>
@@ -474,38 +491,13 @@ Buscá el nombre del emisor / titular para emisor.
           {pendingDataUrl ? (
             <div className="space-y-4 animate-fadeIn">
               {isSharedReceipt && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3.5 rounded-xl flex items-center gap-3 text-xs font-semibold shadow-lg shadow-emerald-500/5">
+                <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-xl flex items-center gap-3 text-xs font-semibold shadow-lg shadow-emerald-500/5">
                   <Sparkles className="w-5 h-5 shrink-0 text-emerald-400 animate-pulse" />
-                  <div>
-                    <div className="font-bold text-emerald-300">📥 ¡Comprobante recibido desde tu billetera!</div>
-                    <div className="text-[11px] text-emerald-400/90 font-normal mt-0.5">Revisá la cuenta asignada abajo y confirmá antes de procesar.</div>
-                  </div>
+                  <div className="font-bold text-emerald-300">📥 ¡Comprobante recibido desde tu billetera!</div>
                 </div>
               )}
 
-              {/* Vista Previa del comprobante recibido */}
-              <div className="bg-slate-950 p-3 rounded-2xl border border-slate-800 flex items-center gap-4">
-                {pendingDataUrl.includes('application/pdf') ? (
-                  <div className="w-16 h-20 bg-slate-900 rounded-lg border border-slate-700 flex flex-col items-center justify-center text-[10px] font-bold text-amber-400">
-                    <span>PDF</span>
-                  </div>
-                ) : (
-                  <img src={pendingDataUrl} alt="Comprobante" className="w-16 h-20 object-cover rounded-lg border border-slate-700 shadow-md shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-bold text-white text-xs truncate">{file?.name || 'comprobante_compartido.jpg'}</div>
-                  <div className="text-[11px] text-slate-400 mt-0.5">Listo para analizar con OCR</div>
-                  <button 
-                    type="button" 
-                    onClick={() => { setPendingDataUrl(null); setFile(null); setPreviewUrl(null); setPendingSample(null); setIsSharedReceipt(false); }}
-                    className="text-[11px] text-red-400 hover:text-red-300 font-semibold mt-1 cursor-pointer"
-                  >
-                    🗑️ Elegir otro comprobante
-                  </button>
-                </div>
-              </div>
-
-              {/* Selector de Socio Destino */}
+              {/* Selector de Socio Destino (Solo Usuarios que Iniciaron Sesión en este Dispositivo) */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-400">
                   <span className="flex items-center gap-1.5">
@@ -525,21 +517,18 @@ Buscá el nombre del emisor / titular para emisor.
                 <select
                   value={selectedSocioId}
                   onChange={(e) => setSelectedSocioId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-3 text-sm font-extrabold focus:outline-none focus:border-amber-400 cursor-pointer shadow-inner"
                 >
-                  {users.map(u => (
+                  {deviceUsersList.map(u => (
                     <option key={u.id} value={u.id}>
-                      {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
+                      {u.nombre} {u.apellido}
                     </option>
                   ))}
                 </select>
-                <p className="text-[10px] text-slate-400 font-medium">
-                  💡 Podés seleccionar la cuenta de cualquier socio/familiar de la lista antes de confirmar.
-                </p>
               </div>
 
-              <div className="bg-slate-800/80 border border-slate-700/80 p-5 rounded-xl text-center">
-                 <div className="text-slate-400 text-xs font-medium mb-1">Monto a Acreditar ({targetSocio.nombre}):</div>
+              <div className="bg-slate-800/80 border border-slate-700/80 p-5 rounded-2xl text-center">
+                 <div className="text-slate-400 text-xs font-bold mb-1">Monto a Acreditar ({targetSocio.nombre}):</div>
                  <div className="text-3xl font-black text-emerald-400">
                    ${(targetSocio.montoCuota || clubSettings.montoCuotaGeneral || 15000).toLocaleString('es-AR')}
                  </div>
@@ -577,7 +566,7 @@ Buscá el nombre del emisor / titular para emisor.
                 </div>
               </div>
 
-              {/* Seleccionar Socio Destino para Acreditación */}
+              {/* Selector de Socio Destino */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-400">
                   <span className="flex items-center gap-1.5">
@@ -597,17 +586,14 @@ Buscá el nombre del emisor / titular para emisor.
                 <select
                   value={selectedSocioId}
                   onChange={(e) => setSelectedSocioId(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-amber-400 cursor-pointer"
+                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl px-3.5 py-3 text-sm font-extrabold focus:outline-none focus:border-amber-400 cursor-pointer shadow-inner"
                 >
-                  {users.map(u => (
+                  {deviceUsersList.map(u => (
                     <option key={u.id} value={u.id}>
-                      {u.nombre} {u.apellido} {u.numeroSocio ? `(N° ${u.numeroSocio} • ${u.categoria || 'Socio'})` : `(${u.rol || 'Socio'})`}
+                      {u.nombre} {u.apellido}
                     </option>
                   ))}
                 </select>
-                <p className="text-[10px] text-slate-400 font-medium">
-                  💡 Si pagás la cuota de un familiar o hijo/a, podés elegir su cuenta en este desplegable antes de enviar el comprobante.
-                </p>
               </div>
 
               <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-xl text-center">
@@ -638,8 +624,6 @@ Buscá el nombre del emisor / titular para emisor.
       {parsing && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
           <div className="bg-slate-900 border border-slate-700/80 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl space-y-5 flex flex-col items-center">
-            
-            {/* Ring giratorio con el escudo del club en el centro */}
             <div className="relative w-24 h-24 flex items-center justify-center">
               <div className="absolute inset-0 rounded-full border-4 border-slate-800 border-t-red-500 border-r-amber-400 animate-spin"></div>
               <div className="w-16 h-16 rounded-full bg-slate-950 p-2 border border-slate-700 shadow-inner flex items-center justify-center z-10">
