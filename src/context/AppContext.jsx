@@ -677,7 +677,7 @@ export const AppProvider = ({ children }) => {
 
       return changed ? nextList : prevTransfers;
     });
-  }, [payments]);
+  }, [payments, mercadoPagoTransfers]);
 
   const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState({ status: 'en_revision', ts: Date.now() });
   const [viewedNotifications, setViewedNotifications] = useState({
@@ -947,6 +947,41 @@ export const AppProvider = ({ children }) => {
     };
 
     setPayments(prev => [newPayment, ...prev]);
+    
+    // Conciliación inmediata en Mercado Pago si el pago está aprobado o matcheado
+    const cleanStr = (s) => String(s || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    const targetOp = cleanStr(newPayment.numeroOperacion);
+    const targetCoelsa = cleanStr(newPayment.coelsaId);
+
+    if (newPayment.estado === 'aprobado' || targetOp.length >= 6) {
+      setMercadoPagoTransfers(prev => prev.map(t => {
+        const opNorm = cleanStr(t.numeroOperacion);
+        const coelsaNorm = cleanStr(t.coelsaId);
+        const matches = (targetOp && opNorm && (targetOp === opNorm || targetOp.includes(opNorm) || opNorm.includes(targetOp))) ||
+                        (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa)));
+        if (matches) {
+          return {
+            ...t,
+            estado: 'conciliado',
+            estado_conciliacion: 'conciliado',
+            asociadoAPagoId: newPayment.id,
+            socioId: targetUser.id,
+            socioNombre: `${targetUser.nombre} ${targetUser.apellido}`
+          };
+        }
+        return t;
+      }));
+
+      if (isSupabaseConfigured && supabase && targetOp) {
+        try {
+          supabase.from('mp_transfers').update({ 
+            estado_conciliacion: 'conciliado', 
+            payment_id: newPayment.id, 
+            socio_id: targetUser.id 
+          }).or(`numero_operacion.eq.${newPayment.numeroOperacion},coelsa_id.eq.${newPayment.numeroOperacion}`);
+        } catch (e) {}
+      }
+    }
     
     // Check if socio already has an approved payment to protect AL DIA status
     const hasApprovedAlready = payments.some(p => p.socioId === targetUser.id && p.estado === 'aprobado');
