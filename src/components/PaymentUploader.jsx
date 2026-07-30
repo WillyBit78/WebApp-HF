@@ -311,25 +311,27 @@ export const PaymentUploader = ({ onSuccess }) => {
           horaExtraida = geminiResult.hora || ocrClientResult.hora || null;
           montoExtraido = geminiResult.monto ? Number(geminiResult.monto) : (ocrClientResult.monto ? Number(ocrClientResult.monto) : null);
           
-          const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-          const extractBestIdToken = (str) => {
-            if (!str) return '';
-            const rawTokens = String(str).replace(/[^a-zA-Z0-9\s-]/g, ' ').split(/[\s-]+/);
-            const validTokens = rawTokens.filter(t => {
-              const u = t.toUpperCase();
-              return u !== 'COELSA' && u !== 'ID' && u !== 'BANCARIO' && u !== 'OPERACION' && u !== 'NUMERO' && u !== 'NO';
-            });
-            validTokens.sort((a, b) => b.length - a.length);
-            return validTokens[0] ? cleanStr(validTokens[0]) : cleanStr(str);
-          };
+          let extractedCoelsa = ocrClientResult.coelsa_id || geminiResult.coelsa_id || '';
+          if (extractedCoelsa && (!/[A-Z]/i.test(extractedCoelsa) || !/[0-9]/.test(extractedCoelsa))) {
+            extractedCoelsa = ''; // El COELSA ID debe ser ALFANUMÉRICO (no únicamente numérico como CBU)
+          }
 
-          const rawCoelsa = String(geminiResult.coelsa_id || ocrClientResult.coelsa_id || '');
-          const extractedCoelsa = extractBestIdToken(rawCoelsa);
-          const rawNumOp = String(geminiResult.numero_operacion || ocrClientResult.numero_operacion || '');
-          const extractedNumOp = extractBestIdToken(rawNumOp);
-          const emisorExtraido = geminiResult.emisor || ocrClientResult.emisor || null;
+          let extractedNumOp = geminiResult.numero_operacion || ocrClientResult.numero_operacion || '';
+          if (extractedNumOp) {
+            const numOnly = String(extractedNumOp).replace(/[^0-9]/g, '');
+            if (numOnly.length >= 7 && numOnly.length <= 14) {
+              extractedNumOp = numOnly;
+            } else if (!/^\d+$/.test(extractedNumOp)) {
+              extractedNumOp = '';
+            }
+          }
 
-          // Armar Informe de Auditoría Detallado
+          let emisorExtraido = geminiResult.emisor || ocrClientResult.emisor || null;
+          if (emisorExtraido) {
+            emisorExtraido = String(emisorExtraido).replace(/\s+(CUIL|CUIT|DNI|Desde|Recibe|Personal|Mercado|Banco|Billetera).*$/i, '').trim();
+          }
+
+          // Armar Informe de Auditoría Detallado sin encabezados redundantes
           const leidos = [];
           const faltantes = [];
 
@@ -353,6 +355,7 @@ export const PaymentUploader = ({ onSuccess }) => {
           }
 
           // Cruce inteligente
+          const cleanStr = (str) => String(str || '').replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
           matchedTransfer = mpList?.find(t => {
             const numOpNorm = cleanStr(t.numeroOperacion);
             const coelsaNorm = cleanStr(t.coelsaId);
@@ -378,15 +381,15 @@ export const PaymentUploader = ({ onSuccess }) => {
 
             if (isDuplicate || matchedTransfer.estado_conciliacion === 'conciliado') {
                finalStatus = 'rechazado';
-               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o ya conciliado.`;
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Comprobante duplicado o ya conciliado.`;
             } else {
                const requestedMonto = clubSettings.montoCuotaGeneral || 15000;
                if (Number(matchedTransfer.monto) !== Number(requestedMonto) && !sampleOverride) {
                  finalStatus = 'en_revision';
-                 autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ REVISIÓN: El monto de MP ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}).`;
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ REVISIÓN: El monto MP ($${matchedTransfer.monto}) difiere de la cuota ($${requestedMonto}).`;
                } else {
                  finalStatus = 'aprobado';
-                 autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO: Coincidencia 100% con Mercado Pago (Emisor: ${matchedTransfer.emisorNombre}).`;
+                 autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n✅ APROBADO: Coincidencia 100% con Mercado Pago (Emisor: ${matchedTransfer.emisorNombre}).`;
                }
             }
           } else {
@@ -401,10 +404,10 @@ export const PaymentUploader = ({ onSuccess }) => {
 
             if (isDuplicate) {
                finalStatus = 'rechazado';
-               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}\n⚠️ RECHAZADO: Re-envío detectado. Misma fecha/hora ya registrada para este socio.`;
             } else {
                finalStatus = 'en_revision';
-               autoObservaciones = `INFORME DE AUDITORÍA DE CONTABILIDAD:\n✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}`;
+               autoObservaciones = `✓ DATOS LEÍDOS POR OCR: ${leidosTxt}\n❌ FALTANTES O SIN COINCIDENCIA MP: ${faltantesTxt}`;
             }
           }
         }

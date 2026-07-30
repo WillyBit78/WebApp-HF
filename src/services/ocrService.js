@@ -78,28 +78,54 @@ export const ocrService = {
 
   parseOperationId(text) {
     if (!text) return null;
-    const opRegex = /(?:Nº|N°|Número|Num|ID)?\s*(?:de|da)?\s*(?:la)?\s*(?:operación|operacion|comprobante|transaccion)[:\s]+([A-Z0-9]{6,20})/i;
+    const opRegex = /(?:Nº|N°|Número|Num|ID)?\s*(?:de|da)?\s*(?:la)?\s*(?:operación|operacion|comprobante|transaccion)[:\s]+(\d{7,14})/i;
     const match = text.match(opRegex);
     if (match) return match[1];
 
-    const numMatch = text.match(/\b(\d{9,12})\b/);
-    return numMatch ? numMatch[1] : null;
+    const numMatches = text.match(/\b(\d{8,12})\b/g);
+    if (numMatches) {
+      for (const nm of numMatches) {
+        if (nm.length >= 8 && nm.length <= 12 && !nm.startsWith('20') && !nm.startsWith('27') && !nm.startsWith('30')) {
+          return nm;
+        }
+      }
+    }
+    return null;
   },
 
   parseCoelsaId(text) {
     if (!text) return null;
-    const coelsaRegex = /(?:COELSA|CoelsaID|Referencia)[:\s]+([A-Z0-9]{12,35})/i;
+    
+    // COELSA ID en Argentina es siempre ALFANUMÉRICO (letras + números, ej: 7L8GYKNX40Z81P7KNMPRZ5)
+    // NUNCA debe ser puramente numérico (eso es CBU/CVU de 22 dígitos)
+    const coelsaRegex = /(?:COELSA|CoelsaID|Referencia|Id Bancario)[:\s]+([A-Z0-9]{14,35})/i;
     const match = text.match(coelsaRegex);
-    if (match) return match[1];
+    if (match) {
+      const token = match[1].replace(/[^A-Z0-9]/gi, '').toUpperCase();
+      if (/[A-Z]/.test(token) && /[0-9]/.test(token) && token.length >= 12) {
+        return token;
+      }
+    }
 
-    const longMatch = text.match(/\b([A-Z0-9]{20,32})\b/);
-    return longMatch ? longMatch[1] : null;
+    const tokens = text.replace(/[^A-Z0-9\s]/gi, ' ').split(/\s+/);
+    for (const t of tokens) {
+      const u = t.toUpperCase();
+      if (u.length >= 16 && u.length <= 32 && /[A-Z]/.test(u) && /[0-9]/.test(u)) {
+        return u;
+      }
+    }
+    return null;
   },
 
   parseEmisor(text) {
     if (!text) return null;
     const emisorRegex = /(?:Envía|Envia|De|Emisor|Titular)[:\s]+([A-Za-zÁÉÍÓÚáéíóúÑñ\s,]{3,35})/i;
     const match = text.match(emisorRegex);
-    return match ? match[1].trim() : null;
+    if (match) {
+      let clean = match[1].trim();
+      clean = clean.replace(/\s+(CUIL|CUIT|DNI|Desde|Recibe|Personal|Mercado|Banco|Billetera).*$/i, '').trim();
+      return clean;
+    }
+    return null;
   }
 };
