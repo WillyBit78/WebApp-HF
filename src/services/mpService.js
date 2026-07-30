@@ -1,4 +1,4 @@
-"import { createClient } from '../lib/supabase';
+import { createClient } from '../lib/supabase';
 
 // Credenciales configuradas (en producción estas irían a variables de entorno)
 const MP_CONFIG = {
@@ -54,4 +54,4 @@ export const mpService = {
       return [];
     }
   }
-};"
+};

@@ -9,6 +9,7 @@ export const PWAInstallBanner = () => {
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [hasPushPermission, setHasPushPermission] = useState(false);
+  const [showModalGuide, setShowModalGuide] = useState(false);
 
   useEffect(() => {
     // Detectar si es modo PWA Instalada (Standalone)

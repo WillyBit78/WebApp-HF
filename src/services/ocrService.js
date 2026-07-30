@@ -1,4 +1,4 @@
-"import Tesseract from 'tesseract.js';
+import Tesseract from 'tesseract.js';
 
 export const ocrService = {
   /**
@@ -49,4 +49,4 @@ export const ocrService = {
     const match = text.match(coelsaRegex);
     return match ? match[1] : null;
   }
-};"
+};
