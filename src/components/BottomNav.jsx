@@ -61,7 +61,10 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
   );
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800 px-2 py-2 shadow-2xl">
+    <div 
+      className="md:hidden fixed bottom-0 left-0 right-0 z-50 backdrop-blur-xl border-t border-slate-800 px-2 pt-2 shadow-2xl"
+      style={{ backgroundColor: '#0f172a', paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       <div className="flex justify-around items-center max-w-md mx-auto">
         {filteredItems.map((item) => {
           const Icon = item.icon;

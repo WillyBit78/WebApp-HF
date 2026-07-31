@@ -37,34 +37,58 @@ function MainApp() {
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
   const [hash, setHash] = useState(window.location.hash);
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
+  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
+  const [touchEndPos, setTouchEndPos] = useState({ x: 0, y: 0 });
 
-  // Swipe navigation flow
-  const swipeTabs = ['dashboard', 'calendar', 'notices', 'store'];
+  // Swipe navigation flow dinámico por rol
+  const getRoleTabs = (role) => {
+    switch (role) {
+      case 'admin':
+        return ['users', 'calendar', 'notices', 'store', 'finance', 'settings'];
+      case 'contador':
+        return ['users', 'calendar', 'notices', 'store', 'finance'];
+      case 'coach':
+        return ['users', 'calendar', 'notices', 'store'];
+      case 'socio':
+      default:
+        return ['dashboard', 'calendar', 'notices', 'store'];
+    }
+  };
 
   const handleTouchStart = (e) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    if (!e.targetTouches || e.targetTouches.length === 0) return;
+    const touch = e.targetTouches[0];
+    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
+    setTouchEndPos({ x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!e.targetTouches || e.targetTouches.length === 0) return;
+    const touch = e.targetTouches[0];
+    setTouchEndPos({ x: touch.clientX, y: touch.clientY });
   };
 
   const handleTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > 60;
-    const isRightSwipe = distance < -60;
+    const deltaX = touchStartPos.x - touchEndPos.x;
+    const deltaY = Math.abs(touchStartPos.y - touchEndPos.y);
 
-    const currentIndex = swipeTabs.indexOf(currentTab);
-    if (currentIndex !== -1) {
-      if (isLeftSwipe && currentIndex < swipeTabs.length - 1) {
-        setCurrentTab(swipeTabs[currentIndex + 1]);
+    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > deltaY * 1.3) {
+      const isLeftSwipe = deltaX > 0;
+      const isRightSwipe = deltaX < 0;
+
+      const roleTabs = getRoleTabs(currentUser?.rol || 'socio');
+      let currentIdx = roleTabs.indexOf(currentTab);
+      if (currentIdx === -1 && currentTab === 'dashboard' && currentUser?.rol !== 'socio') {
+        currentIdx = roleTabs.indexOf('users');
       }
-      if (isRightSwipe && currentIndex > 0) {
-        setCurrentTab(swipeTabs[currentIndex - 1]);
+
+      if (currentIdx !== -1) {
+        if (isLeftSwipe && currentIdx < roleTabs.length - 1) {
+          setCurrentTab(roleTabs[currentIdx + 1]);
+        }
+        if (isRightSwipe && currentIdx > 0) {
+          setCurrentTab(roleTabs[currentIdx - 1]);
+        }
       }
     }
   };
@@ -159,31 +183,31 @@ function MainApp() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex overflow-hidden font-sans">
+    <div className="h-screen w-screen bg-slate-950 text-slate-100 flex overflow-hidden font-sans relative">
       <Sidebar currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
       
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col h-full w-full md:ml-64 overflow-hidden relative">
         <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
         <main 
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-20 md:pb-6 touch-pan-y"
+          className="flex-1 overflow-y-auto max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-28 md:pb-12 touch-pan-y"
         >
           {renderContent()}
-        </main>
 
-        <footer className="border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
-          <div className="flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto px-4 gap-2">
-            <div>
-              © 2026 Club Social y Deportivo Haedo Futsal • Sistema de Gestión Integral
+          <footer className="mt-10 border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
+            <div className="flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto px-4 gap-2">
+              <div>
+                © 2026 Club Social y Deportivo Haedo Futsal • Sistema de Gestión Integral
+              </div>
+              <div className="text-[11px] text-slate-600">
+                Desarrollado para PC y Celular • Integra Supabase + Vercel + GitHub
+              </div>
             </div>
-            <div className="text-[11px] text-slate-600">
-              Desarrollado para PC y Celular • Integra Supabase + Vercel + GitHub
-            </div>
-          </div>
-        </footer>
+          </footer>
+        </main>
 
         <BottomNav currentTab={currentTab} setCurrentTab={setCurrentTab} activeRoleId={activeRoleId} />
       </div>

@@ -631,27 +631,6 @@ export const PaymentUploader = ({ onSuccess }) => {
             </div>
           ) : (
             <>
-              {/* Botones de simulación para pruebas rápidas */}
-              <div className="bg-slate-950/60 p-3 rounded-2xl border border-slate-800 space-y-2">
-                <div className="text-[11px] font-bold text-amber-400 uppercase tracking-wider flex items-center justify-between">
-                  <span>⚡ Pruebas Rápidad / Simulador de Comprobantes</span>
-                  <span className="text-[10px] text-slate-500 font-mono">Modo Dev</span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {sampleReceipts.map((s, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => handleSelectSample(s)}
-                      className="bg-slate-800 hover:bg-slate-700 text-slate-200 p-2.5 rounded-xl text-xs font-bold text-left border border-slate-700 flex items-center justify-between group transition-all cursor-pointer"
-                    >
-                      <span className="truncate">{s.name}</span>
-                      <ArrowRight className="w-3.5 h-3.5 text-amber-400 group-hover:translate-x-1 transition-transform shrink-0" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* Selector de Socio Destino con Categoría */}
               <div className="bg-slate-950/80 p-4 rounded-2xl border border-slate-800 space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-amber-400">

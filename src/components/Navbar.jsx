@@ -69,7 +69,7 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-white">
+    <header className="fixed top-0 left-0 right-0 md:left-64 z-40 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-white">
 
       {/* Main Navbar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
