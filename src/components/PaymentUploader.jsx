@@ -506,7 +506,7 @@ export const PaymentUploader = ({ onSuccess }) => {
       }
 
       const parsedData = sampleOverride || {
-        monto: montoExtraido || clubSettings.montoCuotaGeneral || 15000,
+        monto: matchedTransfer ? Number(matchedTransfer.monto) : (montoExtraido || clubSettings.montoCuotaGeneral || 15000),
         numeroOperacion: extractedNumeroOperacion,
         coelsaId: extractedCoelsa,
         billeteraOrigen: finalWallet,

@@ -681,6 +681,13 @@ export const AppProvider = ({ children }) => {
 
         if (match) {
           changed = true;
+          // Sincronizar el monto del pago registrado con el monto real acreditado en la cuenta de Mercado Pago
+          if (Number(tx.monto) > 0 && Number(match.monto) !== Number(tx.monto)) {
+            setPayments(prevPayments => prevPayments.map(p => p.id === match.id ? { ...p, monto: Number(tx.monto) } : p));
+            if (isSupabaseConfigured && supabase) {
+              supabase.from('payments').update({ monto: Number(tx.monto) }).eq('id', match.id).then(() => {}).catch(() => {});
+            }
+          }
           return {
             ...tx,
             estado: 'conciliado',
@@ -1070,6 +1077,12 @@ export const AppProvider = ({ children }) => {
                         (targetCoelsa && coelsaNorm && (targetCoelsa === coelsaNorm || targetCoelsa.includes(coelsaNorm) || coelsaNorm.includes(targetCoelsa))) ||
                         matchesDate;
         if (matches) {
+          if (txMonto > 0 && pMonto !== txMonto) {
+            setPayments(pList => pList.map(p => p.id === paymentId ? { ...p, monto: txMonto } : p));
+            if (isSupabaseConfigured && supabase) {
+              supabase.from('payments').update({ monto: txMonto }).eq('id', paymentId).then(() => {}).catch(() => {});
+            }
+          }
           return { ...t, estado: 'conciliado', estado_conciliacion: 'conciliado', asociadoAPagoId: paymentId, socioId: targetPayment.socioId, socioNombre: targetPayment.socioNombre };
         }
         return t;
