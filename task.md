@@ -1,23 +1,22 @@
 # 📌 MEMORIA OFICIAL DEL PROYECTO: HAEDO FUTSAL APP
-**Última actualización:** 29 de Julio de 2026
+**Última actualización:** 31 de Julio de 2026
 
 Este documento contiene la arquitectura del proyecto, la memoria técnica y la **directiva oficial del modo de trabajo**. **Consultar este archivo al iniciar cualquier nueva sesión de chat.**
 
 ---
 
-## 🤖 MODO DE TRABAJO OFICIAL: AGENTE ORQUESTADOR + IA LOCAL (QWEN3)
+## 🤖 MODO DE TRABAJO OFICIAL: AGENTE ORQUESTADOR + ACCESOS FULL
 
-- **Rol Principal de Antigravity (IA)**: **ORQUESTADOR Y ARQUITECTO**.
+- **Rol Principal de Antigravity (IA)**: **ORQUESTADOR, ARQUITECTO Y DESARROLLADOR FULL STACK**.
 - **Servidor de IA Local**: Ollama / Qwen3 configurado en la red local:
   - **Endpoint Ollama**: `http://192.168.0.140:11434`
   - **Modelo Local**: `qwen3` / `qwen`
 - **Flujo de Trabajo Exigido**:
   1. El **USUARIO** entrega un requerimiento o indicación.
-  2. **ANTIGRAVITY (Orquestador)** analiza los componentes, entiende el problema y redacta la tarea técnica detallada.
-  3. **ANTIGRAVITY** envía la instrucción al servidor de IA local (`http://192.168.0.140:11434`) para generar/editar el código con **Qwen3**.
-  4. **Qwen3 (IA Local)** ejecuta el trabajo pesado de código.
-  5. **ANTIGRAVITY** revisa el resultado, compila la app (`npm run build`), verifica que todo funcione sin errores y le informa el resultado final al USUARIO.
-- **Objetivo**: Minimizar el consumo de tokens de la suscripción delegando la escritura masiva de código al servidor local de Qwen3.
+  2. **ANTIGRAVITY** analiza los componentes, diseña la solución e implementa los cambios.
+  3. **ANTIGRAVITY** compila y verifica que todo funcione sin errores (`npm run build`).
+  4. **PUBLICACIÓN OBLIGATORIA EN GITHUB**: **SIEMPRE** hacer `git add .`, `git commit` y `git push` a GitHub al completar o modificar algo para que Vercel despliegue la versión actualizada automáticamente.
+- **Acceso Total Concedido**: Antigravity tiene acceso full a **GitHub** (`WillyBit78/WebApp-HF`), **Vercel** y **Supabase** para modificar código, base de datos, deployments o configuraciones requeridas.
 
 ---
 
