@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { DashboardSocios } from './DashboardSocios';
+import { MainDashboardSummary } from './MainDashboardSummary';
 import { 
   Users, 
   Wallet, 
@@ -30,7 +31,7 @@ import {
   Key
 } from 'lucide-react';
 
-export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalEvent, initialSubTab = 'resumen' }) => {
+export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalEvent, onNavigate, initialSubTab = 'resumen' }) => {
   const { 
     stats, 
     users, 
@@ -244,74 +245,8 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Recaudado */}
-        <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/40 border border-emerald-500/20 p-5 rounded-2xl relative overflow-hidden shadow-xl">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Balance General Club</span>
-              <div className="text-2xl font-extrabold text-white mt-1">
-                ${stats.balanceGeneralTotal.toLocaleString('es-AR')}
-              </div>
-              <span className="text-[11px] text-emerald-400/80 flex items-center gap-1 mt-1">
-                <TrendingUp className="w-3 h-3" /> Balances auditados en tiempo real
-              </span>
-            </div>
-            <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-xl">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Total Socios */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Padrón de Socios</span>
-              <div className="text-2xl font-extrabold text-white mt-1">{stats.totalSocios}</div>
-              <span className="text-[11px] text-slate-400 mt-1 block">7 Categorías activas</span>
-            </div>
-            <div className="p-3 bg-blue-500/20 text-blue-400 rounded-xl">
-              <Users className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Cuotas al Día vs Pendientes */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Estado de Cuotas</span>
-              <div className="text-xl font-extrabold text-white mt-1 flex items-center gap-2">
-                <span className="text-emerald-400">{stats.sociosAlDiaCount} al día</span>
-                <span className="text-slate-600">/</span>
-                <span className="text-amber-400">{stats.sociosPendientesCount + stats.sociosMorososCount} pend.</span>
-              </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">Cuota base: ${clubSettings.montoCuotaGeneral.toLocaleString('es-AR')}</span>
-            </div>
-            <div className="p-3 bg-amber-500/20 text-amber-400 rounded-xl">
-              <Wallet className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* Auditoría Pendiente */}
-        <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Comprobantes Mercado Pago</span>
-              <div className="text-2xl font-extrabold text-purple-300 mt-1">
-                {stats.pagosPendientesRev.length} <span className="text-xs font-normal text-slate-400">por revisar</span>
-              </div>
-              <span className="text-[11px] text-slate-400 mt-1 block">Actualizaciones automáticas</span>
-            </div>
-            <div className="p-3 bg-purple-500/20 text-purple-400 rounded-xl">
-              <Clock className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Top Main Dashboard Summary Cards */}
+      <MainDashboardSummary onNavigate={onNavigate} />
 
       {/* Sub Tabs */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-3">
