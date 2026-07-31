@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { isSameMonthAndYear } from '../utils/dateUtils';
 import { 
   Wallet, 
   Users, 
@@ -30,28 +31,18 @@ export const MainDashboardSummary = ({ onNavigate }) => {
   const pctAlDia = totalSocios > 0 ? Math.round((sociosAlDia / totalSocios) * 100) : 0;
   const pctPendiente = totalSocios > 0 ? 100 - pctAlDia : 0;
 
-  // 2. Cálculo de Finanzas del Mes Actual
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth();
-
-  const isCurrentMonth = (dateStr) => {
-    if (!dateStr) return false;
-    const d = new Date(dateStr);
-    return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
-  };
-
+  // 2. Cálculo de Finanzas del Mes Actual usando dateUtils
   // Ingresos del mes (Cuotas Aprobadas + Movimientos Ingreso)
-  const pagosAprobadosMes = payments.filter(p => p.estado === 'aprobado' && isCurrentMonth(p.fecha || p.created_at));
+  const pagosAprobadosMes = payments.filter(p => p.estado === 'aprobado' && isSameMonthAndYear(p.fecha || p.created_at));
   const totalPagosMes = pagosAprobadosMes.reduce((sum, p) => sum + Number(p.monto || 0), 0);
 
-  const movIngresosMes = movimientosFinancieros.filter(m => m.tipo === 'ingreso' && isCurrentMonth(m.fecha));
+  const movIngresosMes = movimientosFinancieros.filter(m => m.tipo === 'ingreso' && isSameMonthAndYear(m.fecha));
   const totalMovIngresosMes = movIngresosMes.reduce((sum, m) => sum + Number(m.monto || 0), 0);
 
   const ingresosMesTotal = totalPagosMes + totalMovIngresosMes;
 
   // Egresos / Gastos del mes
-  const movGastosMes = movimientosFinancieros.filter(m => m.tipo === 'gasto' && isCurrentMonth(m.fecha));
+  const movGastosMes = movimientosFinancieros.filter(m => m.tipo === 'gasto' && isSameMonthAndYear(m.fecha));
   const gastosMesTotal = movGastosMes.reduce((sum, m) => sum + Number(m.monto || 0), 0);
 
   const balanceMesNeto = ingresosMesTotal - gastosMesTotal;

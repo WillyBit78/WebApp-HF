@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 
 import { MainDashboardSummary } from './MainDashboardSummary';
+import { isDateInRange } from '../utils/dateUtils';
 
 export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'control_financiero' }) => {
   const { 
@@ -154,14 +155,8 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
   const [dateFrom, setDateFrom] = useState(firstOfMonth);
   const [dateTo, setDateTo]   = useState(lastOfMonthStr);
 
-  // Helper: check if a date string (YYYY-MM-DD) falls within the selected range
-  const inRange = (dateStr) => {
-    if (!dateStr) return true;
-    const d = dateStr.substring(0, 10);
-    if (dateFrom && d < dateFrom) return false;
-    if (dateTo && d > dateTo) return false;
-    return true;
-  };
+  // Helper: check if a date string falls within the selected range (uses dateUtils.js)
+  const inRange = (dateStr) => isDateInRange(dateStr, dateFrom, dateTo);
 
   // Filtered movimientos for historial (includes date + caja + tipo + responsable)
   const filteredMovimientos = movimientosFinancieros.filter(m => {
