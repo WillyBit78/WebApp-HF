@@ -19,8 +19,9 @@ import {
   Share2,
   Copy
 } from 'lucide-react';
+import { MainDashboardSummary } from './MainDashboardSummary';
 
-export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalNotice }) => {
+export const DashboardCoach = ({ onNavigate, onOpenModalUser, onOpenModalEvent, onOpenModalNotice }) => {
   const { users, events, notices, currentUser, deleteUser, registrarPagoEfectivoCoach, openFichaSocio } = useApp();
   const [selectedCategory, setSelectedCategory] = useState('Todas');
   const [copiedLink, setCopiedLink] = useState(false);
@@ -122,8 +123,12 @@ export const DashboardCoach = ({ onOpenModalUser, onOpenModalEvent, onOpenModalN
         ))}
       </div>
 
-      {/* Dashboard de Socios Jerárquico */}
-      <DashboardSocios onOpenModalUser={onOpenModalUser} />
+      {/* Dashboard Resumen 3D Interactivo para Staff */}
+      <MainDashboardSummary 
+        onNavigate={onNavigate} 
+        onOpenModalUser={onOpenModalUser} 
+        onOpenModalEvent={onOpenModalEvent} 
+      />
 
       {/* Modal Cobro en Efectivo por Coach */}
       {cashModalSocio && (

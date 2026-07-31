@@ -245,23 +245,20 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
 
   return (
     <div className="space-y-6">
-      {/* Top Main Dashboard Summary Cards */}
-      <MainDashboardSummary onNavigate={onNavigate} />
-
       {/* Sub Tabs */}
       <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-3">
         <div className="flex gap-2">
           {[
-            { id: 'resumen', label: 'Control de Socios' },
+            { id: 'resumen', label: '📊 Dashboard Principal' },
             { id: 'logs', label: '📋 Logs & Auditoría de Eventos' },
-            { id: 'configuracion', label: 'Parámetros del Club' }
+            { id: 'configuracion', label: '⚙️ Parámetros del Club' }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                 activeSubTab === tab.id
-                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
               }`}
             >
@@ -271,9 +268,14 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
         </div>
       </div>
 
-      {/* Tab 1: Resumen de Socios */}
+      {/* Tab 1: Resumen Principal (Solamente Tarjetas de Resumen 3D) */}
       {activeSubTab === 'resumen' && (
-        <DashboardSocios onOpenModalUser={onOpenModalUser} onOpenModalStaff={onOpenModalStaff} />
+        <MainDashboardSummary 
+          onNavigate={onNavigate} 
+          onOpenModalUser={onOpenModalUser}
+          onOpenModalStaff={onOpenModalStaff}
+          onOpenModalEvent={onOpenModalEvent}
+        />
       )}
 
       {/* Tab 2: Logs & Auditoría */}
