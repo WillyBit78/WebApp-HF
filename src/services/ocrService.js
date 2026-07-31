@@ -176,12 +176,19 @@ export const ocrService = {
 
   parseOperationId(text) {
     if (!text) return null;
-    // Pattern 1: Número de operación (incluso con "de Mercado Pago" o saltos de línea)
+    
+    // Pattern 1: Mercado Pago Operation ID (10 to 12 digits, ej: 171148585644 o 2846588696)
+    const mpOpRegex = /(?:Número|Numero|N[°º\.]*)\s*(?:de)?\s*operaci[oó]n\s*(?:de\s*Mercado\s*Pago)?[\s\w\n\r]*?[:\s\n\r]+(\d{10,12})/i;
+    const mpMatch = text.match(mpOpRegex);
+    if (mpMatch) return mpMatch[1];
+
+    // Pattern 2: Standard operation ID (de 8 a 14 dígitos, excluyendo DNI/CUIL de 8 dígitos)
     const opRegex = /(?:N[°º\.]*|Número|Num|ID)?\s*(?:de|da)?\s*(?:la)?\s*(?:operación|operacion|comprobante|transaccion)[\s\w\n\r]*?[:\s\n\r]+(\d{8,14})/i;
     const match = text.match(opRegex);
-    if (match) return match[1];
+    if (match && match[1].length !== 8) return match[1];
 
-    const numMatches = text.match(/\b(\d{8,14})\b/g);
+    // Pattern 3: Standalone 10-14 digit numbers (ignoring 8-digit DNI and CUIL numbers)
+    const numMatches = text.match(/\b(\d{10,14})\b/g);
     if (numMatches) {
       for (const nm of numMatches) {
         if (!nm.startsWith('0000') && !nm.startsWith('20') && !nm.startsWith('27') && !nm.startsWith('30')) {
@@ -209,7 +216,7 @@ export const ocrService = {
     const tokens = text.replace(/[^A-Z0-9\s]/gi, ' ').split(/\s+/);
     for (const t of tokens) {
       const u = t.toUpperCase();
-      if (u.length >= 16 && u.length <= 32 && /[A-Z]/.test(u) && /[0-9]/.test(u)) {
+      if (u.length >= 14 && u.length <= 32 && /[A-Z]/.test(u) && /[0-9]/.test(u)) {
         return u;
       }
     }
@@ -218,15 +225,25 @@ export const ocrService = {
 
   parseEmisor(text) {
     if (!text) return null;
+    
+    // Eliminar líneas de fecha/días como "Miércoles 29 de Julio" o "29 de Julio de 2026"
+    const textNoDates = text
+      .replace(/(?:Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)/gi, '')
+      .replace(/\d{1,2}\s*(?:de)?\s*[a-z]{3,10}\s*(?:de)?\s*\d{2,4}/gi, '')
+      .replace(/transferencia\s+realizada/gi, '');
+
     const emisorRegex = /(?:Envía|Envia|De|Emisor|Titular)[:\s]+([A-Za-zÁÉÍÓÚáéíóúÑñ\s,]{3,35})/i;
-    const match = text.match(emisorRegex);
+    const match = textNoDates.match(emisorRegex);
     if (match) {
       let clean = match[1].trim();
       clean = clean.replace(/\s+(CUIL|CUIT|DNI|Desde|Recibe|Personal|Mercado|Banco|Billetera).*$/i, '').trim();
-      return clean;
+      clean = clean.replace(/^(transferencia|realizada|el|del)\s+/gi, '').trim();
+      if (!/^(julio|enero|febrero|marzo|abril|mayo|junio|agosto|septiembre|octubre|noviembre|diciembre|miércoles|lunes|martes|jueves|viernes|sábado|domingo)$/i.test(clean)) {
+        return clean;
+      }
     }
 
-    const lines = text.split(/[\r\n]+/);
+    const lines = textNoDates.split(/[\r\n]+/);
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.toLowerCase().includes('transferencia recibida') && i > 0) {

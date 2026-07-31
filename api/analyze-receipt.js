@@ -46,25 +46,37 @@ export default async function handler(req, res) {
       }
     }];
 
-    const prompt = `Analizá la imagen de este comprobante bancario o billetera virtual de Argentina (Personal Pay, Mercado Pago, Cuenta DNI, Banco Galicia, Santander, BBVA, Brubank, etc.).
-Reglas de extracción estrictas:
-1. "fecha": Formato DD/MM/YYYY (ej: 25/07/2026 o 29/07/2026).
-2. "hora": Formato HH:MM hs. (ej: 15:47 hs. o 20:57 hs.).
-3. "monto": Número entero o decimal (ej: 15000 o 30000).
-4. "numero_operacion": El número de comprobante u operación oficial (de 8 a 14 dígitos, típicamente de 10, 11 o 12 dígitos como 171148585644 o 2897797408) ubicado al pie del comprobante bajo "Número de operación de Mercado Pago" o "N° de la operación". ATENCIÓN: NUNCA tomar el DNI/CUIL de 8 dígitos del titular (ej: 26248272 o 29900782).
-5. "coelsa_id": Código alfanumérico largo (14 a 32 caracteres, ej: 7L8GYKNX40Z81P7KNMPRZ5). Si es un comprobante interno de Mercado Pago y no tiene COELSA ID, retornar null.
-6. "emisor": Nombre completo y apellido del pagador (ej: "Pazos, Guillermo Pablo"). IMPORTANTE: NO incluir fechas, meses (ej: "julio de"), ni palabras como "Desde", "Recibe", "Transferencia".
-7. "billetera": Nombre de la billetera origen (ej: "Personal Pay", "Mercado Pago", "Cuenta DNI").
+    const prompt = `Analizá minuciosamente la imagen de este comprobante bancario o billetera virtual de Argentina (Personal Pay, Mercado Pago, Cuenta DNI, Banco Galicia, Santander, BBVA, Brubank, etc.).
 
-Retorná ÚNICAMENTE en JSON puro con la estructura:
+PASO 1: Identificá la billetera origen ("billetera"):
+- Si el encabezado dice "Mercado Pago", "MercadoPago", "MP": billetera = "Mercado Pago".
+- Si el encabezado dice "Personal Pay", "personalpay": billetera = "Personal Pay".
+- Si dice "Cuenta DNI", "Banco Provincia": billetera = "Cuenta DNI".
+
+PASO 2: Extraé los campos numéricos e identificadores con estas REGLAS ABSOLUTAS:
+1. "fecha": Formato DD/MM/YYYY (ej: 25/07/2026, 12/07/2026, 29/07/2026).
+2. "hora": Formato HH:MM hs. (ej: 15:47 hs., 18:18 hs., 20:57 hs.).
+3. "monto": Número entero (ej: 15000, 30000, 20000).
+4. "billetera": Nombre de la billetera o banco detectado.
+5. "numero_operacion": 
+   - Para Mercado Pago: Buscar el número de 10 a 12 dígitos ubicado abajo de todo tras la frase "Número de operación de Mercado Pago" (ej: 171148585644 o 2846588696).
+   - Para Personal Pay / Cuenta DNI / Bancos: Buscar bajo "N° de la operación" (ej: 2897797408).
+   - REGLA CRÍTICA: NUNCA tomar el DNI o CUIL de 8 dígitos (ej: 26248272 o 29900782 del CUIL 20-26248272-4 / 20-29900782-4). Si solo hay un DNI/CUIL y no hay número de operación separado, retornar null.
+6. "coelsa_id": 
+   - Para Personal Pay / Cuenta DNI / Bancos externos: Buscar el código alfanumérico de 14 a 32 caracteres (ej: L18MKX9RP7P5PZQ4206WYV o 7L8GYKNX40Z81P7KNMPRZ5). A veces figura como "CoelsaID", "Id Bancario" o "N° de identificación".
+   - Para Mercado Pago interno: Retornar null (las transferencias entre cuentas MP no usan COELSA ID).
+7. "emisor": Nombre y apellido del pagador u emisor (ej: "Pazos, Guillermo Pablo" o "Guillermo Pablo Pazos").
+   - REGLA CRÍTICA: EXCLUIR absolutamente palabras de fecha/días como "transferencia", "realizada", "el", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo", "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre". Si no se ve un nombre de persona claro, retornar null.
+
+Retorná ÚNICAMENTE JSON puro con la estructura:
 {
+  "billetera": "Nombre de billetera",
   "fecha": "DD/MM/YYYY",
   "hora": "HH:MM hs.",
   "monto": 15000,
   "coelsa_id": "código alfanumérico o null",
-  "numero_operacion": "número de operación o null",
-  "emisor": "Nombre completo o null",
-  "billetera": "Nombre de billetera"
+  "numero_operacion": "número de 10-12 dígitos o null",
+  "emisor": "Nombre completo o null"
 }`;
 
     const result = await model.generateContent([prompt, ...imageParts]);
