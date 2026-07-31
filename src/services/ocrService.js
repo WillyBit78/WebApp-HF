@@ -226,9 +226,10 @@ export const ocrService = {
   parseEmisor(text) {
     if (!text) return null;
     
-    // Eliminar líneas de fecha/días como "Miércoles 29 de Julio" o "29 de Julio de 2026"
+    // Eliminar líneas de fecha/días como "Miércoles 29 de Julio" o ", a las 20:42 hs."
     const textNoDates = text
       .replace(/(?:Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes|S[aá]bado|Domingo)/gi, '')
+      .replace(/(?:,\s*)?a\s+las\s*\d{1,2}[\s:]*\d{2}\s*(?:hs\.?|[ap]\.?m\.?)?/gi, '')
       .replace(/\d{1,2}\s*(?:de)?\s*[a-z]{3,10}\s*(?:de)?\s*\d{2,4}/gi, '')
       .replace(/transferencia\s+realizada/gi, '');
 
@@ -237,8 +238,11 @@ export const ocrService = {
     if (match) {
       let clean = match[1].trim();
       clean = clean.replace(/\s+(CUIL|CUIT|DNI|Desde|Recibe|Personal|Mercado|Banco|Billetera).*$/i, '').trim();
-      clean = clean.replace(/^(transferencia|realizada|el|del)\s+/gi, '').trim();
-      if (!/^(julio|enero|febrero|marzo|abril|mayo|junio|agosto|septiembre|octubre|noviembre|diciembre|miércoles|lunes|martes|jueves|viernes|sábado|domingo)$/i.test(clean)) {
+      clean = clean.replace(/^([,.:\s]*|(?:transferencia|realizada|el|del|a las)\s+)+/gi, '').trim();
+      clean = clean.replace(/[,.:]+$/g, '').trim();
+
+      const invalidNames = /^(a las|julio|enero|febrero|marzo|abril|mayo|junio|agosto|septiembre|octubre|noviembre|diciembre|miércoles|lunes|martes|jueves|viernes|sábado|domingo|hs|hs\.)$/i;
+      if (clean.length >= 3 && !invalidNames.test(clean)) {
         return clean;
       }
     }
@@ -247,7 +251,7 @@ export const ocrService = {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
       if (line.toLowerCase().includes('transferencia recibida') && i > 0) {
-        const candidate = lines[i - 1].trim();
+        let candidate = lines[i - 1].trim().replace(/^([,.:\s]*|(?:transferencia|realizada|el|del|a las)\s+)+/gi, '').trim();
         if (/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]{5,35}$/.test(candidate) && !candidate.toLowerCase().includes('aprobado') && !candidate.toLowerCase().includes('monto')) {
           return candidate;
         }
@@ -288,14 +292,22 @@ export const ocrService = {
 
     if (day1 !== day2 || month1 !== month2) return false;
 
+    let idx1 = 2;
+    let idx2 = 2;
+
     if (n1.length >= 3 && n2.length >= 3) {
-      const y1 = n1[2] > 100 ? n1[2] % 100 : n1[2];
-      const y2 = n2[2] > 100 ? n2[2] % 100 : n2[2];
-      if (y1 !== y2) return false;
+      const y1 = n1[2] > 1000 ? n1[2] % 100 : n1[2];
+      const y2 = n2[2] > 1000 ? n2[2] % 100 : n2[2];
+      // Si el tercer elemento es el año (ej: 2026 o 26)
+      if ((n1[2] > 1000 || n1[2] <= 99) && (n2[2] > 1000 || n2[2] <= 99)) {
+        if (y1 !== y2) return false;
+        idx1 = 3;
+        idx2 = 3;
+      }
     }
 
-    const t1 = n1.slice(n1.length >= 3 && n1[2] > 100 ? 3 : 2);
-    const t2 = n2.slice(n2.length >= 3 && n2[2] > 100 ? 3 : 2);
+    const t1 = n1.slice(idx1);
+    const t2 = n2.slice(idx2);
 
     if (t1.length >= 2 && t2.length >= 2) {
       const h1 = t1[0] % 12;
