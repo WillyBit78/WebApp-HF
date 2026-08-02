@@ -36,6 +36,8 @@ function MainApp() {
   const [cashMonto, setCashMonto] = useState(15000);
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
+  const [hash, setHash] = useState(window.location.hash);
+
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash);
     window.addEventListener('hashchange', handleHashChange);
