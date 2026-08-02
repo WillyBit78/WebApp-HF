@@ -1,157 +1,157 @@
 ================================================================================
-📌 CONTEXTO TÉCNICO Y MEMORIA COMPLETA DEL PROYECTO: HAEDO FUTSAL APP
+📌 PROJECT TECHNICAL CONTEXT & COMPREHENSIVE KNOWLEDGE BASE: HAEDO FUTSAL APP
 ================================================================================
-Última actualización: Agosto de 2026
+Last Updated: August 2026
 
 --------------------------------------------------------------------------------
-1. ℹ️ INFORMACIÓN GENERAL DEL PROYECTO
+1. ℹ️ PROJECT OVERVIEW & PURPOSE
 --------------------------------------------------------------------------------
-- Nombre de la aplicación: Haedo Futsal App (haedo-futsal-app)
-- Nombre de repositorio: WillyBit78/WebApp-HF
-- Tipo de aplicación: Web App Progresiva (PWA) de Gestión Integral para el Club Social y Deportivo Haedo Futsal.
-- Objetivo principal: Administrar padrón de socios, cobro y verificación de cuotas/pagos por transferencia u OCR, avisos/notificaciones push a socios, eventos/calendarios, roles de personal (Admin, Contador, Coach, Socio), y tienda del club.
-
---------------------------------------------------------------------------------
-2. 🔗 PLATAFORMAS CONECTADAS E INTEGRACIONES
---------------------------------------------------------------------------------
-La aplicación se encuentra conectada e integrada con 3 plataformas clave:
-1. GitHub: Repositorio principal de código fuente (`WillyBit78/WebApp-HF`).
-2. Supabase: Backend as a Service (Base de Datos PostgreSQL, Autenticación, Storage para fotos y comprobantes).
-3. Vercel: Hosting y despliegue continuo (Continuous Deployment conectado automáticamente al repositorio de GitHub).
-
-⚠️ TODAS LAS CREDENCIALES, TOKENS DE ACCESO Y CLAVES SE ENCUENTRAN ALMACENADAS EN EL ARCHIVO `.env` EN LA RAÍZ DEL PROYECTO (`Z:\Willy\Proyectos\App Club\Nueva APP\.env`).
-
-Entre las credenciales almacenadas en `.env` se destacan:
-- URL de Supabase y Supabase Anon / Service Role Keys
-- Credenciales de PostgreSQL / Supabase Pooler
-- Token de Mercado Pago
-- Claves VAPID para Notificaciones Push (Web Push)
-- Credenciales de Gemini API (para OCR de comprobantes de pago)
+- Application Name: Haedo Futsal App (`haedo-futsal-app`)
+- Repository Name: `WillyBit78/WebApp-HF`
+- Application Type: Progressive Web App (PWA) for Comprehensive Sports Club Management.
+- Primary Objective: Manage club membership roster (Socios), monthly fee collection and payment verification via OCR transfer receipts or cash, institutional notices with web push notifications, match & event calendar, role-based user management (Admin, Accountant/Contador, Coach, Member/Socio), and official club store.
 
 --------------------------------------------------------------------------------
-3. 🚨 DIRECTIVA OBLIGATORIA DE MODO DE TRABAJO (SUBIDA A GITHUB)
+2. 🔗 CONNECTED PLATFORMS & INTEGRATION (.env LOCATION)
 --------------------------------------------------------------------------------
-- SIEMPRE que se realice cualquier modificación o implementación de código en el proyecto, ES OBLIGATORIO Y REQUISITO INDISPENSABLE subir los cambios al repositorio de GitHub inmediatamente.
-- Pasos a ejecutar al finalizar cambios:
-  1. Verificar compilación local limpia: `npm run build`
-  2. Hacer Commit y Push a GitHub: `git add .`, `git commit -m "..."`, `git push origin main`
-- Esto garantiza que Vercel detecte el push y despliegue automáticamente la versión actualizada sin requerir intervención manual.
+The project is integrated with three core services:
+1. GitHub: Core code repository (`WillyBit78/WebApp-HF`).
+2. Supabase: Backend-as-a-Service (PostgreSQL Database, Auth, Storage for face photos and payment receipts).
+3. Vercel: Continuous Deployment hosting linked to the GitHub repository for automatic builds on push.
 
---------------------------------------------------------------------------------
-4. 🛠️ STACK TECNOLÓGICO Y ARQUITECTURA
---------------------------------------------------------------------------------
-- Frontend: React 18, Vite, Tailwind CSS 3, Lucide React (iconos), clsx, tailwind-merge.
-- Backend & DB: Supabase (`@supabase/supabase-js`), PostgreSQL native client (`pg`).
-- PWA & Service Worker: Web Share Target (`sw.js`), Web Push (`web-push`), Manifest.
-- OCR Comprobantes: `@google/generative-ai` (Gemini Flash 1.5/2.0) + `pdfjs-dist` (para renderizar PDF a canvas antes de procesar).
-- Navegación: Adaptativa por rol de usuario (`App.jsx`, `Sidebar.jsx` para PC, `BottomNav.jsx` para celulares, `Navbar.jsx`).
+⚠️ ALL CREDENTIALS, API KEYS, AND TOKENS ARE STORED IN THE ENVIRONMENT FILE `.env` LOCATED AT THE PROJECT ROOT (`Z:\Willy\Proyectos\App Club\Nueva APP\.env`).
 
---------------------------------------------------------------------------------
-5. 🧩 RESUMEN DE FUNCIONALIDADES E HISTORIAL DE CONFIGURACIONES
---------------------------------------------------------------------------------
-
-A. GESTIÓN DE ROLES Y NAVEGACIÓN PERMITIDA
-   - Socio: Inicio/Dashboard, Calendario, Avisos, Tienda.
-   - Coach: Padrón de Socios/Planteles, Calendario, Avisos, Tienda, Cobro de Cuota en Efectivo.
-   - Contador: Padrón de Socios, Control Financiero (Ingresos/Gastos/Auditoría de Pagos), Calendario, Avisos, Tienda.
-   - Admin: Acceso total (Socios, Calendario, Avisos, Tienda, Finanzas, Configuración de Sistema/Staff).
-
-B. PADRÓN DE SOCIOS Y FICHA DE SOCIO (`DashboardSocios.jsx`, `ModalFichaSocio.jsx`)
-   - Formato de Nombres: Apellido en MAYÚSCULAS (ej. PAZOS) y Nombre capitalizado (ej. Guillermo). Limpieza automática de metadatos `| META:...`.
-   - Visualización Padrón: El DNI está OCULTO en la tabla principal por privacidad; se muestra el número de teléfono con botón de acceso directo a WhatsApp.
-   - Ficha Personal del Socio: Modal completo que muestra APELLIDO y Nombre, Fotografía de rostro, N° de Socio (ID auto), DNI, Fecha de nacimiento, Hincha de, Teléfono/WhatsApp, Contacto/Tutor de Emergencia con WhatsApp directo, PIN de 4 dígitos exactos, y Dropdown `<select>` para cambiar Categoría/Disciplina (Baby, Futsal Masc, Fem, Mayores, Dirigencia, Finanzas).
-
-C. MÓDULO DE COMUNICADOS Y AVISOS (`NoticeBoard.jsx`, `AppContext.jsx`)
-   - Persistencia directa en Supabase (`notices`). Arroja excepciones si falla DB.
-   - Notificaciones Push Web automáticas a todos los dispositivos registrados al publicar aviso.
-   - Todos los avisos se muestran organizados en la sección **Avisos** (`NoticeBoard.jsx`). Se eliminó el banner violeta/urgente de la pantalla del socio.
-   - El emisor se guarda y visualiza como nombre limpio (sin sufijos de roles).
-
-D. LECTOR DE COMPROBANTES OCR, WEB SHARE TARGET Y COBROS (`PaymentUploader.jsx`, `sw.js`)
-   - Web Share Target (Android PWA): Permite compartir comprobantes directamente desde apps de bancos/billeteras (Mercado Pago, Cuenta DNI, BNA, etc.) en PDF o imagen a la app.
-   - Service Worker (`sw.js`): Intercepta POST a `/share-receipt`, almacena en cache `/shared-receipt-file` y realiza redirección segura a `/?shared=true`.
-   - Lector Híbrido OCR: Procesa PDFs e imágenes mediante Gemini Flash. Si no hay red o API falla, avanza la pantalla con animación de escudo girando y registra el pago en estado `en_revision`.
-   - Privacidad en Estados de Pago:
-     * Vista Socio: Mensaje limpio "⏳ Comprobante recibido. En proceso de verificación por Administración."
-     * Vista Contador/Admin: Auditoría completa con desglose OCR (Monto, Fecha, Hora, COELSA ID vs Faltantes).
-   - Cobro en Efectivo: Tanto Coach como Admin pueden registrar cobro de cuota en efectivo directamente desde la Ficha del Socio.
-
-E. SECCIÓN TIENDA OFICIAL (`StoreModule.jsx`)
-   - Ubicación Móvil: Botón "Tienda" en la barra inferior (`BottomNav.jsx`).
-   - Ubicación PC: Opción "Tienda Oficial" en la barra lateral fija (`Sidebar.jsx`).
-
-F. ELIMINACIÓN DEL SWIPE HORIZONTAL EN CELULARES
-   - Se removió completamente la navegación por gestos horizontales (swipe) entre pantallas para evitar conflictos táctiles durante el scroll vertical y mejorar la usabilidad en dispositivos móviles.
-
-G. BANNER PWA Y NOTIFICACIONES PUSH (`PWAInstallBanner.jsx`)
-   - Ocultamiento inteligente cuando la PWA ya está instalada o los permisos de notificación fueron otorgados.
+Keys stored in `.env` include:
+- Supabase URL & Public/Service Keys
+- PostgreSQL Connection String / Supabase Pooler
+- Mercado Pago Access Token
+- VAPID Keys for Web Push Notifications
+- Google Gemini API Key (for receipt OCR processing)
 
 --------------------------------------------------------------------------------
-6. 🗄️ ESQUEMA NATIVO DE BASE DE DATOS EN SUPABASE (`users`)
+3. 🚨 MANDATORY WORKFLOW DIRECTIVE: GITHUB PUBLICATION
 --------------------------------------------------------------------------------
-Tabla `users`:
-- `id`: Texto `usr-[DNI]` (ej: `usr-26.248.272`)
-- `dni`: Texto limpio (ej: `26.248.272`)
-- `nombre`: Texto (ej: `Guillermo`)
-- `apellido`: Texto en MAYÚSCULAS (ej: `PAZOS`)
-- `telefono`: Texto de WhatsApp (ej: `11 6740-9620`)
-- `fecha_nacimiento`: Texto (ej: `14/08/1982`)
-- `hincha_de`: Texto (ej: `Haedo Futsal`)
-- `nombre_contacto`: Texto de Tutor/Familiar (ej: `Tutor Guillermo`)
-- `telefono_contacto`: Texto de WhatsApp de Tutor (ej: `11 5544-3322`)
-- `foto_rostro`: URL/base64 de foto oficial de cara
-- `clave`: PIN de 4 dígitos exactos (ej: `1234`)
+- MANDATORY RULE: Whenever ANY modification or code implementation is made, it is REQUIRED to commit and push the changes to GitHub immediately.
+- Execution Workflow:
+  1. Build & Verify locally: `npm run build`
+  2. Commit & Push to GitHub: `git add .`, `git commit -m "..."`, `git push origin main`
+- This ensures Vercel automatically detects the push and deploys the latest production version seamlessly.
+
+--------------------------------------------------------------------------------
+4. 🛠️ TECH STACK & ARCHITECTURE
+--------------------------------------------------------------------------------
+- Frontend Framework: React 18 + Vite + Tailwind CSS 3 + Lucide React + clsx + tailwind-merge.
+- Backend & DB: Supabase (`@supabase/supabase-js`) + PostgreSQL (`pg`).
+- PWA & Service Worker: Web Share Target (`sw.js`), Web Push Notifications (`web-push`), Web App Manifest.
+- Payment Receipt OCR: `@google/generative-ai` (Gemini Flash 1.5/2.0) + `pdfjs-dist` (PDF to canvas rendering).
+- Layout & Navigation: Responsive, role-based (`App.jsx`, desktop `Sidebar.jsx`, mobile `BottomNav.jsx`, top `Navbar.jsx`).
+
+--------------------------------------------------------------------------------
+5. 🧩 FEATURE BREAKDOWN & HISTORICAL CONFIGURATIONS
+--------------------------------------------------------------------------------
+
+A. ROLE-BASED NAVIGATION & PERMISSIONS
+   - Socio (Member): Home/Dashboard, Calendar, Notices, Store.
+   - Coach: Member Roster / Rosters, Calendar, Notices, Store, Cash Fee Collection.
+   - Contador (Accountant): Member Roster, Financial Control (Income/Expenses/Audit), Calendar, Notices, Store.
+   - Admin: Full system access (Socios, Calendar, Notices, Store, Financials, System/Staff Config).
+
+B. MEMBER ROSTER & INDIVIDUAL PROFILE (`DashboardSocios.jsx`, `ModalFichaSocio.jsx`)
+   - Name Formatting: SURNAME in UPPERCASE (e.g. PAZOS), First Name capitalized (e.g. Guillermo). Automatic stripping of metadata suffixes `| META:...`.
+   - Roster Privacy: DNI document number is HIDDEN in the main table grid; phone number is shown with a direct WhatsApp action link.
+   - Socio Profile Modal: Displays SURNAME and Name, face photograph, Auto-generated Socio ID, DNI, Date of Birth, Favorite Club (Hincha de), Phone/WhatsApp, Emergency/Tutor Contact with direct WhatsApp link, 4-digit PIN, and a `<select>` dropdown for Category/Discipline (Baby, Futsal Masc, Fem, Mayores, Dirigencia, Finanzas).
+
+C. NOTICES & ANNOUNCEMENTS MODULE (`NoticeBoard.jsx`, `AppContext.jsx`)
+   - Direct Supabase persistence (`notices` table) with explicit exception handling.
+   - Automated Web Push Notifications broadcast to all subscribed devices upon publication.
+   - Displayed exclusively in the **Avisos** section (`NoticeBoard.jsx`). Urgent/purple banner removed from Socio Dashboard.
+   - Sender name formatted as clean name without role brackets.
+
+D. OCR RECEIPT READER, WEB SHARE TARGET & PAYMENTS (`PaymentUploader.jsx`, `sw.js`)
+   - Android PWA Web Share Target (`sw.js`): Intercepts native POST requests to `/share-receipt` when sharing PDF/Image bank receipts directly from banking apps (Mercado Pago, Cuenta DNI, BNA, etc.).
+   - Service Worker (`sw.js`): Caches payload to `/shared-receipt-file` and performs safe absolute redirection to `/?shared=true`.
+   - Hybrid OCR Reader: Processes images/PDFs with Gemini Flash. On network failure or API latency, advances to `en_revision` state with spinning crest animation.
+   - Differentiated Audit Views:
+     * Socio View: Clean status "⏳ Comprobante recibido. En proceso de verificación por Administración."
+     * Admin/Contador View: Full OCR extraction details (Amount, Date, Time, COELSA ID vs Missing fields).
+   - Cash Payment Collection: Coaches and Admins can record cash fee payments directly from the Socio profile modal.
+
+E. OFFICIAL CLUB STORE (`StoreModule.jsx`)
+   - Mobile: Accessible via "Tienda" tab on the bottom navigation bar (`BottomNav.jsx`).
+   - Desktop: Accessible via "Tienda Oficial" on the fixed sidebar (`Sidebar.jsx`).
+
+F. HORIZONTAL SWIPE REMOVAL
+   - Horizontal touch gesture navigation (swipe between tabs) was COMPLETELY REMOVED to prevent mobile scroll conflicts and ensure smooth vertical scrolling.
+
+G. PWA INSTALLATION BANNER & PUSH PROMPT (`PWAInstallBanner.jsx`)
+   - Automatically hides when the app is running in standalone mode (PWA) or push notification permissions have already been granted.
+
+--------------------------------------------------------------------------------
+6. 🗄️ SUPABASE DATABASE SCHEMA (`users` & CORE TABLES)
+--------------------------------------------------------------------------------
+`users` Table:
+- `id`: Text format `usr-[DNI]` (e.g. `usr-26.248.272`)
+- `dni`: Clean document text (e.g. `26.248.272`)
+- `nombre`: First Name (e.g. `Guillermo`)
+- `apellido`: SURNAME in UPPERCASE (e.g. `PAZOS`)
+- `telefono`: WhatsApp phone string (e.g. `11 6740-9620`)
+- `fecha_nacimiento`: Birthdate text (e.g. `14/08/1982`)
+- `hincha_de`: Club preference text (e.g. `Haedo Futsal`)
+- `nombre_contacto`: Tutor/Family contact name (e.g. `Tutor Guillermo`)
+- `telefono_contacto`: Tutor WhatsApp phone (e.g. `11 5544-3322`)
+- `foto_rostro`: Official face image URL/base64
+- `clave`: Exact 4-digit PIN (e.g. `1234`)
 - `rol`: `socio`, `coach`, `contador`, `admin`
-- `categoria`: Disciplina / Categoría asignada
+- `categoria`: Assigned sports category / discipline
 
-Otras Tablas Supabase:
-- `notices`: Avisos y noticias institucionales.
-- `events`: Eventos del calendario y partidos.
-- `payments`: Registro de pagos y transferencias comprobadas por OCR o manual.
-- `push_subscriptions`: Suscripciones de notificaciones push por dispositivo.
+Other Core Tables:
+- `notices`: Institutional announcements and news.
+- `events`: Matches, training sessions, and calendar events.
+- `payments`: Fee payment history, OCR metadata, and audit verification states.
+- `push_subscriptions`: Device push notification tokens.
 
 --------------------------------------------------------------------------------
-7. 📁 ESTRUCTURA PRINCIPAL DEL PROYECTO
+7. 📁 PROJECT DIRECTORY STRUCTURE
 --------------------------------------------------------------------------------
 Nueva APP/
-├── .env                  # Credenciales (GitHub, Supabase, Vercel, MP, Gemini)
-├── task.md               # Memoria oficial de estado de tareas
-├── proyect_context.txt   # Este archivo de contexto unificado para IA
-├── index.html            # Entrypoint HTML & PWA manifest link
-├── sw.js                 # Service Worker (Web Share Target & Push)
-├── vite.config.js        # Configuración Vite
-├── package.json          # Dependencias y scripts npm
-├── scripts/              # Scripts de build y utilidades
+├── .env                  # Environment variables (GitHub, Supabase, Vercel, MP, Gemini)
+├── task.md               # Task log and status memory
+├── proyect_context.txt   # Complete AI technical context file (THIS FILE)
+├── index.html            # HTML entry point & PWA manifest setup
+├── sw.js                 # Service Worker (Web Share Target & Push handling)
+├── vite.config.js        # Vite bundler configuration
+├── package.json          # Node dependencies & NPM scripts
+├── scripts/              # Build scripts and utilities
 └── src/
-    ├── App.jsx           # Componente principal / Orquestador de vistas
-    ├── main.jsx          # Mount React
+    ├── App.jsx           # Main Application entry point & router
+    ├── main.jsx          # React DOM mounting
     ├── context/
-    │   └── AppContext.jsx # Estado global y llamadas Supabase
+    │   └── AppContext.jsx # Global state & Supabase data operations
     └── components/
-        ├── BottomNav.jsx              # Navegación inferior celular
-        ├── Sidebar.jsx                # Navegación lateral PC
-        ├── Navbar.jsx                 # Barra superior
-        ├── DashboardAdmin.jsx         # Panel Administrador
-        ├── DashboardContador.jsx      # Panel Control Financiero
-        ├── DashboardCoach.jsx         # Panel Entrenador
-        ├── DashboardSocio.jsx         # Panel Socio
-        ├── DashboardSocios.jsx        # Padrón General de Socios
-        ├── ModalFichaSocio.jsx        # Ficha Individual del Socio
-        ├── NoticeBoard.jsx            # Tablero de Avisos
-        ├── CalendarModule.jsx         # Módulo Calendario
-        ├── StoreModule.jsx            # Tienda Oficial
-        ├── PaymentUploader.jsx        # Lector OCR y subida de comprobantes
-        ├── LoginScreen.jsx            # Pantalla de Login
-        ├── PublicRegistrationScreen.jsx # Registro Público de Socios
-        └── PWAInstallBanner.jsx       # Banner PWA & Push Notifications
+        ├── BottomNav.jsx              # Mobile bottom navigation bar
+        ├── Sidebar.jsx                # Desktop fixed sidebar
+        ├── Navbar.jsx                 # Top header bar
+        ├── DashboardAdmin.jsx         # Administrator dashboard
+        ├── DashboardContador.jsx      # Financial control dashboard
+        ├── DashboardCoach.jsx         # Coach dashboard
+        ├── DashboardSocio.jsx         # Socio/Member dashboard
+        ├── DashboardSocios.jsx        # General Member roster management
+        ├── ModalFichaSocio.jsx        # Member profile & cash payment modal
+        ├── NoticeBoard.jsx            # Notices & news board
+        ├── CalendarModule.jsx         # Calendar & events module
+        ├── StoreModule.jsx            # Official club store module
+        ├── PaymentUploader.jsx        # OCR receipt reader & upload tool
+        ├── LoginScreen.jsx            # Authentication screen
+        ├── PublicRegistrationScreen.jsx # Public socio self-registration screen
+        └── PWAInstallBanner.jsx       # PWA install & Push prompt banner
 
 --------------------------------------------------------------------------------
-8. 🚀 COMANDOS ÚTILES PARA EL DESARROLLADOR / IA
+8. 🚀 DEV COMMANDS & VERIFICATION WORKFLOW
 --------------------------------------------------------------------------------
-- Probar localmente: `npm run dev`
-- Compilar para producción: `npm run build`
-- Git Workflow Mandatorio:
+- Local Development Server: `npm run dev`
+- Production Build Check: `npm run build`
+- Mandatory Git Deployment Commands:
   git add .
-  git commit -m "Descripción clara del cambio"
+  git commit -m "Descriptive commit message"
   git push origin main
 ================================================================================
