@@ -1,0 +1,12 @@
+node_modules
+node_modules/
+dist/
+build/
+.git/
+*.log
+*.lock
+package-lock.json
+mp_results.json
+logo.png
+logo_192.png
+logo_512.png

@@ -36,63 +36,6 @@ function MainApp() {
   const [cashMonto, setCashMonto] = useState(15000);
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
 
-  const [hash, setHash] = useState(window.location.hash);
-  const [touchStartPos, setTouchStartPos] = useState({ x: 0, y: 0 });
-  const [touchEndPos, setTouchEndPos] = useState({ x: 0, y: 0 });
-
-  // Swipe navigation flow dinámico por rol
-  const getRoleTabs = (role) => {
-    switch (role) {
-      case 'admin':
-        return ['users', 'calendar', 'notices', 'store', 'finance', 'settings'];
-      case 'contador':
-        return ['users', 'calendar', 'notices', 'store', 'finance'];
-      case 'coach':
-        return ['users', 'calendar', 'notices', 'store'];
-      case 'socio':
-      default:
-        return ['dashboard', 'calendar', 'notices', 'store'];
-    }
-  };
-
-  const handleTouchStart = (e) => {
-    if (!e.targetTouches || e.targetTouches.length === 0) return;
-    const touch = e.targetTouches[0];
-    setTouchStartPos({ x: touch.clientX, y: touch.clientY });
-    setTouchEndPos({ x: touch.clientX, y: touch.clientY });
-  };
-
-  const handleTouchMove = (e) => {
-    if (!e.targetTouches || e.targetTouches.length === 0) return;
-    const touch = e.targetTouches[0];
-    setTouchEndPos({ x: touch.clientX, y: touch.clientY });
-  };
-
-  const handleTouchEnd = () => {
-    const deltaX = touchStartPos.x - touchEndPos.x;
-    const deltaY = Math.abs(touchStartPos.y - touchEndPos.y);
-
-    if (Math.abs(deltaX) > 45 && Math.abs(deltaX) > deltaY * 1.3) {
-      const isLeftSwipe = deltaX > 0;
-      const isRightSwipe = deltaX < 0;
-
-      const roleTabs = getRoleTabs(currentUser?.rol || 'socio');
-      let currentIdx = roleTabs.indexOf(currentTab);
-      if (currentIdx === -1 && currentTab === 'dashboard' && currentUser?.rol !== 'socio') {
-        currentIdx = roleTabs.indexOf('users');
-      }
-
-      if (currentIdx !== -1) {
-        if (isLeftSwipe && currentIdx < roleTabs.length - 1) {
-          setCurrentTab(roleTabs[currentIdx + 1]);
-        }
-        if (isRightSwipe && currentIdx > 0) {
-          setCurrentTab(roleTabs[currentIdx - 1]);
-        }
-      }
-    }
-  };
-
   useEffect(() => {
     const handleHashChange = () => setHash(window.location.hash);
     window.addEventListener('hashchange', handleHashChange);
@@ -190,10 +133,7 @@ function MainApp() {
         <Navbar currentTab={currentTab} setCurrentTab={setCurrentTab} />
 
         <main 
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-28 md:pb-12 touch-pan-y"
+          className="flex-1 overflow-y-auto max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-28 md:pb-12"
         >
           {renderContent()}
 

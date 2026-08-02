@@ -1,7 +1,7 @@
 # 📌 MEMORIA OFICIAL DEL PROYECTO: HAEDO FUTSAL APP
-**Última actualización:** 31 de Julio de 2026
+**Última actualización:** 2 de Agosto de 2026
 
-Este documento contiene la arquitectura del proyecto, la memoria técnica y la **directiva oficial del modo de trabajo**. **Consultar este archivo al iniciar cualquier nueva sesión de chat.**
+Este documento contiene la arquitectura del proyecto, la memoria técnica y la **directiva oficial del modo de trabajo**. **Consultar este archivo y `proyect_context.txt` al iniciar cualquier nueva sesión de chat.**
 
 ---
 
@@ -49,8 +49,8 @@ Este documento contiene la arquitectura del proyecto, la memoria técnica y la *
   - Ubicación en Celular: Botón **Tienda** (`ShoppingBag`) a la derecha de **Avisos** en la barra inferior.
   - Ubicación en PC: Ítem **Tienda Oficial** en el grupo General de la barra lateral fija.
   - Contenido: Muestra el banner explicativo *"Próximamente La Tienda oficial del Club"*.
-- **Navegación Táctil Horizontal (Swipe)**:
-  - Soporte de gestos en celular para deslizar horizontalmente la pantalla entre **Inicio ↔ Calendario ↔ Avisos ↔ Tienda**.
+- **Navegación Táctil (Swipe Eliminado)**:
+  - **REMOVIDO EL SWIPE HORIZONTAL**: Se eliminó la navegación táctil horizontal por gestos para evitar inconvenientes en celulares y permitir un desplazamiento vertical fluido.
 - **Barra Lateral Fija en PC (`Sidebar.jsx`)**:
   - La barra lateral permanece inmóvil (`sticky top-0 h-screen`) al hacer scroll vertical en el contenido del panel derecho.
 
