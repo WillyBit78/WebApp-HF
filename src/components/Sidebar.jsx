@@ -7,6 +7,7 @@ import {
   Bell, 
   Settings, 
   Wallet, 
+  History,
   ShieldCheck,
   LogOut,
   Trophy,
@@ -37,6 +38,7 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
       items: [
         { id: 'users', label: 'Gestión de Socios', icon: Users, roles: ['admin', 'contador', 'coach'] },
         { id: 'finance', label: 'Finanzas', icon: Wallet, roles: ['admin', 'contador'] },
+        { id: 'audit-logs', label: 'Logs y Auditoría', icon: History, roles: ['admin'] },
         { id: 'settings', label: 'Ajustes del Club', icon: Settings, roles: ['admin'] },
       ]
     }

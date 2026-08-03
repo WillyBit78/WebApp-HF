@@ -124,11 +124,7 @@ export const DashboardCoach = ({ onNavigate, onOpenModalUser, onOpenModalEvent, 
       </div>
 
       {/* Dashboard Resumen 3D Interactivo para Staff */}
-      <MainDashboardSummary 
-        onNavigate={onNavigate} 
-        onOpenModalUser={onOpenModalUser} 
-        onOpenModalEvent={onOpenModalEvent} 
-      />
+      <MainDashboardSummary onNavigate={onNavigate} />
 
       {/* Modal Cobro en Efectivo por Coach */}
       {cashModalSocio && (

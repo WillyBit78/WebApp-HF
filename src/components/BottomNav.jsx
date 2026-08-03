@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Users, Calendar, Bell, Wallet, Settings, Home, ShoppingBag } from 'lucide-react';
+import { Users, Calendar, Bell, Wallet, Settings, Home, ShoppingBag, History } from 'lucide-react';
 
 export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
   const { setAuditoriaFilterStatus } = useApp();
@@ -47,6 +47,12 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
       label: 'Finanzas', 
       icon: Wallet, 
       roles: ['admin', 'contador'] 
+    },
+    { 
+      id: 'audit-logs', 
+      label: 'Logs', 
+      icon: History, 
+      roles: ['admin'] 
     },
     { 
       id: 'settings', 

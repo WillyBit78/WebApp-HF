@@ -112,6 +112,8 @@ function MainApp() {
         return <DashboardSocios onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} />;
       case 'settings':
         return <DashboardAdmin initialSubTab="configuracion" onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+      case 'audit-logs':
+        return <DashboardAdmin initialSubTab="logs" onNavigate={setCurrentTab} onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
       case 'profile':
       case 'payments':
         return <DashboardSocio />;

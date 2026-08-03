@@ -24,7 +24,6 @@ import {
   History,
   CheckCheck,
   ShieldAlert,
-  Share2,
   Eye,
   EyeOff,
   ChevronDown,
@@ -48,10 +47,9 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
     currentUser
   } = useApp();
 
-  const [activeSubTab, setActiveSubTab] = useState(initialSubTab); // 'resumen' | 'logs' | 'configuracion'
+  const view = initialSubTab; // 'resumen' | 'logs' | 'configuracion' (ruta desde App / Sidebar)
   const [editingSettings, setEditingSettings] = useState(false);
   const [settingsForm, setSettingsForm] = useState(clubSettings);
-  const [copiedLink, setCopiedLink] = useState(false);
 
   // Settings confirmation modal
   const [showConfirmSettings, setShowConfirmSettings] = useState(false);
@@ -72,14 +70,6 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const handleCopyLink = () => {
-    const url = window.location.origin + window.location.pathname + '#registro';
-    const shareText = `Haedo Futsal App\nInscribite en la App Oficial del Club!\n${url}`;
-    navigator.clipboard.writeText(shareText);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
-  };
 
   // Multi-select Filters for Audit Logs
   const [selectedEventTypes, setSelectedEventTypes] = useState([]); // [] means ALL
@@ -245,41 +235,11 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
 
   return (
     <div className="space-y-6">
-      {/* Sub Tabs */}
-      <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-3">
-        <div className="flex gap-2">
-          {[
-            { id: 'resumen', label: '📊 Dashboard Principal' },
-            { id: 'logs', label: '📋 Logs & Auditoría de Eventos' },
-            { id: 'configuracion', label: '⚙️ Parámetros del Club' }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveSubTab(tab.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeSubTab === tab.id
-                  ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Tab 1: Resumen Principal (Solamente Tarjetas de Resumen 3D) */}
-      {activeSubTab === 'resumen' && (
-        <MainDashboardSummary 
-          onNavigate={onNavigate} 
-          onOpenModalUser={onOpenModalUser}
-          onOpenModalStaff={onOpenModalStaff}
-          onOpenModalEvent={onOpenModalEvent}
-        />
+      {view === 'resumen' && (
+        <MainDashboardSummary onNavigate={onNavigate} />
       )}
 
-      {/* Tab 2: Logs & Auditoría */}
-      {activeSubTab === 'logs' && (
+      {view === 'logs' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -462,8 +422,7 @@ export const DashboardAdmin = ({ onOpenModalUser, onOpenModalStaff, onOpenModalE
         </div>
       )}
 
-      {/* Tab 3: Parámetros del Club */}
-      {activeSubTab === 'configuracion' && (
+      {view === 'configuracion' && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl max-w-2xl">
           <h3 className="font-bold text-lg text-white mb-2 flex items-center gap-2">
             <Sliders className="w-5 h-5 text-amber-400" />
