@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 
 export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
-  const { deleteUser, addOrUpdateUser, registrarLog, payments, currentUser } = useApp();
+  const { deleteUser, addOrUpdateUser, registrarLog, payments, currentUser, fetchUserPhotoUrl } = useApp();
   
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -56,6 +56,16 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
   const mergedMeta = { ...savedMeta, ...dbMeta };
   const currentPhoto = socio?.fotoRostro || socio?.fotoUrl || socio?.foto || socio?.avatar || mergedMeta.fotoRostro || '';
+
+  useEffect(() => {
+    if (socio?.id && !currentPhoto && typeof fetchUserPhotoUrl === 'function') {
+      fetchUserPhotoUrl(socio.id).then(photo => {
+        if (photo) {
+          setEditForm(prev => ({ ...prev, fotoUrl: photo }));
+        }
+      });
+    }
+  }, [socio?.id]);
 
   const [editForm, setEditForm] = useState({
     nombre: socio?.nombre || socio?.nombres || '',

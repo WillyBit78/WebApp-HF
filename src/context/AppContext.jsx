@@ -3,6 +3,7 @@ import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { fetchMercadoPagoTransfers } from '../services/mercadopago';
 import { ocrService } from '../services/ocrService';
 import { MOCK_ROLES, MOCK_USERS } from '../mockData/initialData';
+import { uploadFileToStorage, compressBase64Image } from '../lib/storageUtils';
 
 const AppContext = createContext();
 
@@ -270,17 +271,21 @@ export const AppProvider = ({ children }) => {
       broadcastChannelRef.current = bcast;
     };
 
+    // Lightweight column selectors to avoid fetching heavy base64 blobs in list queries
+    const LIGHT_USER_FIELDS = 'id, dni, numero_socio, socio_id, nombre, apellido, usuario, clave, rol, categoria, estado_cuota, monto_cuota, telefono, fecha_nacimiento, hincha_de, nombre_contacto, telefono_contacto, created_at';
+    const LIGHT_PAYMENT_FIELDS = 'id, socio_id, socio_nombre, monto, numero_operacion, coelsa_id, billetera_origen, emisor_nombre, fecha_transferencia, observaciones, estado, created_at';
+
     const loadData = async () => {
       setLoadingDb(true);
       if (isSupabaseConfigured && supabase) {
         try {
           const [uRes, pRes, eRes, nRes, mRes, lRes] = await Promise.all([
-            supabase.from('users').select('*').order('created_at', { ascending: true }),
-            supabase.from('payments').select('*').order('created_at', { ascending: false }),
-            supabase.from('events').select('*').order('created_at', { ascending: false }),
-            supabase.from('notices').select('*').order('created_at', { ascending: false }),
-            supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
-            supabase.from('logs').select('*').order('created_at', { ascending: false })
+            supabase.from('users').select(LIGHT_USER_FIELDS).order('created_at', { ascending: true }),
+            supabase.from('payments').select(LIGHT_PAYMENT_FIELDS).order('created_at', { ascending: false }).limit(100),
+            supabase.from('events').select('*').order('created_at', { ascending: false }).limit(50),
+            supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(50),
+            supabase.from('movimientos').select('*').order('created_at', { ascending: false }).limit(100),
+            supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50)
           ]);
           if (uRes.data && uRes.data.length > 0) {
             const loadedUsers = uRes.data.map(normalizeKeys);
@@ -359,11 +364,11 @@ export const AppProvider = ({ children }) => {
       if (!isSupabaseConfigured || !supabase) return;
       try {
         const [uRes, pRes, mRes, lRes, nRes] = await Promise.all([
-          supabase.from('users').select('*').order('created_at', { ascending: true }),
-          supabase.from('payments').select('*').order('created_at', { ascending: false }),
-          supabase.from('movimientos').select('*').order('created_at', { ascending: false }),
-          supabase.from('logs').select('*').order('created_at', { ascending: false }),
-          supabase.from('notices').select('*').order('created_at', { ascending: false })
+          supabase.from('users').select(LIGHT_USER_FIELDS).order('created_at', { ascending: true }),
+          supabase.from('payments').select(LIGHT_PAYMENT_FIELDS).order('created_at', { ascending: false }).limit(100),
+          supabase.from('movimientos').select('*').order('created_at', { ascending: false }).limit(100),
+          supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50),
+          supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(50)
         ]);
         if (uRes.data) {
           setUsers(uRes.data.map(normalizeKeys));
@@ -396,13 +401,24 @@ export const AppProvider = ({ children }) => {
       clearTimeout(dbLoadingSafetyTimer);
     });
 
-    // Auto-sincronización en segundo plano cada 5 segundos para actualización instantánea sin F5
-    const syncInterval = setInterval(() => {
-      refreshDataSilent();
-    }, 5000);
+    // Smart throttled refresh on window focus (at most once every 2 minutes) instead of aggressive 5s polling
+    let lastSyncTimestamp = Date.now();
+    const handleWindowFocus = () => {
+      if (Date.now() - lastSyncTimestamp > 120000) {
+        lastSyncTimestamp = Date.now();
+        refreshDataSilent();
+      }
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') handleWindowFocus();
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
 
     return () => {
-      clearInterval(syncInterval);
+      window.removeEventListener('focus', handleWindowFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
       if (channel && isSupabaseConfigured && supabase) {
         supabase.removeChannel(channel);
       }
@@ -835,73 +851,84 @@ export const AppProvider = ({ children }) => {
       numeroSocio: userData.numeroSocio || (users.length + 201)
     };
 
+    let finalPhoto = newUser.fotoRostro || newUser.fotoUrl || newUser.foto || '';
+    if (finalPhoto && finalPhoto.startsWith('data:')) {
+      try {
+        finalPhoto = await uploadFileToStorage(
+          finalPhoto,
+          'avatars',
+          `avatar_${newUser.id || Date.now()}.jpg`
+        );
+      } catch (e) {}
+    }
+    const userToSave = { ...newUser, fotoRostro: finalPhoto };
+
     if (isEdit) {
-      setUsers(prev => prev.map(u => u.id === newUser.id ? newUser : u));
-      if (currentUser && currentUser.id === newUser.id) setCurrentUser(newUser);
+      setUsers(prev => prev.map(u => u.id === userToSave.id ? userToSave : u));
+      if (currentUser && currentUser.id === userToSave.id) setCurrentUser(userToSave);
 
       if (isSupabaseConfigured && supabase) {
         try {
           const dbUserPayload = {
-            id: newUser.id,
-            numeroSocio: newUser.numeroSocio,
-            nombre: newUser.nombre,
-            apellido: `${newUser.apellido || ''}${newUser.telefono ? ` | Tel: ${newUser.telefono}` : ''}`,
-            usuario: newUser.usuario || newUser.dni || newUser.id,
-            clave: newUser.clave,
-            rol: newUser.rol || 'socio',
-            categoria: newUser.categoria || 'BAFI Femenino (1ra)',
-            estadoCuota: newUser.estadoCuota || 'pendiente',
-            montoCuota: Number(newUser.montoCuota) || 0
+            id: userToSave.id,
+            numeroSocio: userToSave.numeroSocio,
+            nombre: userToSave.nombre,
+            apellido: `${userToSave.apellido || ''}${userToSave.telefono ? ` | Tel: ${userToSave.telefono}` : ''}`,
+            usuario: userToSave.usuario || userToSave.dni || userToSave.id,
+            clave: userToSave.clave,
+            rol: userToSave.rol || 'socio',
+            categoria: userToSave.categoria || 'BAFI Femenino (1ra)',
+            estadoCuota: userToSave.estadoCuota || 'pendiente',
+            montoCuota: Number(userToSave.montoCuota) || 0,
+            foto_rostro: finalPhoto
           };
           await supabase.from('users').upsert([dbUserPayload]).catch(console.warn);
         } catch (err) {
           console.warn("Supabase update catch error:", err);
         }
       }
-      registrarLog('modificacion_usuario', `Modificación de usuario (${newUser.nombre} ${newUser.apellido})`, `Rol: ${newUser.rol}`);
+      registrarLog('modificacion_usuario', `Modificación de usuario (${userToSave.nombre} ${userToSave.apellido})`, `Rol: ${userToSave.rol}`);
     } else {
-      setUsers(prev => [...prev, newUser]);
+      setUsers(prev => [...prev, userToSave]);
 
       if (isSupabaseConfigured && supabase) {
         try {
-          const cleanNombre = (newUser.nombre || newUser.nombres || 'Socio').trim();
-          const cleanApellido = (newUser.apellido || '').trim();
-          const cleanUsuario = (newUser.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}` || `SOCIO${Date.now().toString().slice(-4)}`).toUpperCase();
+          const cleanNombre = (userToSave.nombre || userToSave.nombres || 'Socio').trim();
+          const cleanApellido = (userToSave.apellido || '').trim();
+          const cleanUsuario = (userToSave.usuario || `${cleanNombre.charAt(0)}${cleanApellido.replace(/\s+/g, '')}` || `SOCIO${Date.now().toString().slice(-4)}`).toUpperCase();
 
           // Respaldo local inquebrantable de metadatos del socio por ID y DNI
           const fullMetadata = {
-            fechaNacimiento: newUser.fechaNacimiento || newUser.fecha_nacimiento || '',
-            hinchaDe: newUser.hinchaDe || newUser.hincha_de || 'Haedo Futsal',
-            nombreContacto: newUser.nombreContacto || newUser.nombre_contacto || '',
-            telefonoContacto: newUser.telefonoContacto || newUser.telefono_contacto || '',
-            fotoRostro: newUser.fotoRostro || newUser.fotoUrl || newUser.foto || ''
+            fechaNacimiento: userToSave.fechaNacimiento || userToSave.fecha_nacimiento || '',
+            hinchaDe: userToSave.hinchaDe || userToSave.hincha_de || 'Haedo Futsal',
+            nombreContacto: userToSave.nombreContacto || userToSave.nombre_contacto || '',
+            telefonoContacto: userToSave.telefonoContacto || userToSave.telefono_contacto || '',
+            fotoRostro: finalPhoto
           };
           
           try {
-            const metaKey = `socio_meta_${newUser.dni || newUser.usuario || newUser.id}`;
+            const metaKey = `socio_meta_${userToSave.dni || userToSave.usuario || userToSave.id}`;
             localStorage.setItem(metaKey, JSON.stringify(fullMetadata));
           } catch (e) {}
 
-          const metaString = JSON.stringify(fullMetadata);
-
           const dbUserPayload = {
-            id: newUser.id,
-            numeroSocio: newUser.numeroSocio || (users.length + 201),
+            id: userToSave.id,
+            numeroSocio: userToSave.numeroSocio || (users.length + 201),
             nombre: cleanNombre,
             apellido: cleanApellido,
             usuario: cleanUsuario,
-            clave: (newUser.clave || '1234').toString().slice(0, 4),
-            rol: newUser.rol || 'socio',
-            categoria: newUser.categoria || 'BAFI Femenino (1ra)',
-            estadoCuota: newUser.estadoCuota || 'pendiente',
-            montoCuota: Number(newUser.montoCuota) || 0,
-            dni: newUser.dni || '',
-            telefono: newUser.telefono || '',
-            fecha_nacimiento: newUser.fechaNacimiento || newUser.fecha_nacimiento || '',
-            hincha_de: newUser.hinchaDe || newUser.hincha_de || 'Haedo Futsal',
-            nombre_contacto: newUser.nombreContacto || newUser.nombre_contacto || '',
-            telefono_contacto: newUser.telefonoContacto || newUser.telefono_contacto || '',
-            foto_rostro: newUser.fotoRostro || newUser.fotoUrl || newUser.foto || ''
+            clave: (userToSave.clave || '1234').toString().slice(0, 4),
+            rol: userToSave.rol || 'socio',
+            categoria: userToSave.categoria || 'BAFI Femenino (1ra)',
+            estadoCuota: userToSave.estadoCuota || 'pendiente',
+            montoCuota: Number(userToSave.montoCuota) || 0,
+            dni: userToSave.dni || '',
+            telefono: userToSave.telefono || '',
+            fecha_nacimiento: userToSave.fechaNacimiento || userToSave.fecha_nacimiento || '',
+            hincha_de: userToSave.hinchaDe || userToSave.hincha_de || 'Haedo Futsal',
+            nombre_contacto: userToSave.nombreContacto || userToSave.nombre_contacto || '',
+            telefono_contacto: userToSave.telefonoContacto || userToSave.telefono_contacto || '',
+            foto_rostro: finalPhoto
           };
 
           const { error } = await supabase.from('users').upsert([dbUserPayload]);
@@ -954,9 +981,73 @@ export const AppProvider = ({ children }) => {
     if (target) registrarLog('baja_usuario', `Baja de usuario (${target.nombre || ''} ${target.apellido || ''})`, `Rol: ${target.rol}`);
   };
 
+  // On-demand fetch of heavy payment receipt blob / storage URL
+  const fetchPaymentReceiptUrl = async (paymentId) => {
+    if (!paymentId) return null;
+    const existing = payments.find(p => p.id === paymentId);
+    if (existing && existing.comprobanteUrl && existing.comprobanteUrl.length > 0) {
+      return existing.comprobanteUrl;
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase
+          .from('payments')
+          .select('comprobante_url, comprobanteUrl')
+          .eq('id', paymentId)
+          .single();
+        if (data) {
+          const url = data.comprobanteUrl || data.comprobante_url || '';
+          if (url) {
+            setPayments(prev => prev.map(p => p.id === paymentId ? { ...p, comprobanteUrl: url } : p));
+            return url;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch payment receipt URL on-demand:", e);
+      }
+    }
+    return existing?.comprobanteUrl || null;
+  };
+
+  // On-demand fetch of heavy user face photo / storage URL
+  const fetchUserPhotoUrl = async (userId) => {
+    if (!userId) return null;
+    const existing = users.find(u => u.id === userId);
+    if (existing && existing.fotoRostro && existing.fotoRostro.length > 0) {
+      return existing.fotoRostro;
+    }
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('foto_rostro, fotoRostro, foto_url')
+          .eq('id', userId)
+          .single();
+        if (data) {
+          const photo = data.fotoRostro || data.foto_rostro || data.foto_url || '';
+          if (photo) {
+            setUsers(prev => prev.map(u => u.id === userId ? { ...u, fotoRostro: photo } : u));
+            return photo;
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch user photo on-demand:", e);
+      }
+    }
+    return existing?.fotoRostro || null;
+  };
+
   // Payments
   const uploadPaymentReceipt = async (receiptData, targetSocioOverride = null) => {
     const targetUser = targetSocioOverride || currentUser;
+    let finalComprobanteUrl = receiptData.comprobanteUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80';
+    if (finalComprobanteUrl && finalComprobanteUrl.startsWith('data:')) {
+      finalComprobanteUrl = await uploadFileToStorage(
+        finalComprobanteUrl,
+        'receipts',
+        `receipt_${targetUser.id}_${Date.now()}.jpg`
+      );
+    }
     const newPayment = {
       id: `pay-${Date.now()}`,
       socioId: targetUser.id,
@@ -966,7 +1057,7 @@ export const AppProvider = ({ children }) => {
       billeteraOrigen: receiptData.billeteraOrigen || 'Mercado Pago',
       emisorNombre: receiptData.emisorNombre || `${targetUser.nombre}`,
       fechaTransferencia: receiptData.fechaTransferencia || new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
-      comprobanteUrl: receiptData.comprobanteUrl || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80',
+      comprobanteUrl: finalComprobanteUrl,
       estado: receiptData.estado || 'en_revision',
       observaciones: receiptData.observaciones || 'Comprobante subido desde app.'
     };
@@ -1427,7 +1518,7 @@ export const AppProvider = ({ children }) => {
       cuotasPorDisciplina, updateCuotaDisciplina,
       clubSettings, setClubSettings,
       roles: MOCK_ROLES,
-      uploadPaymentReceipt, updatePaymentStatus, deletePayment,
+      uploadPaymentReceipt, updatePaymentStatus, deletePayment, fetchPaymentReceiptUrl, fetchUserPhotoUrl,
       addOrUpdateUser, deleteUser,
       addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead, toggleNoticeRead,
       registerPushSubscription,

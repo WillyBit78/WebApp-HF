@@ -54,6 +54,7 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
     updateCuotaDisciplina,
     deletePayment,
     updatePaymentStatus,
+    fetchPaymentReceiptUrl,
     auditoriaFilterStatus,
     setAuditoriaFilterStatus,
     markNotificationsAsViewed,
@@ -76,6 +77,19 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
   };
   const [showCuotasModal, setShowCuotasModal] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState(null);
+
+  const handleViewReceipt = async (p) => {
+    if (p?.comprobanteUrl && p.comprobanteUrl.length > 20) {
+      setSelectedReceipt(p.comprobanteUrl);
+      return;
+    }
+    if (typeof fetchPaymentReceiptUrl === 'function' && p?.id) {
+      const url = await fetchPaymentReceiptUrl(p.id);
+      setSelectedReceipt(url || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80');
+    } else {
+      setSelectedReceipt('https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400&q=80');
+    }
+  };
   const [selectedPayments, setSelectedPayments] = useState([]);
   const [isZoomed, setIsZoomed] = useState(false);
   const [mpFilter, setMpFilter] = useState('sin_conciliar');
@@ -919,7 +933,7 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3 border-t border-slate-800 w-full">
                       <button
                         type="button"
-                        onClick={() => setSelectedReceipt(p.comprobanteUrl)}
+                        onClick={() => handleViewReceipt(p)}
                         className="w-full px-2 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
                         <Eye className="w-4 h-4 text-amber-400 shrink-0" /> Ver Captura
