@@ -5,27 +5,26 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-async function testAll() {
-  const [uRes, pRes, eRes, nRes, mRes, lRes] = await Promise.all([
-    supabase.from('users').select('*').order('created_at', { ascending: true }),
-    supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
-    supabase.from('events').select('*').order('created_at', { ascending: false }).limit(50),
-    supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(50),
-    supabase.from('movimientos').select('*').order('created_at', { ascending: false }).limit(100),
-    supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50)
-  ]);
+async function testLogs() {
+  const testLog = {
+    id: `log-test-${Date.now()}`,
+    created_at: new Date().toISOString(),
+    fechaHora: new Date().toLocaleString(),
+    usuarioNombre: 'Test User',
+    usuarioRol: 'admin',
+    tipoEvento: 'test_event',
+    descripcion: 'Test log description',
+    detalles: 'Test log details'
+  };
 
-  console.log('users error:', uRes.error, 'count:', uRes.data?.length);
-  console.log('payments error:', pRes.error, 'count:', pRes.data?.length);
-  console.log('events error:', eRes.error, 'count:', eRes.data?.length);
-  console.log('notices error:', nRes.error, 'count:', nRes.data?.length);
-  console.log('movimientos error:', mRes.error, 'count:', mRes.data?.length);
-  console.log('logs error:', lRes.error, 'count:', lRes.data?.length);
+  console.log('Testing logs insert with camelCase fields...');
+  const res1 = await supabase.from('logs').insert([testLog]);
+  console.log('res1 Error:', res1.error);
 
-  if (uRes.data) {
-    console.log('\nUsers found:');
-    uRes.data.forEach(u => console.log(`- ID: ${u.id} | Nombre: ${u.nombre} ${u.apellido} | Rol: ${u.rol}`));
-  }
+  console.log('\nFetching last 5 logs...');
+  const res2 = await supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(5);
+  console.log('res2 Error:', res2.error);
+  console.log('Last logs:', res2.data);
 }
 
-testAll();
+testLogs();

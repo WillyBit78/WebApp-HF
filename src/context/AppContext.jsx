@@ -260,12 +260,27 @@ export const AppProvider = ({ children }) => {
         )
         .subscribe();
 
-      // Broadcast channel for notice deletion
-      const bcast = supabase.channel('haedo-notices-broadcast');
+      // Broadcast channel for global real-time notifications (logs, payments, notices)
+      const bcast = supabase.channel('haedo-app-broadcast');
       bcast
         .on('broadcast', { event: 'notice_deleted' }, ({ payload }) => {
           if (!payload?.id) return;
           setNotices(prev => prev.filter(n => n.id !== payload.id));
+        })
+        .on('broadcast', { event: 'new_log' }, ({ payload }) => {
+          if (payload?.id) {
+            const norm = normalizeKeys(payload);
+            setLogs(prev => prev.some(l => l.id === norm.id) ? prev : [norm, ...prev]);
+          }
+        })
+        .on('broadcast', { event: 'clear_logs' }, () => {
+          setLogs([]);
+        })
+        .on('broadcast', { event: 'new_payment' }, ({ payload }) => {
+          if (payload?.id) {
+            const norm = normalizeKeys(payload);
+            setPayments(prev => prev.some(p => p.id === norm.id) ? prev : [norm, ...prev]);
+          }
         })
         .subscribe();
       broadcastChannelRef.current = bcast;
@@ -600,6 +615,14 @@ export const AppProvider = ({ children }) => {
           detalles: newLog.detalles
         };
         await supabase.from('logs').insert([dbLogPayload]);
+
+        if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'new_log',
+            payload: dbLogPayload
+          }).catch(() => {});
+        }
       } catch (err) {
         console.warn("Supabase log insert error:", err);
       }
@@ -612,6 +635,12 @@ export const AppProvider = ({ children }) => {
     if (isSupabaseConfigured && supabase) {
       try {
         await supabase.from('logs').delete().neq('id', 'clear_sentinel');
+        if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'clear_logs'
+          }).catch(() => {});
+        }
       } catch (err) {
         console.warn("Supabase clear logs error:", err);
       }
@@ -1111,6 +1140,13 @@ export const AppProvider = ({ children }) => {
           supabase.from('payments').insert([newPayment]),
           supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', targetUser.id)
         ]);
+        if (broadcastChannelRef.current) {
+          broadcastChannelRef.current.send({
+            type: 'broadcast',
+            event: 'new_payment',
+            payload: newPayment
+          }).catch(() => {});
+        }
       } catch (err) {
         console.warn("Supabase payment insert error:", err);
       }
