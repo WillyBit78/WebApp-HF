@@ -271,17 +271,13 @@ export const AppProvider = ({ children }) => {
       broadcastChannelRef.current = bcast;
     };
 
-    // Lightweight column selectors to avoid fetching heavy base64 blobs in list queries
-    const LIGHT_USER_FIELDS = 'id, dni, numero_socio, socio_id, nombre, apellido, usuario, clave, rol, categoria, estado_cuota, monto_cuota, telefono, fecha_nacimiento, hincha_de, nombre_contacto, telefono_contacto, created_at';
-    const LIGHT_PAYMENT_FIELDS = 'id, socio_id, socio_nombre, monto, numero_operacion, coelsa_id, billetera_origen, emisor_nombre, fecha_transferencia, observaciones, estado, created_at';
-
     const loadData = async () => {
       setLoadingDb(true);
       if (isSupabaseConfigured && supabase) {
         try {
           const [uRes, pRes, eRes, nRes, mRes, lRes] = await Promise.all([
-            supabase.from('users').select(LIGHT_USER_FIELDS).order('created_at', { ascending: true }),
-            supabase.from('payments').select(LIGHT_PAYMENT_FIELDS).order('created_at', { ascending: false }).limit(100),
+            supabase.from('users').select('*').order('created_at', { ascending: true }),
+            supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
             supabase.from('events').select('*').order('created_at', { ascending: false }).limit(50),
             supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(50),
             supabase.from('movimientos').select('*').order('created_at', { ascending: false }).limit(100),
@@ -364,8 +360,8 @@ export const AppProvider = ({ children }) => {
       if (!isSupabaseConfigured || !supabase) return;
       try {
         const [uRes, pRes, mRes, lRes, nRes] = await Promise.all([
-          supabase.from('users').select(LIGHT_USER_FIELDS).order('created_at', { ascending: true }),
-          supabase.from('payments').select(LIGHT_PAYMENT_FIELDS).order('created_at', { ascending: false }).limit(100),
+          supabase.from('users').select('*').order('created_at', { ascending: true }),
+          supabase.from('payments').select('*').order('created_at', { ascending: false }).limit(100),
           supabase.from('movimientos').select('*').order('created_at', { ascending: false }).limit(100),
           supabase.from('logs').select('*').order('created_at', { ascending: false }).limit(50),
           supabase.from('notices').select('*').order('created_at', { ascending: false }).limit(50)
