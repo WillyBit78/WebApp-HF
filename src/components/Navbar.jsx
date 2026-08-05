@@ -54,12 +54,14 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  const unreadAprobados = payments.filter(p => p.estado === 'aprobado' && !viewedPaymentIds.includes(p.id)).length;
-  const unreadEnRevision = payments.filter(p => p.estado === 'en_revision' && !viewedPaymentIds.includes(p.id)).length;
-  const unreadRechazados = payments.filter(p => p.estado === 'rechazado' && !viewedPaymentIds.includes(p.id)).length;
+  const viewedPaymentStringIds = viewedPaymentIds.map(String);
+  const unreadAprobados = payments.filter(p => p.estado === 'aprobado' && !viewedPaymentStringIds.includes(String(p.id))).length;
+  const unreadEnRevision = payments.filter(p => p.estado === 'en_revision' && !viewedPaymentStringIds.includes(String(p.id))).length;
+  const unreadRechazados = payments.filter(p => p.estado === 'rechazado' && !viewedPaymentStringIds.includes(String(p.id))).length;
 
   const visibleNotices = getNoticesForUser ? getNoticesForUser(currentUser) : notices;
-  const unreadNoticesCount = visibleNotices.filter(n => !readNoticeIds.includes(n.id)).length;
+  const readNoticeStringIds = readNoticeIds.map(String);
+  const unreadNoticesCount = visibleNotices.filter(n => !readNoticeStringIds.includes(String(n.id))).length;
 
   const handleNotificationClick = (status) => {
     if (currentUser?.rol !== 'admin' && currentUser?.rol !== 'contador') return;

@@ -771,10 +771,11 @@ export const AppProvider = ({ children }) => {
     const cleanStatus = typeof status === 'object' ? status.status : status;
     const matchingPaymentIds = payments
       .filter(p => p.estado === cleanStatus)
-      .map(p => p.id);
+      .map(p => String(p.id));
 
     setViewedPaymentIds(prev => {
-      const newSet = new Set([...prev, ...matchingPaymentIds]);
+      const stringPrev = prev.map(String);
+      const newSet = new Set([...stringPrev, ...matchingPaymentIds]);
       const updated = Array.from(newSet);
       try { localStorage.setItem('haedo_viewed_payment_ids', JSON.stringify(updated)); } catch (e) {}
       return updated;
@@ -1516,9 +1517,10 @@ export const AppProvider = ({ children }) => {
 
   const markAllNoticesAsRead = (user = null) => {
     const userNotices = getNoticesForUser(user || currentUser);
-    const userNoticeIds = userNotices.map(n => n.id);
+    const userNoticeIds = userNotices.map(n => String(n.id));
     setReadNoticeIds(prev => {
-      const newSet = new Set([...prev, ...userNoticeIds]);
+      const stringPrev = prev.map(String);
+      const newSet = new Set([...stringPrev, ...userNoticeIds]);
       const updated = Array.from(newSet);
       try { localStorage.setItem('haedo_read_notice_ids', JSON.stringify(updated)); } catch (e) {}
       return updated;

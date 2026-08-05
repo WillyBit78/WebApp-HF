@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import { isSameMonthAndYear } from '../utils/dateUtils';
 import { 
   Wallet, 
-  Users, 
   Clock, 
   CheckCircle2, 
   TrendingUp, 
@@ -11,10 +10,8 @@ import {
   ArrowDownRight, 
   PieChart, 
   ShieldCheck,
-  Trophy,
-  Baby,
-  Heart,
-  Shield
+  Bell,
+  Megaphone
 } from 'lucide-react';
 
 export const MainDashboardSummary = ({ onNavigate }) => {
@@ -22,6 +19,7 @@ export const MainDashboardSummary = ({ onNavigate }) => {
     users = [], 
     payments = [], 
     movimientosFinancieros = [], 
+    notices = [],
     currentUser,
     openAuditoriaStatus,
     setAuditoriaFilterStatus
@@ -37,13 +35,11 @@ export const MainDashboardSummary = ({ onNavigate }) => {
   const sociosPendientes = totalSocios - sociosAlDia;
   const pctAlDia = totalSocios > 0 ? Math.round((sociosAlDia / totalSocios) * 100) : 0;
 
-  // Disciplinas stats
-  const countBaby = socios.filter(s => (s.categoria || '').toLowerCase().includes('baby')).length;
-  const countMasc = socios.filter(s => (s.categoria || '').toLowerCase().includes('masculino') || (s.categoria || '').toLowerCase().includes('promo')).length;
-  const countFem = socios.filter(s => (s.categoria || '').toLowerCase().includes('femenino')).length;
-  const countMayores = socios.filter(s => (s.categoria || '').toLowerCase().includes('mayores') || (s.categoria || '').includes('+')).length;
+  // 2. Comunicados stats
+  const totalNoticesCount = notices.length;
+  const lastNotice = notices[0];
 
-  // 2. Cálculo de Finanzas del Mes Actual usando dateUtils
+  // 3. Cálculo de Finanzas del Mes Actual usando dateUtils
   const pagosAprobadosMes = payments.filter(p => p.estado === 'aprobado' && isSameMonthAndYear(p.fecha || p.created_at));
   const totalPagosMes = pagosAprobadosMes.reduce((sum, p) => sum + Number(p.monto || 0), 0);
 
@@ -58,7 +54,7 @@ export const MainDashboardSummary = ({ onNavigate }) => {
 
   const balanceMesNeto = ingresosMesTotal - gastosMesTotal;
 
-  // 3. Comprobantes pendientes de revisión
+  // 4. Comprobantes pendientes de revisión
   const comprobantesPendientes = payments.filter(p => p.estado === 'en_revision');
   const totalPendientesCount = comprobantesPendientes.length;
 
@@ -75,6 +71,10 @@ export const MainDashboardSummary = ({ onNavigate }) => {
     if (onNavigate) onNavigate('users');
   };
 
+  const handleGoToNotices = () => {
+    if (onNavigate) onNavigate('notices');
+  };
+
   const handleGoToAuditoria = () => {
     if (!isStaffAdmin) return;
     if (openAuditoriaStatus) {
@@ -88,55 +88,10 @@ export const MainDashboardSummary = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       
-      {/* Grid de Tarjetas Interactivas de Resumen (Role-based) - Layout Ampliado */}
+      {/* Grid de Tarjetas Interactivas del Panel Principal */}
       <div className={`grid grid-cols-1 ${isStaffAdmin ? 'sm:grid-cols-2 lg:grid-cols-4' : 'sm:grid-cols-2'} gap-5`}>
         
-        {/* CARD 1: SECTOR FINANZAS - BALANCE DEL MES (Solo Staff Admin / Contador) */}
-        {isStaffAdmin && (
-          <div 
-            onClick={handleGoToFinance}
-            className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div>
-                <span className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <Wallet className="w-4 h-4 text-emerald-400" />
-                  Sector Finanzas
-                </span>
-                <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Balance Neto del Mes</h4>
-              </div>
-              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-            </div>
-
-            <div className="my-3">
-              <div className={`text-3xl sm:text-4xl font-black tracking-tight ${balanceMesNeto >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                ${balanceMesNeto.toLocaleString('es-AR')}
-              </div>
-            </div>
-
-            <div className="space-y-2 pt-3 border-t border-slate-800/80">
-              <div className="flex items-center justify-between text-xs font-bold">
-                <div className="flex items-center gap-1 text-emerald-400">
-                  <ArrowUpRight className="w-3.5 h-3.5" />
-                  <span>Ingresos: ${ingresosMesTotal.toLocaleString('es-AR')}</span>
-                </div>
-                <div className="flex items-center gap-1 text-rose-400">
-                  <ArrowDownRight className="w-3.5 h-3.5" />
-                  <span>Gastos: ${gastosMesTotal.toLocaleString('es-AR')}</span>
-                </div>
-              </div>
-
-              <div className="pt-2 text-[11px] text-amber-400 font-bold flex items-center justify-between group-hover:text-amber-300">
-                <span>Ver Balance General Completo</span>
-                <span className="group-hover:translate-x-1 transition-transform">→</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* CARD 2: SECTOR SOCIOS - GRÁFICO CIRCULAR 3D DE CUOTAS AL DÍA */}
+        {/* CARD 1: ESTADO DE CUOTAS MENSUAL */}
         <div 
           onClick={handleGoToSocios}
           className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-amber-500/50 p-5 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
@@ -145,7 +100,7 @@ export const MainDashboardSummary = ({ onNavigate }) => {
             <div>
               <span className="text-[11px] font-extrabold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                 <PieChart className="w-4 h-4 text-amber-400" />
-                Estado de Cuotas Social
+                Estado de Cuotas Mensual
               </span>
               <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Socios al Día</h4>
             </div>
@@ -160,17 +115,16 @@ export const MainDashboardSummary = ({ onNavigate }) => {
             <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
               <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_8px_16px_rgba(16,185,129,0.3)]" viewBox="0 0 100 100">
                 <defs>
-                  <linearGradient id="donutGrad3D" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <linearGradient id="donutGrad3DMain" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#10b981" />
                     <stop offset="50%" stopColor="#06b6d4" />
                     <stop offset="100%" stopColor="#3b82f6" />
                   </linearGradient>
-                  <filter id="shadow3D" x="-20%" y="-20%" width="140%" height="140%">
+                  <filter id="shadow3DMain" x="-20%" y="-20%" width="140%" height="140%">
                     <feDropShadow dx="1" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.6" />
                   </filter>
                 </defs>
 
-                {/* Inner track */}
                 <circle
                   cx="50"
                   cy="50"
@@ -191,23 +145,21 @@ export const MainDashboardSummary = ({ onNavigate }) => {
                   fill="transparent"
                 />
 
-                {/* Animated 3D Ring */}
                 <circle
                   cx="50"
                   cy="50"
                   r={radius}
-                  stroke="url(#donutGrad3D)"
+                  stroke="url(#donutGrad3DMain)"
                   strokeWidth="9"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
                   fill="transparent"
-                  filter="url(#shadow3D)"
+                  filter="url(#shadow3DMain)"
                   className="transition-all duration-1000 ease-out"
                 />
               </svg>
 
-              {/* Center percentage badge */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
                 <span className="text-lg font-black text-white leading-none tracking-tight">{pctAlDia}%</span>
                 <span className="text-[9px] font-black text-emerald-400 uppercase mt-0.5 tracking-wider">AL DÍA</span>
@@ -254,46 +206,96 @@ export const MainDashboardSummary = ({ onNavigate }) => {
           </div>
         </div>
 
-        {/* CARD 3: CANTIDAD DE SOCIOS ACTIVOS & DISCIPLINAS */}
+        {/* CARD 2: DASHBOARD RESUMIDO DE COMUNICADOS / AVISOS */}
         <div 
-          onClick={handleGoToSocios}
-          className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-blue-500/50 p-5 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
+          onClick={handleGoToNotices}
+          className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-sky-500/50 p-5 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
         >
           <div className="flex justify-between items-start mb-2">
             <div>
-              <span className="text-[11px] font-extrabold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-400" />
-                Socios Activos
+              <span className="text-[11px] font-extrabold text-sky-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Bell className="w-4 h-4 text-sky-400" />
+                Comunicados del Club
               </span>
-              <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Padrón de Miembros del Club</h4>
+              <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Avisos y Novedades</h4>
             </div>
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl group-hover:scale-110 group-hover:bg-blue-500/20 transition-all">
-              <Users className="w-5 h-5" />
-            </div>
-          </div>
-
-          <div className="my-2">
-            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-              {totalSocios} <span className="text-sm font-semibold text-blue-300">Socios Activos</span>
+            <div className="p-3 bg-sky-500/10 border border-sky-500/20 text-sky-400 rounded-2xl group-hover:scale-110 group-hover:bg-sky-500/20 transition-all">
+              <Megaphone className="w-5 h-5" />
             </div>
           </div>
 
-          <div className="space-y-1.5 pt-3 border-t border-slate-800/80 text-[11px]">
-            <div className="grid grid-cols-2 gap-1 text-slate-300 font-semibold">
-              <span className="flex items-center gap-1"><Baby className="w-3 h-3 text-amber-400" /> Baby: {countBaby}</span>
-              <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-blue-400" /> Masc: {countMasc}</span>
-              <span className="flex items-center gap-1"><Heart className="w-3 h-3 text-purple-400" /> Fem: {countFem}</span>
-              <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-emerald-400" /> +30: {countMayores}</span>
+          <div className="my-2 space-y-2">
+            <div className="text-3xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-2">
+              {totalNoticesCount}
+              <span className="text-sm font-semibold text-sky-300">Avisos Activos</span>
             </div>
 
-            <div className="pt-2 text-blue-400 font-bold flex items-center justify-between group-hover:text-blue-300">
-              <span>Ver Padrón Completo</span>
-              <span className="group-hover:translate-x-1 transition-transform">→</span>
-            </div>
+            {lastNotice ? (
+              <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80 space-y-1">
+                <div className="text-[10px] text-amber-400 font-bold uppercase truncate">
+                  📌 {lastNotice.titulo}
+                </div>
+                <p className="text-[11px] text-slate-300 line-clamp-1 font-medium">
+                  {lastNotice.contenido}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-400 italic">No hay avisos recientes</p>
+            )}
+          </div>
+
+          <div className="pt-2 border-t border-slate-800/80 text-[11px] text-sky-400 font-bold flex items-center justify-between group-hover:text-sky-300">
+            <span>Ver Comunicados del Club</span>
+            <span className="group-hover:translate-x-1 transition-transform">→</span>
           </div>
         </div>
 
-        {/* CARD 4: COMPROBANTES PENDIENTES DE REVISIÓN (Solo Staff Admin / Contador) */}
+        {/* CARD 3: SECTOR FINANZAS - BALANCE DEL MES (Solo Staff Admin / Contador) */}
+        {isStaffAdmin && (
+          <div 
+            onClick={handleGoToFinance}
+            className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-emerald-500/50 p-5 rounded-3xl shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1 cursor-pointer group relative overflow-hidden flex flex-col justify-between"
+          >
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <span className="text-[11px] font-extrabold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Wallet className="w-4 h-4 text-emerald-400" />
+                  Sector Finanzas
+                </span>
+                <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Balance Neto del Mes</h4>
+              </div>
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl group-hover:scale-110 group-hover:bg-emerald-500/20 transition-all">
+                <TrendingUp className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="my-3">
+              <div className={`text-3xl sm:text-4xl font-black tracking-tight ${balanceMesNeto >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                ${balanceMesNeto.toLocaleString('es-AR')}
+              </div>
+            </div>
+
+            <div className="space-y-2 pt-3 border-t border-slate-800/80">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <div className="flex items-center gap-1 text-emerald-400">
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                  <span>Ingresos: ${ingresosMesTotal.toLocaleString('es-AR')}</span>
+                </div>
+                <div className="flex items-center gap-1 text-rose-400">
+                  <ArrowDownRight className="w-3.5 h-3.5" />
+                  <span>Gastos: ${gastosMesTotal.toLocaleString('es-AR')}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 text-[11px] text-emerald-400 font-bold flex items-center justify-between group-hover:text-emerald-300">
+                <span>Ver Balance General Completo</span>
+                <span className="group-hover:translate-x-1 transition-transform">→</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CARD 4: AUDITORÍA DE PAGOS (Solo Staff Admin / Contador) */}
         {isStaffAdmin && (
           <div 
             onClick={handleGoToAuditoria}
@@ -307,7 +309,7 @@ export const MainDashboardSummary = ({ onNavigate }) => {
               <div>
                 <span className="text-[11px] font-extrabold text-purple-400 uppercase tracking-wider flex items-center gap-1.5">
                   <Clock className="w-4 h-4 text-purple-400" />
-                  Auditoría
+                  Auditoría de Pagos
                 </span>
                 <h4 className="text-xs font-semibold text-slate-400 mt-0.5">Comprobantes por Revisar</h4>
               </div>

@@ -291,9 +291,6 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
 
   return (
     <div className="space-y-6">
-      {/* Top Main Dashboard Summary Cards */}
-      <MainDashboardSummary onNavigate={onNavigate} />
-
       {/* Header Navigation */}
       <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/20 border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
