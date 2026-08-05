@@ -197,6 +197,19 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     return users.filter(u => (u.rol === 'admin' || u.rol === 'contador' || u.rol === 'coach' || u.rol === 'staff') && u.usuario !== 'WILLY' && u.nombre !== 'Willy');
   }, [users]);
 
+  // Obtener coaches asignados a una disciplina o categoría
+  const getCoachesForCategory = (targetName) => {
+    if (!targetName) return [];
+    const normTarget = targetName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    return users.filter(u => {
+      if (u.rol !== 'coach') return false;
+      const userCat = (u.categoria || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      if (userCat === 'todas las categorias' || userCat === 'todas') return true;
+      return userCat.includes(normTarget) || normTarget.includes(userCat);
+    });
+  };
+
   const [showStaffSection, setShowStaffSection] = useState(false);
 
   const [copiedLink, setCopiedLink] = useState(false);
