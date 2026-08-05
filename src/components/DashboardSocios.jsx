@@ -192,9 +192,9 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   // Global total stats
   const globalStats = useMemo(() => getStats(socios), [socios]);
 
-  // Staff members list (Coach, Contador, Admin - excluding Willy)
+  // Staff members list (Coach, Contador, Staff, Admin - excluding Willy)
   const staffMembers = useMemo(() => {
-    return users.filter(u => (u.rol === 'admin' || u.rol === 'contador' || u.rol === 'coach') && u.usuario !== 'WILLY' && u.nombre !== 'Willy');
+    return users.filter(u => (u.rol === 'admin' || u.rol === 'contador' || u.rol === 'coach' || u.rol === 'staff') && u.usuario !== 'WILLY' && u.nombre !== 'Willy');
   }, [users]);
 
   const [showStaffSection, setShowStaffSection] = useState(false);
@@ -314,7 +314,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                 onClick={onOpenModalStaff}
                 className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
               >
-                <Plus className="w-4 h-4" /> Alta Staff / Usuario
+                <Plus className="w-4 h-4" /> Alta Staff
               </button>
             )}
           </div>
@@ -322,63 +322,51 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
 
         {/* Modern 3D Donut Chart & Breakdown Panel */}
         <div className="mt-6 pt-6 border-t border-slate-800/80">
-          <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-amber-500/30 p-5 rounded-3xl shadow-2xl transition-all flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-amber-500/30 p-6 rounded-3xl shadow-2xl transition-all flex flex-col items-center justify-center gap-5">
             
-            <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
-              {/* Donut Chart SVG */}
-              <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
-                <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_8px_16px_rgba(16,185,129,0.3)]" viewBox="0 0 100 100">
-                  <defs>
-                    <linearGradient id="donutGradSociosMain" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#10b981" />
-                      <stop offset="50%" stopColor="#06b6d4" />
-                      <stop offset="100%" stopColor="#3b82f6" />
-                    </linearGradient>
-                    <filter id="shadowSociosMain" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="1" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.6" />
-                    </filter>
-                  </defs>
+            {/* Agrandado Gráfico Donut 3D Centrado */}
+            <div className="relative w-36 h-36 sm:w-44 sm:h-44 flex items-center justify-center shrink-0 my-1">
+              <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_10px_20px_rgba(16,185,129,0.35)]" viewBox="0 0 100 100">
+                <defs>
+                  <linearGradient id="donutGradSociosMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#10b981" />
+                    <stop offset="50%" stopColor="#06b6d4" />
+                    <stop offset="100%" stopColor="#3b82f6" />
+                  </linearGradient>
+                  <filter id="shadowSociosMain" x="-20%" y="-20%" width="140%" height="140%">
+                    <feDropShadow dx="1" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.6" />
+                  </filter>
+                </defs>
 
-                  {/* Inner tracks */}
-                  <circle cx="50" cy="50" r="38" className="text-slate-950" strokeWidth="10" stroke="currentColor" fill="transparent" />
-                  <circle cx="50" cy="50" r="38" className="text-slate-800/80" strokeWidth="8" stroke="currentColor" fill="transparent" />
+                {/* Inner tracks */}
+                <circle cx="50" cy="50" r="38" className="text-slate-950" strokeWidth="10" stroke="currentColor" fill="transparent" />
+                <circle cx="50" cy="50" r="38" className="text-slate-800/80" strokeWidth="8" stroke="currentColor" fill="transparent" />
 
-                  {/* Animated 3D Ring */}
-                  <circle
-                    cx="50"
-                    cy="50"
-                    r="38"
-                    stroke="url(#donutGradSociosMain)"
-                    strokeWidth="9"
-                    strokeDasharray={238.76}
-                    strokeDashoffset={238.76 - (238.76 * (globalStats.pctAlDia || 0)) / 100}
-                    strokeLinecap="round"
-                    fill="transparent"
-                    filter="url(#shadowSociosMain)"
-                    className="transition-all duration-1000 ease-out"
-                  />
-                </svg>
+                {/* Animated 3D Ring */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  stroke="url(#donutGradSociosMain)"
+                  strokeWidth="9.5"
+                  strokeDasharray={238.76}
+                  strokeDashoffset={238.76 - (238.76 * (globalStats.pctAlDia || 0)) / 100}
+                  strokeLinecap="round"
+                  fill="transparent"
+                  filter="url(#shadowSociosMain)"
+                  className="transition-all duration-1000 ease-out"
+                />
+              </svg>
 
-                {/* Center percentage badge */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
-                  <span className="text-lg font-black text-white leading-none tracking-tight">{globalStats.pctAlDia}%</span>
-                  <span className="text-[9px] font-black text-emerald-400 uppercase mt-0.5 tracking-wider">AL DÍA</span>
-                </div>
-              </div>
-
-              {/* Title & Description */}
-              <div>
-                <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5 mb-1">
-                  <TrendingUp className="w-4 h-4 text-amber-400" />
-                  Estado de Cuotas Social
-                </span>
-                <h3 className="text-xl font-black text-white tracking-tight">Socios al Día vs Pendientes</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Visión general del estado contable de todo el padrón</p>
+              {/* Center percentage badge */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
+                <span className="text-2xl font-black text-white leading-none tracking-tight">{globalStats.pctAlDia}%</span>
+                <span className="text-[10px] font-black text-emerald-400 uppercase mt-1 tracking-wider">AL DÍA</span>
               </div>
             </div>
 
-            {/* Details panel on the side */}
-            <div className="w-full sm:w-auto min-w-[230px] bg-slate-950/80 border border-slate-800 p-4 rounded-2xl space-y-2.5 text-xs font-bold shadow-inner">
+            {/* Details panel at bottom */}
+            <div className="w-full max-w-sm bg-slate-950/80 border border-slate-800 p-4 rounded-2xl space-y-2.5 text-xs font-bold shadow-inner">
               <div className="flex items-center justify-between gap-4">
                 <span className="flex items-center gap-2 text-slate-200">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
@@ -718,7 +706,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
             </div>
             <div className="text-left">
               <h3 className="font-extrabold text-white text-sm sm:text-base">Staff e Integrantes del Club</h3>
-              <p className="text-xs text-slate-400">Dirigentes, Contadores y Cuerpo Técnico ({staffMembers.length} integrantes)</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -756,12 +743,19 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                           ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
                           : member.rol === 'contador' 
                           ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' 
+                          : member.rol === 'coach'
+                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
                           : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
                       }`}>
-                        {member.rol}
+                        {member.rol === 'contador' ? 'Adm.Club' : member.rol}
                       </span>
                       <span className="text-[10px] font-mono text-amber-400 font-bold truncate">@{member.usuario}</span>
                     </div>
+                    {member.categoria && member.categoria !== 'Staff' && (
+                      <div className="text-[10px] text-amber-300/90 font-semibold truncate mt-0.5">
+                        Cat: {member.categoria}
+                      </div>
+                    )}
                     {member.telefono && (
                       <a 
                         href={`https://wa.me/${member.telefono.replace(/[^0-9]/g, '')}`} 

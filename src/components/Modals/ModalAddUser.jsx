@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, UserPlus } from 'lucide-react';
+import { X, UserPlus, Check } from 'lucide-react';
 
 export const CLUB_CATEGORIES = {
   'BAFI Femenino': ['1ra', 'Reserva'],
@@ -12,56 +12,52 @@ export const CLUB_CATEGORIES = {
 };
 
 export const ModalAddUser = ({ onClose }) => {
-  const { addOrUpdateUser, cuotasPorCategoria = {} } = useApp();
+  const { addOrUpdateUser } = useApp();
   
-  const [categoriaMadre, setCategoriaMadre] = useState('BAFI Femenino');
-  const [subCategoria, setSubCategoria] = useState('1ra');
-
   const [formData, setFormData] = useState({
     nombre: '',
-    apellido: '',
     telefono: '',
-    rol: 'socio',
-    categoria: 'BAFI Femenino (1ra)'
+    rol: 'staff',
+    categoria: ''
   });
 
-  const handleMadreChange = (catMadre) => {
-    setCategoriaMadre(catMadre);
-    const firstSub = CLUB_CATEGORIES[catMadre][0];
-    setSubCategoria(firstSub);
+  const [selectedCoachCats, setSelectedCoachCats] = useState([]);
+
+  const handleNombreChange = (val) => {
     setFormData(prev => ({
       ...prev,
-      categoria: `${catMadre} (${firstSub})`,
-      montoCuota: cuotasPorCategoria[catMadre] || 15000
+      nombre: val
     }));
   };
 
-  const handleSubChange = (sub) => {
-    setSubCategoria(sub);
-    setFormData(prev => ({
-      ...prev,
-      categoria: `${categoriaMadre} (${sub})`,
-      montoCuota: cuotasPorCategoria[categoriaMadre] || 15000
-    }));
+  const toggleCoachCat = (catName) => {
+    setSelectedCoachCats(prev => {
+      const exists = prev.includes(catName);
+      return exists ? prev.filter(c => c !== catName) : [...prev, catName];
+    });
   };
 
-  // Autogenerar usuario: Inicial nombre + apellido completo (sin espacios y en mayúsculas)
-  const generarUsuario = () => {
-    if (!formData.nombre || !formData.apellido) return '';
-    const inicial = formData.nombre.charAt(0).toUpperCase();
-    const apellido = formData.apellido.replace(/\s+/g, '').toUpperCase();
-    return `${inicial}${apellido}`;
-  };
-
-  const usuarioGenerado = generarUsuario();
+  // Generar usuario a partir del Nombre ingresado (sin espacios y en minúsculas)
+  const usuarioGenerado = formData.nombre.trim() 
+    ? formData.nombre.trim().replace(/\s+/g, '').toLowerCase() 
+    : '';
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const isSocioRole = formData.rol === 'socio';
+    if (!formData.nombre.trim()) return;
+
+    const finalCat = formData.rol === 'coach' 
+      ? (selectedCoachCats.length > 0 ? selectedCoachCats.join(', ') : 'Todas las Categorías') 
+      : 'Staff';
+
     addOrUpdateUser({
-      ...formData,
-      categoria: isSocioRole ? `${categoriaMadre} (${subCategoria})` : 'Staff',
-      montoCuota: isSocioRole ? (cuotasPorCategoria[categoriaMadre] || 15000) : 0,
+      nombre: formData.nombre.trim(),
+      apellido: '',
+      telefono: formData.telefono.trim(),
+      rol: formData.rol,
+      categoria: finalCat,
+      montoCuota: 0,
+      estadoCuota: 'al_dia',
       usuario: usuarioGenerado,
       clave: '1234'
     });
@@ -73,41 +69,32 @@ export const ModalAddUser = ({ onClose }) => {
       <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
         <div className="flex justify-between items-center pb-2 border-b border-slate-800">
           <h3 className="font-bold text-white text-base flex items-center gap-2">
-            <UserPlus className="w-5 h-5 text-amber-400" /> Alta / Registro de Socio
+            <UserPlus className="w-5 h-5 text-amber-400" /> Alta Staff
           </h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white">
+          <button onClick={onClose} className="text-slate-400 hover:text-white cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 text-xs">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-slate-400 mb-1">Nombre</label>
-              <input
-                type="text"
-                required
-                value={formData.nombre}
-                onChange={(e) => setFormData({...formData, nombre: e.target.value})}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-slate-400 mb-1">Apellido</label>
-              <input
-                type="text"
-                required
-                value={formData.apellido}
-                onChange={(e) => setFormData({...formData, apellido: e.target.value})}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          {/* Campo Único: Nombre */}
+          <div>
+            <label className="block text-slate-400 mb-1 font-medium">Nombre (Nombre e Inicial/Apellido)</label>
+            <input
+              type="text"
+              required
+              placeholder="Ej: Marcelo DT, Juan Perez"
+              value={formData.nombre}
+              onChange={(e) => handleNombreChange(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-amber-500 font-semibold"
+            />
           </div>
 
-          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
+          {/* Nombre autogenera el Usuario de Acceso */}
+          <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-400 font-medium">Usuario de Acceso:</span>
-              <span className="text-amber-400 font-black tracking-widest">{usuarioGenerado || '---'}</span>
+              <span className="text-amber-400 font-black font-mono">@{usuarioGenerado || '---'}</span>
             </div>
             <div className="flex justify-between items-center text-xs">
               <span className="text-slate-400 font-medium">PIN de Seguridad:</span>
@@ -115,71 +102,58 @@ export const ModalAddUser = ({ onClose }) => {
             </div>
           </div>
 
+          {/* Teléfono */}
           <div>
-            <label className="block text-slate-400 mb-1">Teléfono (WhatsApp)</label>
+            <label className="block text-slate-400 mb-1 font-medium">Teléfono (WhatsApp)</label>
             <input
               type="text"
-              required
+              placeholder="Ej: 1112345678"
               value={formData.telefono}
               onChange={(e) => setFormData({...formData, telefono: e.target.value})}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-amber-500 font-medium"
             />
           </div>
 
+          {/* Rol de Acceso (Solo Staff, Coach, Adm.Club) */}
           <div>
-            <label className="block text-slate-400 mb-1">Rol de Acceso</label>
+            <label className="block text-slate-400 mb-1 font-medium">Rol de Acceso</label>
             <select
               value={formData.rol}
               onChange={(e) => setFormData({...formData, rol: e.target.value})}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white outline-none font-semibold"
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-amber-300 outline-none font-bold text-xs cursor-pointer"
             >
-              <option value="socio">Socio / Jugador</option>
-              <option value="coach">Coach / DT</option>
-              <option value="contador">Contador</option>
-              <option value="admin">Admin</option>
+              <option value="staff">Staff (Sin acceso a finanzas)</option>
+              <option value="coach">Coach (Seleccionar categorías de trabajo)</option>
+              <option value="contador">Adm.Club (Administrador y finanzas)</option>
             </select>
           </div>
 
-          {formData.rol === 'socio' ? (
-            <>
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Categoría Madre</label>
-                  <select
-                    value={categoriaMadre}
-                    onChange={(e) => handleMadreChange(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-amber-300 font-bold outline-none text-xs"
-                  >
-                    {Object.keys(CLUB_CATEGORIES).map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-slate-400 mb-1 font-semibold">Sub-categoría (Plantel)</label>
-                  <select
-                    value={subCategoria}
-                    onChange={(e) => handleSubChange(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 text-white font-bold outline-none text-xs"
-                  >
-                    {CLUB_CATEGORIES[categoriaMadre].map(sub => (
-                      <option key={sub} value={sub}>{sub}</option>
-                    ))}
-                  </select>
-                </div>
+          {/* Selección de Categorías para Coach */}
+          {formData.rol === 'coach' && (
+            <div className="space-y-2 bg-slate-950 p-3 rounded-xl border border-slate-800">
+              <label className="block text-amber-400 text-[11px] font-bold">
+                Categorías en las que trabaja el Coach:
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                {Object.keys(CLUB_CATEGORIES).map(cat => {
+                  const isChecked = selectedCoachCats.includes(cat);
+                  return (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => toggleCoachCat(cat)}
+                      className={`p-1.5 rounded-lg text-[10px] font-bold text-left flex items-center justify-between border transition-all cursor-pointer ${
+                        isChecked 
+                          ? 'bg-purple-500/20 text-purple-300 border-purple-500/50' 
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <span className="truncate">{cat}</span>
+                      {isChecked && <Check className="w-3 h-3 text-purple-400 shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
-
-              <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex justify-between items-center text-xs">
-                <span className="text-slate-400">Cuota Mensual correspondiente:</span>
-                <span className="text-emerald-400 font-extrabold text-sm">
-                  ${(cuotasPorCategoria[categoriaMadre] || 15000).toLocaleString('es-AR')}
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 font-medium">
-              ℹ️ Los usuarios con rol <strong className="text-white capitalize">{formData.rol}</strong> pertenecen al Staff del Club y no poseen asignación de categoría ni pago de cuota social.
             </div>
           )}
 
@@ -187,15 +161,15 @@ export const ModalAddUser = ({ onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="w-1/3 bg-slate-800 text-slate-300 py-2.5 rounded-xl font-bold"
+              className="w-1/3 bg-slate-800 text-slate-300 py-2.5 rounded-xl font-bold hover:bg-slate-700 transition-colors cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl shadow-lg shadow-amber-500/20"
+              className="w-2/3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black py-2.5 rounded-xl shadow-lg shadow-amber-500/20 transition-colors cursor-pointer"
             >
-              Guardar Socio
+              Guardar Staff
             </button>
           </div>
         </form>
