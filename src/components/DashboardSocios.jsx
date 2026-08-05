@@ -437,36 +437,53 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
               className={`bg-slate-900 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden shadow-xl transition-all`}
             >
               {/* LEVEL 1: DISCIPLINA HEADER */}
-              <div
-                onClick={() => toggleDisc(discId)}
-                className={`p-5 bg-gradient-to-r ${config.color} cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 select-none hover:opacity-95 transition-opacity`}
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="p-3 bg-slate-950/80 rounded-2xl border border-slate-800 shadow-md shrink-0">
-                    <DiscIcon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-white text-lg tracking-tight flex items-center gap-2">
-                      {config.nombre}
-                    </h3>
-                    <span className="text-xs font-semibold text-slate-400">
-                      {discStats.total} {discStats.total === 1 ? 'socio en padrón' : 'socios registrados'}
-                    </span>
-                  </div>
-                </div>
+              {(() => {
+                const discCoaches = getCoachesForCategory(config.nombre);
+                return (
+                  <div
+                    onClick={() => toggleDisc(discId)}
+                    className={`p-4 sm:p-5 bg-gradient-to-r ${config.color} cursor-pointer flex flex-row items-center justify-between gap-3 select-none hover:opacity-95 transition-opacity`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      <div className="p-2.5 bg-slate-950/80 rounded-2xl border border-slate-800 shadow-md shrink-0">
+                        <DiscIcon className="w-5 h-5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-extrabold text-white text-base sm:text-lg tracking-tight truncate">
+                          {config.nombre}
+                        </h3>
+                        {discCoaches.length > 0 && (
+                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                            <span className="text-[10px] font-black text-amber-300">
+                              {discCoaches.length === 1 ? 'Coach:' : 'Coaches:'}
+                            </span>
+                            {discCoaches.map(c => (
+                              <span key={c.id} className="bg-purple-500/30 text-purple-200 border border-purple-400/40 px-2 py-0.5 rounded-md text-[10px] font-extrabold shadow-sm">
+                                {c.nombre}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <span className="text-[11px] font-semibold text-slate-400 block mt-0.5">
+                          {discStats.total} {discStats.total === 1 ? 'socio en padrón' : 'socios registrados'}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
-                  {renderStatusIndicators(discStats)}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {renderStatusIndicators(discStats)}
 
-                  <div className="p-1.5 rounded-full bg-slate-950/60 border border-slate-800 text-slate-300">
-                    {isDiscOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                      <div className="p-1.5 rounded-full bg-slate-950/60 border border-slate-800 text-slate-300">
+                        {isDiscOpen ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
+                );
+              })()}
 
               {/* LEVEL 2: CATEGORÍAS */}
               {isDiscOpen && (
-                <div className="p-4 sm:p-6 space-y-4 bg-slate-950/60 border-t border-slate-800/80">
+                <div className="p-3 sm:p-5 space-y-3 bg-slate-950/60 border-t border-slate-800/80">
                   {Object.keys(discObj.cats).map(catName => {
                     const subMap = discObj.cats[catName];
                     const catSocios = [];
@@ -477,6 +494,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                     const catStats = getStats(catSocios);
                     const catKey = `${discId}-${catName}`;
                     const isCatOpen = isSearchActive || Boolean(expandedCat[catKey]);
+                    const catCoaches = getCoachesForCategory(catName);
 
                     return (
                       <div 
@@ -486,17 +504,29 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                         {/* CATEGORÍA ROW */}
                         <div
                           onClick={() => toggleCat(catKey)}
-                          className="p-4 bg-slate-900 hover:bg-slate-800/60 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors border-b border-slate-800/60 select-none"
+                          className="p-3.5 bg-slate-900 hover:bg-slate-800/60 cursor-pointer flex flex-row items-center justify-between gap-3 transition-colors border-b border-slate-800/60 select-none"
                         >
-                          <div className="flex items-center gap-2.5">
+                          <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
-                            <div>
-                              <h4 className="font-bold text-white text-base">{catName}</h4>
-                              <span className="text-[11px] text-slate-400">{catStats.total} socios en categoría</span>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-bold text-white text-sm sm:text-base truncate">{catName}</h4>
+                              {catCoaches.length > 0 && (
+                                <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                                  <span className="text-[10px] font-black text-amber-300">
+                                    {catCoaches.length === 1 ? 'DT:' : 'DTs:'}
+                                  </span>
+                                  {catCoaches.map(c => (
+                                    <span key={c.id} className="bg-purple-500/30 text-purple-200 border border-purple-400/40 px-1.5 py-0.5 rounded text-[10px] font-extrabold">
+                                      {c.nombre}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              <span className="text-[11px] text-slate-400 block">{catStats.total} socios en categoría</span>
                             </div>
                           </div>
 
-                          <div className="flex items-center justify-between sm:justify-end gap-4 w-full sm:w-auto">
+                          <div className="flex items-center gap-3 shrink-0">
                             {renderStatusIndicators(catStats)}
 
                             <div className="p-1 rounded-lg bg-slate-800 text-slate-400">
@@ -507,7 +537,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
 
                         {/* LEVEL 3: SUB-CATEGORÍAS */}
                         {isCatOpen && (
-                          <div className="p-3 sm:p-4 space-y-3 bg-slate-950/80">
+                          <div className="p-2.5 sm:p-4 space-y-2.5 bg-slate-950/80">
                             {Object.keys(subMap).map(subName => {
                               const subSocios = subMap[subName];
                               if (isSearchActive && subSocios.length === 0) return null;
@@ -524,16 +554,16 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                   {/* SUB-CATEGORÍA ROW */}
                                   <div
                                     onClick={() => toggleSub(subKey)}
-                                    className="p-3.5 bg-slate-900 hover:bg-slate-800/40 cursor-pointer flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition-colors select-none"
+                                    className="p-3 bg-slate-900 hover:bg-slate-800/40 cursor-pointer flex flex-row items-center justify-between gap-3 transition-colors select-none"
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black">
+                                    <div className="flex items-center gap-2 min-w-0">
+                                      <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-black shrink-0">
                                         Sub: {subName}
                                       </span>
-                                      <span className="text-xs text-slate-400 font-medium">({subStats.total} socios)</span>
+                                      <span className="text-xs text-slate-400 font-medium truncate">({subStats.total} socios)</span>
                                     </div>
 
-                                    <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
+                                    <div className="flex items-center gap-2.5 shrink-0">
                                       {renderStatusIndicators(subStats)}
                                       <div className="text-slate-400">
                                         {isSubOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
