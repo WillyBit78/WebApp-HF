@@ -25,10 +25,15 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     stats, 
     logout, 
     payments = [], 
+    notices = [],
     setAuditoriaFilterStatus, 
     openAuditoriaStatus,
     markNotificationsAsViewed, 
-    viewedNotifications = {} 
+    viewedNotifications = {},
+    viewedPaymentIds = [],
+    readNoticeIds = [],
+    markAllNoticesAsRead,
+    getNoticesForUser
   } = useApp();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -49,13 +54,12 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-  const totalAprobados = payments.filter(p => p.estado === 'aprobado').length;
-  const totalEnRevision = payments.filter(p => p.estado === 'en_revision').length;
-  const totalRechazados = payments.filter(p => p.estado === 'rechazado').length;
+  const unreadAprobados = payments.filter(p => p.estado === 'aprobado' && !viewedPaymentIds.includes(p.id)).length;
+  const unreadEnRevision = payments.filter(p => p.estado === 'en_revision' && !viewedPaymentIds.includes(p.id)).length;
+  const unreadRechazados = payments.filter(p => p.estado === 'rechazado' && !viewedPaymentIds.includes(p.id)).length;
 
-  const unreadAprobados = Math.max(0, totalAprobados - (viewedNotifications?.aprobado || 0));
-  const unreadEnRevision = Math.max(0, totalEnRevision - (viewedNotifications?.en_revision || 0));
-  const unreadRechazados = Math.max(0, totalRechazados - (viewedNotifications?.rechazado || 0));
+  const visibleNotices = getNoticesForUser ? getNoticesForUser(currentUser) : notices;
+  const unreadNoticesCount = visibleNotices.filter(n => !readNoticeIds.includes(n.id)).length;
 
   const handleNotificationClick = (status) => {
     if (currentUser?.rol !== 'admin' && currentUser?.rol !== 'contador') return;
@@ -66,6 +70,11 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
     }
     if (markNotificationsAsViewed) markNotificationsAsViewed(status);
     setCurrentTab('finance');
+  };
+
+  const handleAvisosClick = () => {
+    if (markAllNoticesAsRead) markAllNoticesAsRead(currentUser);
+    setCurrentTab('notices');
   };
 
   return (
@@ -139,8 +148,8 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
           {/* Active User Badge & Stats */}
           <div className="hidden sm:flex items-center gap-3">
             <button 
-              onClick={() => setCurrentTab('notices')}
-              className={`p-2 rounded-xl transition-all border flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
+              onClick={handleAvisosClick}
+              className={`p-2 rounded-xl transition-all border flex items-center gap-1.5 text-xs font-bold cursor-pointer relative ${
                 currentTab === 'notices'
                   ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
                   : 'bg-slate-800/80 text-slate-300 border-slate-700 hover:text-white'
@@ -149,15 +158,21 @@ export const Navbar = ({ currentTab, setCurrentTab }) => {
             >
               <Bell className="w-4 h-4 text-purple-400" />
               <span>Avisos</span>
+              {unreadNoticesCount > 0 && (
+                <span className="bg-purple-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm animate-pulse">
+                  {unreadNoticesCount}
+                </span>
+              )}
             </button>
 
-            {stats.pagosPendientesRev.length > 0 && (currentUser?.rol === 'admin' || currentUser?.rol === 'contador') && (
+            {unreadEnRevision > 0 && (currentUser?.rol === 'admin' || currentUser?.rol === 'contador') && (
               <div 
-                onClick={() => setCurrentTab('dashboard')}
-                className="cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 animate-pulse"
+                onClick={() => handleNotificationClick('en_revision')}
+                className="cursor-pointer bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 animate-pulse hover:bg-amber-500/30 transition-all"
+                title="Ir a auditar comprobantes en revisión"
               >
                 <Wallet className="w-3.5 h-3.5" />
-                {stats.pagosPendientesRev.length} pago(s) por auditar
+                {unreadEnRevision} pago(s) por auditar
               </div>
             )}
 

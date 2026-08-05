@@ -746,6 +746,15 @@ export const AppProvider = ({ children }) => {
   }, [payments, mercadoPagoTransfers]);
 
   const [auditoriaFilterStatus, setAuditoriaFilterStatus] = useState({ status: 'en_revision', ts: Date.now() });
+  const [viewedPaymentIds, setViewedPaymentIds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('haedo_viewed_payment_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
   const [viewedNotifications, setViewedNotifications] = useState({
     aprobado: 0,
     en_revision: 0,
@@ -760,6 +769,17 @@ export const AppProvider = ({ children }) => {
   const markNotificationsAsViewed = (status) => {
     if (!status) return;
     const cleanStatus = typeof status === 'object' ? status.status : status;
+    const matchingPaymentIds = payments
+      .filter(p => p.estado === cleanStatus)
+      .map(p => p.id);
+
+    setViewedPaymentIds(prev => {
+      const newSet = new Set([...prev, ...matchingPaymentIds]);
+      const updated = Array.from(newSet);
+      try { localStorage.setItem('haedo_viewed_payment_ids', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+
     const currentCount = payments.filter(p => p.estado === cleanStatus).length;
     setViewedNotifications(prev => ({
       ...prev,
@@ -1486,7 +1506,23 @@ export const AppProvider = ({ children }) => {
   };
 
   const markNoticeAsRead = (noticeId) => {
-    setReadNoticeIds(prev => prev.includes(noticeId) ? prev : [...prev, noticeId]);
+    setReadNoticeIds(prev => {
+      if (prev.includes(noticeId)) return prev;
+      const updated = [...prev, noticeId];
+      try { localStorage.setItem('haedo_read_notice_ids', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
+  };
+
+  const markAllNoticesAsRead = (user = null) => {
+    const userNotices = getNoticesForUser(user || currentUser);
+    const userNoticeIds = userNotices.map(n => n.id);
+    setReadNoticeIds(prev => {
+      const newSet = new Set([...prev, ...userNoticeIds]);
+      const updated = Array.from(newSet);
+      try { localStorage.setItem('haedo_read_notice_ids', JSON.stringify(updated)); } catch (e) {}
+      return updated;
+    });
   };
 
   const toggleNoticeRead = (noticeId) => {
@@ -1542,7 +1578,7 @@ export const AppProvider = ({ children }) => {
       loadingDb,
       selectedSocioForModal, openFichaSocio, closeFichaSocio,
       auditoriaFilterStatus, setAuditoriaFilterStatus, openAuditoriaStatus,
-      viewedNotifications, markNotificationsAsViewed,
+      viewedNotifications, viewedPaymentIds, markNotificationsAsViewed,
       addMovimientoFinanciero, deleteMovimientoFinanciero,
       vincularTransferenciaMP, sincronizarMercadoPago,
       registrarLog, clearLogs, registrarPagoEfectivoCoach,
@@ -1552,7 +1588,7 @@ export const AppProvider = ({ children }) => {
       roles: MOCK_ROLES,
       uploadPaymentReceipt, updatePaymentStatus, deletePayment, fetchPaymentReceiptUrl, fetchUserPhotoUrl,
       addOrUpdateUser, deleteUser,
-      addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead, toggleNoticeRead,
+      addEvent, addNotice, deleteNotice, getNoticesForUser, readNoticeIds, markNoticeAsRead, markAllNoticesAsRead, toggleNoticeRead,
       registerPushSubscription,
       stats: {
         totalRecaudado, pagosPendientesRev, sociosAlDiaCount, sociosPendientesCount, sociosMorososCount,

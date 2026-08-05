@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Bell, AlertTriangle, Plus, Megaphone, Trash2, Shield, Users, Clock, CheckCircle2, Filter, RotateCcw } from 'lucide-react';
 
 export const NoticeBoard = ({ onOpenModalNotice }) => {
-  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead, registerPushSubscription } = useApp();
+  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead, markAllNoticesAsRead, registerPushSubscription } = useApp();
 
   const userRole = currentUser?.rol || 'socio';
   const canPublish = userRole === 'admin' || userRole === 'coach' || userRole === 'contador';
@@ -11,6 +11,10 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
 
   // Filter notices depending on role
   const visibleNotices = getNoticesForUser(currentUser);
+
+  React.useEffect(() => {
+    if (markAllNoticesAsRead) markAllNoticesAsRead(currentUser);
+  }, []);
 
   return (
     <div className="space-y-6">
