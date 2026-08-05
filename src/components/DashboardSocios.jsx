@@ -233,33 +233,48 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   const canManage = currentUser?.rol === 'admin' || currentUser?.rol === 'coach' || currentUser?.rol === 'contador';
   const isStaffAdmin = currentUser?.rol === 'admin' || currentUser?.rol === 'contador';
 
-  // Render 2-Color Visual Percentage Indicator Bar (Verde = Al Día, Rojo = Pendiente)
+  // Render Circular Donut Gauge & Status Breakdown
   const renderStatusIndicators = (stats) => {
+    const pct = stats.pctAlDia || 0;
+    const radius = 14;
+    const circ = 2 * Math.PI * radius;
+    const offset = circ - (circ * pct) / 100;
+
     return (
-      <div className="space-y-1.5 w-full sm:w-auto min-w-[200px]">
-        <div className="flex items-center justify-between gap-2 text-[10px] font-bold">
-          <span className="text-emerald-400 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            {stats.pctAlDia}% Al día ({stats.alDia})
-          </span>
-          <span className="text-rose-400 flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-            {stats.pctPendiente}% Pendiente ({stats.pendiente})
-          </span>
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Mini Circular Donut Chart */}
+        <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+          <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_4px_8px_rgba(16,185,129,0.25)]" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r={radius} className="text-slate-950" strokeWidth="4" stroke="currentColor" fill="transparent" />
+            <circle cx="18" cy="18" r={radius} className="text-slate-800/90" strokeWidth="3" stroke="currentColor" fill="transparent" />
+            <circle
+              cx="18"
+              cy="18"
+              r={radius}
+              stroke={stats.pctAlDia === 100 ? '#10b981' : stats.pctAlDia === 0 ? '#f43f5e' : '#3b82f6'}
+              strokeWidth="3.5"
+              strokeDasharray={circ}
+              strokeDashoffset={offset}
+              strokeLinecap="round"
+              fill="transparent"
+              className="transition-all duration-700 ease-out"
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center select-none text-[8.5px] font-black text-white leading-none">
+            {pct}%
+          </div>
         </div>
 
-        {/* 2-Color Progress Bar (Verde y Rojo) */}
-        <div className="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden flex border border-slate-800 shadow-inner">
-          <div 
-            style={{ width: `${stats.pctAlDia}%` }} 
-            className="bg-emerald-500 h-full transition-all duration-500"
-            title={`Al día: ${stats.alDia} (${stats.pctAlDia}%)`}
-          />
-          <div 
-            style={{ width: `${stats.pctPendiente}%` }} 
-            className="bg-rose-500 h-full transition-all duration-500"
-            title={`Pendiente: ${stats.pendiente} (${stats.pctPendiente}%)`}
-          />
+        {/* Text Counts */}
+        <div className="hidden sm:flex flex-col justify-center text-[10px] font-bold space-y-0.5 leading-tight">
+          <span className="text-emerald-400 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            {stats.alDia} Al día
+          </span>
+          <span className="text-rose-400 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            {stats.pendiente} Pendiente
+          </span>
         </div>
       </div>
     );
@@ -305,96 +320,94 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
           </div>
         </div>
 
-        {/* Modern 2-Color Account Status Breakdown Panel */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80 space-y-4">
-          
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {/* Modern 3D Donut Chart & Breakdown Panel */}
+        <div className="mt-6 pt-6 border-t border-slate-800/80">
+          <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-amber-500/30 p-5 rounded-3xl shadow-2xl transition-all flex flex-col sm:flex-row items-center justify-between gap-6">
             
-            <div className="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">Total Padrón Socios</span>
-                <div className="text-2xl font-black text-white mt-0.5">{globalStats.total} socios</div>
+            <div className="flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+              {/* Donut Chart SVG */}
+              <div className="relative w-28 h-28 flex items-center justify-center shrink-0">
+                <svg className="w-full h-full transform -rotate-90 drop-shadow-[0_8px_16px_rgba(16,185,129,0.3)]" viewBox="0 0 100 100">
+                  <defs>
+                    <linearGradient id="donutGradSociosMain" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#10b981" />
+                      <stop offset="50%" stopColor="#06b6d4" />
+                      <stop offset="100%" stopColor="#3b82f6" />
+                    </linearGradient>
+                    <filter id="shadowSociosMain" x="-20%" y="-20%" width="140%" height="140%">
+                      <feDropShadow dx="1" dy="3" stdDeviation="3" floodColor="#000000" floodOpacity="0.6" />
+                    </filter>
+                  </defs>
+
+                  {/* Inner tracks */}
+                  <circle cx="50" cy="50" r="38" className="text-slate-950" strokeWidth="10" stroke="currentColor" fill="transparent" />
+                  <circle cx="50" cy="50" r="38" className="text-slate-800/80" strokeWidth="8" stroke="currentColor" fill="transparent" />
+
+                  {/* Animated 3D Ring */}
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="38"
+                    stroke="url(#donutGradSociosMain)"
+                    strokeWidth="9"
+                    strokeDasharray={238.76}
+                    strokeDashoffset={238.76 - (238.76 * (globalStats.pctAlDia || 0)) / 100}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    filter="url(#shadowSociosMain)"
+                    className="transition-all duration-1000 ease-out"
+                  />
+                </svg>
+
+                {/* Center percentage badge */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center select-none">
+                  <span className="text-lg font-black text-white leading-none tracking-tight">{globalStats.pctAlDia}%</span>
+                  <span className="text-[9px] font-black text-emerald-400 uppercase mt-0.5 tracking-wider">AL DÍA</span>
+                </div>
               </div>
-              <div className="p-3 bg-blue-500/15 text-blue-400 rounded-2xl">
-                <Users className="w-6 h-6" />
+
+              {/* Title & Description */}
+              <div>
+                <span className="text-xs font-extrabold text-amber-400 uppercase tracking-wider flex items-center justify-center sm:justify-start gap-1.5 mb-1">
+                  <TrendingUp className="w-4 h-4 text-amber-400" />
+                  Estado de Cuotas Social
+                </span>
+                <h3 className="text-xl font-black text-white tracking-tight">Socios al Día vs Pendientes</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Visión general del estado contable de todo el padrón</p>
               </div>
             </div>
 
-            <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Socios Al Día (Verde)</span>
-                <div className="text-2xl font-black text-emerald-400 mt-0.5">
-                  {globalStats.alDia} <span className="text-sm font-bold text-emerald-400/80">({globalStats.pctAlDia}%)</span>
-                </div>
+            {/* Details panel on the side */}
+            <div className="w-full sm:w-auto min-w-[230px] bg-slate-950/80 border border-slate-800 p-4 rounded-2xl space-y-2.5 text-xs font-bold shadow-inner">
+              <div className="flex items-center justify-between gap-4">
+                <span className="flex items-center gap-2 text-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm shadow-emerald-400/50"></span>
+                  Al Día:
+                </span>
+                <strong className="text-emerald-400 font-extrabold text-sm">{globalStats.alDia}</strong>
               </div>
-              <div className="p-3 bg-emerald-500/20 text-emerald-400 rounded-2xl">
-                <CheckCircle2 className="w-6 h-6" />
-              </div>
-            </div>
 
-            <div className="bg-slate-950/80 border border-rose-500/30 rounded-2xl p-4 flex items-center justify-between">
-              <div>
-                <span className="text-[10px] text-rose-400 font-semibold uppercase tracking-wider">Socios Pendientes (Rojo)</span>
-                <div className="text-2xl font-black text-rose-400 mt-0.5">
-                  {globalStats.pendiente} <span className="text-sm font-bold text-rose-400/80">({globalStats.pctPendiente}%)</span>
-                </div>
+              <div className="flex items-center justify-between gap-4">
+                <span className="flex items-center gap-2 text-slate-200">
+                  <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+                  Pendientes:
+                </span>
+                <strong className="text-rose-400 font-extrabold text-sm">{globalStats.pendiente}</strong>
               </div>
-              <div className="p-3 bg-rose-500/20 text-rose-400 rounded-2xl">
-                <AlertCircle className="w-6 h-6" />
+
+              <div className="text-[11px] text-slate-400 font-semibold pt-2 border-t border-slate-800/80 flex justify-between items-center">
+                <span>Padrón Total:</span>
+                <span className="text-white font-extrabold">{globalStats.total} socios</span>
               </div>
             </div>
 
           </div>
-
-          {/* Modern 2-Color Progress Bar Graph */}
-          <div className="bg-slate-950/90 border border-slate-800/90 p-5 rounded-2xl space-y-3">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-amber-500/20 text-amber-400 rounded-lg">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-extrabold text-white">
-                  Estado de Cuentas General ({globalStats.pctAlDia}% Al Día)
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-4 text-xs font-bold">
-                <span className="flex items-center gap-1.5 text-emerald-400">
-                  <span className="w-3 h-3 rounded-full bg-emerald-500"></span>
-                  Al Día: {globalStats.pctAlDia}% ({globalStats.alDia})
-                </span>
-                <span className="flex items-center gap-1.5 text-rose-400">
-                  <span className="w-3 h-3 rounded-full bg-rose-500"></span>
-                  Pendiente: {globalStats.pctPendiente}% ({globalStats.pendiente})
-                </span>
-              </div>
-            </div>
-
-            {/* 2-Color High-Tech Bar (Verde & Rojo) */}
-            <div className="w-full bg-slate-900 h-5 rounded-2xl overflow-hidden flex border border-slate-800 p-0.5 shadow-inner">
-              <div 
-                style={{ width: `${globalStats.pctAlDia}%` }} 
-                className="bg-emerald-500 h-full rounded-l-xl transition-all duration-500 flex items-center justify-center text-[10px] font-black text-slate-950"
-                title={`Al Día: ${globalStats.alDia} socios (${globalStats.pctAlDia}%)`}
-              >
-                {globalStats.pctAlDia > 10 && `${globalStats.pctAlDia}%`}
-              </div>
-              <div 
-                style={{ width: `${globalStats.pctPendiente}%` }} 
-                className="bg-rose-500 h-full rounded-r-xl transition-all duration-500 flex items-center justify-center text-[10px] font-black text-white"
-                title={`Pendiente: ${globalStats.pendiente} socios (${globalStats.pctPendiente}%)`}
-              >
-                {globalStats.pctPendiente > 10 && `${globalStats.pctPendiente}%`}
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      {/* Filter and Search Toolbar */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
-        <div className="relative w-full md:w-80 shrink-0">
+      {/* Search Toolbar (Sin botones de filtro sobrantes) */}
+      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
+        <div className="relative w-full">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
           <input
             type="text"
@@ -404,110 +417,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
             className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-3 py-2 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
           />
         </div>
-
-        {/* Responsive Wrapping Filter Buttons (NO horizontal scrollbar) */}
-        <div className="flex flex-wrap items-center gap-2 w-full">
-          <span className="text-xs font-semibold text-slate-400 shrink-0 flex items-center gap-1">
-            <Filter className="w-3.5 h-3.5" /> Filtrar:
-          </span>
-          <button
-            onClick={() => setSelectedDiscFilter('todas')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              selectedDiscFilter === 'todas'
-                ? 'bg-amber-500 text-slate-950 shadow-md'
-                : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-            }`}
-          >
-            Todas las Disciplinas
-          </button>
-          {DISCIPLINAS_CONFIG.map(d => (
-            <button
-              key={d.id}
-              onClick={() => setSelectedDiscFilter(d.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                selectedDiscFilter === d.id
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-              }`}
-            >
-              {d.nombre}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* STAFF SECTION ACCORDION */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden transition-all">
-        <button
-          onClick={() => setShowStaffSection(!showStaffSection)}
-          className="w-full p-4 bg-slate-900 hover:bg-slate-800/80 flex items-center justify-between transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
-              <Shield className="w-5 h-5" />
-            </div>
-            <div className="text-left">
-              <h3 className="font-extrabold text-white text-sm sm:text-base">Staff e Integrantes del Club</h3>
-              <p className="text-xs text-slate-400">Dirigentes, Contadores y Cuerpo Técnico ({staffMembers.length} integrantes)</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-black">
-              {staffMembers.length} Miembros
-            </span>
-            {showStaffSection ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
-          </div>
-        </button>
-
-        {showStaffSection && (
-          <div className="p-4 bg-slate-950 border-t border-slate-800/80 space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-              {staffMembers.map(member => (
-                <div 
-                  key={member.id} 
-                  className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center gap-3 hover:border-amber-500/50 transition-all shadow-md cursor-pointer group"
-                  onClick={() => openFichaSocio(member)}
-                  title="Haz clic para ver Ficha / Modificar Datos"
-                >
-                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-sm shrink-0 overflow-hidden group-hover:border-amber-400 transition-colors">
-                    {member.fotoUrl || member.foto ? (
-                      <img src={member.fotoUrl || member.foto} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      (member.nombre || 'U').charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="font-extrabold text-white text-xs truncate group-hover:text-amber-400 transition-colors">
-                      {member.nombre} {member.apellido}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        member.rol === 'admin' 
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
-                          : member.rol === 'contador' 
-                          ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' 
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                      }`}>
-                        {member.rol}
-                      </span>
-                      <span className="text-[10px] font-mono text-amber-400 font-bold truncate">@{member.usuario}</span>
-                    </div>
-                    {member.telefono && (
-                      <a 
-                        href={`https://wa.me/${member.telefono.replace(/[^0-9]/g, '')}`} 
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 mt-1 font-semibold"
-                      >
-                        <Phone className="w-3 h-3" /> {member.telefono}
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Main Hierarchy List (Disciplinas -> Categorías -> Sub-categorías -> Socios) */}
@@ -795,6 +704,80 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
             </div>
           );
         })}
+      </div>
+
+      {/* STAFF SECTION ACCORDION (Ubicado debajo de todas las disciplinas) */}
+      <div className="bg-slate-900 border border-slate-800 rounded-3xl shadow-xl overflow-hidden transition-all">
+        <button
+          onClick={() => setShowStaffSection(!showStaffSection)}
+          className="w-full p-4 bg-slate-900 hover:bg-slate-800/80 flex items-center justify-between transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <h3 className="font-extrabold text-white text-sm sm:text-base">Staff e Integrantes del Club</h3>
+              <p className="text-xs text-slate-400">Dirigentes, Contadores y Cuerpo Técnico ({staffMembers.length} integrantes)</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-black">
+              {staffMembers.length} Miembros
+            </span>
+            {showStaffSection ? <ChevronDown className="w-5 h-5 text-slate-400" /> : <ChevronRight className="w-5 h-5 text-slate-400" />}
+          </div>
+        </button>
+
+        {showStaffSection && (
+          <div className="p-4 bg-slate-950 border-t border-slate-800/80 space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              {staffMembers.map(member => (
+                <div 
+                  key={member.id} 
+                  className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl flex items-center gap-3 hover:border-amber-500/50 transition-all shadow-md cursor-pointer group"
+                  onClick={() => openFichaSocio(member)}
+                  title="Haz clic para ver Ficha / Modificar Datos"
+                >
+                  <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 font-black text-sm shrink-0 overflow-hidden group-hover:border-amber-400 transition-colors">
+                    {member.fotoUrl || member.foto ? (
+                      <img src={member.fotoUrl || member.foto} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      (member.nombre || 'U').charAt(0).toUpperCase()
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-extrabold text-white text-xs truncate group-hover:text-amber-400 transition-colors">
+                      {member.nombre} {member.apellido}
+                    </div>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                        member.rol === 'admin' 
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' 
+                          : member.rol === 'contador' 
+                          ? 'bg-sky-500/20 text-sky-300 border border-sky-500/40' 
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                      }`}>
+                        {member.rol}
+                      </span>
+                      <span className="text-[10px] font-mono text-amber-400 font-bold truncate">@{member.usuario}</span>
+                    </div>
+                    {member.telefono && (
+                      <a 
+                        href={`https://wa.me/${member.telefono.replace(/[^0-9]/g, '')}`} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-[10px] text-emerald-400 hover:underline flex items-center gap-1 mt-1 font-semibold"
+                      >
+                        <Phone className="w-3 h-3" /> {member.telefono}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Confirmation Modal for Deleting User */}

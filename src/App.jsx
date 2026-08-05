@@ -142,13 +142,8 @@ function MainApp() {
           {renderContent()}
 
           <footer className="mt-10 border-t border-slate-900 bg-slate-950 py-4 text-center text-xs text-slate-500">
-            <div className="flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto px-4 gap-2">
-              <div>
-                © 2026 Club Social y Deportivo Haedo Futsal • Sistema de Gestión Integral
-              </div>
-              <div className="text-[11px] text-slate-600">
-                Desarrollado para PC y Celular • Integra Supabase + Vercel + GitHub
-              </div>
+            <div className="max-w-7xl mx-auto px-4 text-center">
+              © 2026 Haedo Futsal App - Sistema de Gestión Integral
             </div>
           </footer>
         </main>
