@@ -21,7 +21,8 @@ import {
   Key,
   Check,
   Camera,
-  Upload
+  Upload,
+  ZoomIn
 } from 'lucide-react';
 
 export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
@@ -33,6 +34,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
   const fileInputRef = useRef(null);
   const [showCameraModal, setShowCameraModal] = useState(false);
+  const [showZoomPhoto, setShowZoomPhoto] = useState(false);
   const videoRef = useRef(null);
   const [cameraStream, setCameraStream] = useState(null);
 
@@ -256,6 +258,40 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
         </div>
       )}
 
+      {/* Modal para Ampliar / Ver Foto del Socio en tamaño gigante */}
+      {showZoomPhoto && (currentPhoto || editForm.fotoUrl) && (
+        <div 
+          className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4 animate-fadeIn cursor-pointer"
+          onClick={() => setShowZoomPhoto(false)}
+        >
+          <div className="relative max-w-lg w-full bg-slate-900 border border-amber-500/40 rounded-3xl p-4 shadow-2xl space-y-3 cursor-default" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-1 pt-1">
+              <div>
+                <h3 className="font-extrabold text-white text-base">{nombreCompleto}</h3>
+                <p className="text-xs text-amber-400 font-semibold">{editForm.categoria || 'Socio'}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowZoomPhoto(false)}
+                className="p-1.5 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-all cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="relative w-full max-h-[70vh] rounded-2xl overflow-hidden bg-black flex items-center justify-center border border-slate-800 shadow-inner">
+              <img 
+                src={editForm.fotoUrl || currentPhoto} 
+                alt={nombreCompleto} 
+                className="w-full h-full object-contain max-h-[68vh] rounded-xl"
+              />
+            </div>
+            <p className="text-center text-xs text-slate-400 font-medium pt-1">
+              Foto Oficial de Perfil del Socio • Haedo Futsal
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-2xl w-full overflow-hidden shadow-2xl space-y-0 text-slate-200 my-auto">
         
         {/* Top Header Card with Banner */}
@@ -269,34 +305,66 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
           </button>
 
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-            {/* Foto / Avatar con opción de actualizar para Coach/Contador/Admin */}
+            {/* Foto / Avatar con opción de ampliar y de actualizar para Coach/Contador/Admin */}
             <div className="relative group shrink-0">
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-amber-500/20 to-slate-800 border-2 border-amber-500/40 p-1 overflow-hidden shadow-xl flex items-center justify-center relative">
-                {currentPhoto ? (
-                  <img 
-                    src={currentPhoto} 
-                    alt={nombreCompleto} 
-                    className="w-full h-full object-cover rounded-xl"
-                  />
+              <div 
+                onClick={() => {
+                  if (currentPhoto || editForm.fotoUrl) setShowZoomPhoto(true);
+                }}
+                className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-gradient-to-br from-amber-500/20 to-slate-800 border-2 border-amber-500/40 p-1 overflow-hidden shadow-xl flex items-center justify-center relative transition-all ${currentPhoto || editForm.fotoUrl ? 'cursor-pointer hover:border-amber-400 hover:scale-105' : ''}`}
+                title={currentPhoto || editForm.fotoUrl ? "Haz clic para ampliar la foto" : "Sin foto cargada"}
+              >
+                {currentPhoto || editForm.fotoUrl ? (
+                  <>
+                    <img 
+                      src={editForm.fotoUrl || currentPhoto} 
+                      alt={nombreCompleto} 
+                      className="w-full h-full object-cover rounded-xl"
+                    />
+                    <div className="absolute bottom-1 right-1 p-1 bg-slate-950/80 text-amber-400 rounded-lg backdrop-blur-xs flex items-center justify-center border border-amber-500/40 shadow-md">
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </div>
+                  </>
                 ) : (
                   <div className="w-full h-full bg-slate-800 rounded-xl flex items-center justify-center text-amber-400 font-extrabold text-3xl">
                     {(editForm.nombre || 'U').charAt(0).toUpperCase()}
                   </div>
                 )}
 
-                {/* Overlay de Edición de Foto para Roles de Gestión */}
+                {/* Overlay de Edición/Ampliación de Foto para Roles de Gestión */}
                 {canManage && (
-                  <div className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 rounded-xl cursor-pointer p-1">
+                  <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1 rounded-xl p-1 z-20">
+                    {(currentPhoto || editForm.fotoUrl) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowZoomPhoto(true);
+                        }}
+                        className="px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-[10px] font-bold flex items-center gap-1 w-full justify-center shadow-sm"
+                        title="Ver foto ampliada"
+                      >
+                        <ZoomIn className="w-3 h-3" /> Ver Foto
+                      </button>
+                    )}
                     <button
-                      onClick={startCamera}
-                      className="px-2 py-1 bg-amber-500 text-slate-950 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-amber-400 w-full justify-center"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        startCamera();
+                      }}
+                      className="px-2 py-1 bg-slate-800 text-amber-300 rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-slate-700 w-full justify-center border border-slate-700"
                       title="Tomar Foto con Cámara"
                     >
                       <Camera className="w-3 h-3" /> Cámara
                     </button>
                     <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-slate-700 w-full justify-center"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="px-2 py-1 bg-slate-800 text-white rounded-lg text-[10px] font-bold flex items-center gap-1 hover:bg-slate-700 w-full justify-center border border-slate-700"
                       title="Subir archivo de imagen"
                     >
                       <Upload className="w-3 h-3" /> Archivo
