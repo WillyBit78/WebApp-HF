@@ -773,38 +773,78 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
             </div>
           )}
 
-          {/* Historial de Comprobantes del Socio */}
+          {/* Historial Mensual de Cuotas y Comprobantes del Socio */}
           {isSocioRole && !isEditing && (
-            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3">
-              <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-2">
-                <Clock className="w-4 h-4 text-amber-400" /> Historial de Pagos y Comprobantes
-              </h3>
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-4">
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                  <Calendar className="w-4 h-4 text-emerald-400" /> Registro Mensual de Cuotas Social
+                </h3>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-3">
+                  {[
+                    { key: '2026-08', label: 'Agosto 2026', badge: 'Mes Actual' },
+                    { key: '2026-07', label: 'Julio 2026', badge: 'Mes Anterior' },
+                    { key: '2026-06', label: 'Junio 2026' },
+                    { key: '2026-05', label: 'Mayo 2026' }
+                  ].map(per => {
+                    const statusForPeriod = getSocioFeeStatus ? getSocioFeeStatus(socio, payments, per.key) : 'pendiente';
+                    const isPaid = statusForPeriod === 'al_dia';
 
-              {socioPayments.length > 0 ? (
-                <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                  {socioPayments.map((p, idx) => (
-                    <div 
-                      key={p.id || idx} 
-                      className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs"
-                    >
-                      <div>
-                        <div className="font-bold text-white">N° Op: {p.numeroOperacion || 'Cobro Efectivo'}</div>
-                        <div className="text-[10px] text-slate-400">{p.periodo ? `Periodo: ${p.periodo} • ` : ''}{p.fechaTransferencia || p.fechaHora || 'Reciente'} • {p.billeteraOrigen || 'Efectivo'}</div>
+                    return (
+                      <div 
+                        key={per.key} 
+                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                          isPaid 
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
+                            : 'bg-slate-900 border-slate-800 text-slate-400'
+                        }`}
+                      >
+                        <div className="text-[10px] text-slate-400 font-semibold">{per.label}</div>
+                        <div className="text-xs font-black mt-1 flex items-center justify-center gap-1">
+                          {isPaid ? (
+                            <span className="text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> AL DÍA</span>
+                          ) : (
+                            <span className="text-amber-400 flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> PENDIENTE</span>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-extrabold text-emerald-400">${Number(p.monto || 0).toLocaleString('es-AR')}</div>
-                        <span className={`text-[10px] font-bold uppercase ${p.estado === 'aprobado' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                          {p.estado === 'aprobado' ? 'Aprobado' : 'En revisión'}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              ) : (
-                <p className="text-xs text-slate-500 italic text-center py-3">
-                  No hay comprobantes de pago registrados para este socio aún.
-                </p>
-              )}
+              </div>
+
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2 border-b border-slate-800/80 pb-2">
+                  <Clock className="w-4 h-4 text-amber-400" /> Historial de Comprobantes Registrados
+                </h3>
+
+                {socioPayments.length > 0 ? (
+                  <div className="space-y-2 max-h-44 overflow-y-auto pr-1 pt-2">
+                    {socioPayments.map((p, idx) => (
+                      <div 
+                        key={p.id || idx} 
+                        className="bg-slate-900 border border-slate-800 p-2.5 rounded-xl flex items-center justify-between text-xs"
+                      >
+                        <div>
+                          <div className="font-bold text-white">N° Op: {p.numeroOperacion || 'Cobro Efectivo'}</div>
+                          <div className="text-[10px] text-slate-400">{p.periodo ? `Periodo: ${p.periodo} • ` : ''}{p.fechaTransferencia || p.fechaHora || 'Reciente'} • {p.billeteraOrigen || 'Efectivo'}</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="font-extrabold text-emerald-400">${Number(p.monto || 0).toLocaleString('es-AR')}</div>
+                          <span className={`text-[10px] font-bold uppercase ${p.estado === 'aprobado' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {p.estado === 'aprobado' ? 'Aprobado' : 'En revisión'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-500 italic text-center py-3">
+                    No hay comprobantes de pago registrados para este socio aún.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 

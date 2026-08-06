@@ -1681,16 +1681,7 @@ export const AppProvider = ({ children }) => {
       const pDate = parseAnyDate(p.fechaTransferencia || p.fecha || p.created_at);
       if (pDate) {
         const pMonth = getPeriodString(pDate);
-        if (pMonth === targetPeriod) return true;
-
-        // End-of-month transfer rule: Transfer between 20th and last day of previous month counts for current month
-        const [targetY, targetM] = targetPeriod.split('-').map(Number);
-        const prevMonthDate = new Date(targetY, targetM - 2, 1);
-        const prevMonthPeriod = getPeriodString(prevMonthDate);
-
-        if (pMonth === prevMonthPeriod && pDate.getDate() >= 20) {
-          return true;
-        }
+        return pMonth === targetPeriod;
       }
       return false;
     });

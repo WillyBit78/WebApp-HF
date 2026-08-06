@@ -113,6 +113,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   const [cashModalSocio, setCashModalSocio] = useState(null);
   const [cashMonto, setCashMonto] = useState(15000);
   const [cashConcepto, setCashConcepto] = useState('Pago de cuota social en efectivo');
+  const [cashPeriodo, setCashPeriodo] = useState('2026-08');
 
   // Only socio roles (case-insensitive)
   const socios = useMemo(() => {
@@ -238,7 +239,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
   const handleConfirmCashPayment = (e) => {
     e.preventDefault();
     if (!cashModalSocio) return;
-    registrarPagoEfectivoCoach(cashModalSocio.id, cashMonto, cashConcepto);
+    registrarPagoEfectivoCoach(cashModalSocio.id, cashMonto, cashConcepto, cashPeriodo);
     setCashModalSocio(null);
   };
 
@@ -892,7 +893,21 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
               </div>
 
               <div>
-                <label className="block text-slate-400 mb-1 font-semibold">Concepto / Período</label>
+                <label className="block text-slate-400 mb-1 font-semibold">Período / Mes a Imputar</label>
+                <select
+                  value={cashPeriodo}
+                  onChange={(e) => setCashPeriodo(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-extrabold cursor-pointer"
+                >
+                  <option value="2026-07">Julio 2026 (Cuota Anterior)</option>
+                  <option value="2026-08">Agosto 2026 (Cuota Actual)</option>
+                  <option value="2026-09">Septiembre 2026 (Adelantado)</option>
+                  <option value="2026-10">Octubre 2026 (Adelantado)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 font-semibold">Concepto / Notas</label>
                 <input
                   type="text"
                   required

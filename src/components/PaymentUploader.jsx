@@ -59,6 +59,7 @@ export const PaymentUploader = ({ onSuccess }) => {
   
   const [selectedSocioId, setSelectedSocioId] = useState(defaultUser?.id || currentUser?.id);
   const targetSocio = users.find(u => u.id === selectedSocioId) || currentUser;
+  const [selectedPeriod, setSelectedPeriod] = useState(getPeriodString());
 
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -520,7 +521,7 @@ export const PaymentUploader = ({ onSuccess }) => {
 
       const paymentData = await uploadPaymentReceipt({
         ...parsedData,
-        periodo: getPeriodString(),
+        periodo: selectedPeriod,
         estado: finalStatus,
         observaciones: autoObservaciones,
         comprobanteUrl: dataUrl
@@ -613,6 +614,23 @@ export const PaymentUploader = ({ onSuccess }) => {
                     </option>
                   ))}
                 </select>
+
+                <div className="pt-2 border-t border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 mb-1.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    Seleccionar Mes / Período a Pagar:
+                  </div>
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 text-emerald-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold focus:outline-none focus:border-emerald-400 cursor-pointer shadow-inner"
+                  >
+                    <option value="2026-07">Julio 2026 (Cuota Anterior)</option>
+                    <option value="2026-08">Agosto 2026 (Cuota Actual)</option>
+                    <option value="2026-09">Septiembre 2026 (Adelantado)</option>
+                    <option value="2026-10">Octubre 2026 (Adelantado)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="bg-slate-800/80 border border-slate-700/80 p-5 rounded-2xl text-center">
@@ -661,6 +679,23 @@ export const PaymentUploader = ({ onSuccess }) => {
                     </option>
                   ))}
                 </select>
+
+                <div className="pt-2 border-t border-slate-800/80">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-400 mb-1.5">
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                    Seleccionar Mes / Período a Pagar:
+                  </div>
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 text-emerald-300 rounded-xl px-3.5 py-2.5 text-xs font-extrabold focus:outline-none focus:border-emerald-400 cursor-pointer shadow-inner"
+                  >
+                    <option value="2026-07">Julio 2026 (Cuota Anterior)</option>
+                    <option value="2026-08">Agosto 2026 (Cuota Actual)</option>
+                    <option value="2026-09">Septiembre 2026 (Adelantado)</option>
+                    <option value="2026-10">Octubre 2026 (Adelantado)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="bg-slate-800/80 border border-slate-700/80 p-6 rounded-xl text-center">
