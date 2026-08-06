@@ -12,6 +12,7 @@ import { Sidebar } from './components/Sidebar';
 import { LoginScreen } from './components/LoginScreen';
 
 import { DashboardSocios } from './components/DashboardSocios';
+import { MainDashboardSummary } from './components/MainDashboardSummary';
 import { ModalFichaSocio } from './components/ModalFichaSocio';
 import { ModalAddUser } from './components/Modals/ModalAddUser';
 import { ModalAddEvent } from './components/Modals/ModalAddEvent';
