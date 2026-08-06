@@ -85,13 +85,10 @@ function MainApp() {
   const activeRoleId = currentUser.rol || 'socio';
 
   const renderDashboardByRole = () => {
-    switch (activeRoleId) {
-      case 'admin': return <DashboardAdmin onNavigate={setCurrentTab} onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
-      case 'contador': return <DashboardContador onNavigate={setCurrentTab} initialTab="control_financiero" onOpenModalUser={() => setModalUserOpen(true)} />;
-      case 'coach': return <DashboardCoach onNavigate={setCurrentTab} onOpenModalUser={() => setModalUserOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
-      case 'socio': return <DashboardSocio />;
-      default: return <DashboardAdmin onNavigate={setCurrentTab} onOpenModalUser={() => setModalUserOpen(true)} onOpenModalStaff={() => setModalStaffOpen(true)} onOpenModalEvent={() => setModalEventOpen(true)} />;
+    if (activeRoleId === 'socio') {
+      return <DashboardSocio />;
     }
+    return <MainDashboardSummary onNavigate={setCurrentTab} />;
   };
 
   const renderContent = () => {
