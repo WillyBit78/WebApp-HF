@@ -4,7 +4,7 @@ import { fetchMercadoPagoTransfers } from '../services/mercadopago';
 import { ocrService } from '../services/ocrService';
 import { MOCK_ROLES, MOCK_USERS } from '../mockData/initialData';
 import { uploadFileToStorage, compressBase64Image } from '../lib/storageUtils';
-import { getPeriodString, isLastDayOfMonth, getNextPeriodString } from '../utils/dateUtils';
+import { getPeriodString, isLastDayOfMonth, getNextPeriodString, parseAnyDate } from '../utils/dateUtils';
 
 const AppContext = createContext();
 
@@ -1671,9 +1671,28 @@ export const AppProvider = ({ children }) => {
     });
 
     const periodPayments = socioPayments.filter(p => {
-      if (p.periodo) return p.periodo === targetPeriod;
-      const pPeriod = getPeriodString(p.fechaTransferencia || p.fecha || p.created_at);
-      return pPeriod === targetPeriod;
+      let pPeriod = p.periodo;
+      if (!pPeriod && p.observaciones && p.observaciones.includes('[Periodo:')) {
+        const match = p.observaciones.match(/\[Periodo:\s*([0-9]{4}-[0-9]{2})\]/);
+        if (match && match[1]) pPeriod = match[1];
+      }
+      if (pPeriod) return pPeriod === targetPeriod;
+
+      const pDate = parseAnyDate(p.fechaTransferencia || p.fecha || p.created_at);
+      if (pDate) {
+        const pMonth = getPeriodString(pDate);
+        if (pMonth === targetPeriod) return true;
+
+        // End-of-month transfer rule: Transfer between 20th and last day of previous month counts for current month
+        const [targetY, targetM] = targetPeriod.split('-').map(Number);
+        const prevMonthDate = new Date(targetY, targetM - 2, 1);
+        const prevMonthPeriod = getPeriodString(prevMonthDate);
+
+        if (pMonth === prevMonthPeriod && pDate.getDate() >= 20) {
+          return true;
+        }
+      }
+      return false;
     });
 
     const hasApproved = periodPayments.some(p => p.estado === 'aprobado');
