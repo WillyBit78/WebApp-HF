@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Upload, CheckCircle2, Sparkles, ArrowRight, CreditCard, Clock, User } from 'lucide-react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ocrService } from '../services/ocrService';
+import { getPeriodString } from '../utils/dateUtils';
 import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurar el worker de PDF.js usando CDN para evitar problemas de Vite
@@ -519,6 +520,7 @@ export const PaymentUploader = ({ onSuccess }) => {
 
       const paymentData = await uploadPaymentReceipt({
         ...parsedData,
+        periodo: getPeriodString(),
         estado: finalStatus,
         observaciones: autoObservaciones,
         comprobanteUrl: dataUrl

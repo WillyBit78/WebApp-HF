@@ -70,3 +70,34 @@ export const isDateInRange = (dateVal, dateFrom, dateTo) => {
   if (dateTo && isoDate > dateTo) return false;
   return true;
 };
+
+/**
+ * Returns period string in YYYY-MM format (e.g. "2026-08")
+ */
+export const getPeriodString = (dateVal = new Date()) => {
+  const d = parseAnyDate(dateVal) || new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${yyyy}-${mm}`;
+};
+
+/**
+ * Checks if the given date is the last day of its month
+ */
+export const isLastDayOfMonth = (dateVal = new Date()) => {
+  const d = parseAnyDate(dateVal) || new Date();
+  const year = d.getFullYear();
+  const month = d.getMonth();
+  const lastDay = new Date(year, month + 1, 0).getDate();
+  return d.getDate() === lastDay;
+};
+
+/**
+ * Returns period string of the next month (e.g. "2026-09")
+ */
+export const getNextPeriodString = (dateVal = new Date()) => {
+  const d = parseAnyDate(dateVal) || new Date();
+  const nextMonthDate = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+  return getPeriodString(nextMonthDate);
+};
+

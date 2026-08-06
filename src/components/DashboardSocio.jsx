@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { PaymentUploader } from './PaymentUploader';
+import { getPeriodString, isLastDayOfMonth } from '../utils/dateUtils';
 import { 
   Users, 
   CheckCircle2, 
@@ -48,21 +49,27 @@ export const DashboardSocio = () => {
 
   // Socio category events
   const myEvents = events.filter(e => e.categoria === currentUser.categoria || e.categoria === 'Todas');
-  
-  // My payments history
-  const myPayments = payments.filter(p => p.socioId === currentUser.id);
+    // My payments history
+  const myPayments = payments.filter(p => p.socioId === currentUser.id || String(p.numeroSocio) === String(currentUser.numeroSocio));
 
-  // Dynamic fee status calculation: if socio has ANY approved payment, they are AL DIA!
-  const hasApprovedPayment = myPayments.some(p => p.estado === 'aprobado');
-  const hasPendingRevision = myPayments.some(p => p.estado === 'en_revision');
+  // Dynamic fee status calculation for active period (Agosto 2026)
+  const activePeriod = getPeriodString();
+  const myActivePeriodPayments = myPayments.filter(p => {
+    if (p.periodo) return p.periodo === activePeriod;
+    return getPeriodString(p.fechaTransferencia || p.fecha || p.created_at) === activePeriod;
+  });
+
+  const hasApprovedPayment = myActivePeriodPayments.some(p => p.estado === 'aprobado');
+  const hasPendingRevision = myActivePeriodPayments.some(p => p.estado === 'en_revision');
   
   const effectiveFeeStatus = hasApprovedPayment 
     ? 'al_dia' 
-    : (hasPendingRevision ? 'pendiente' : (currentUser.estadoCuota || 'moroso'));
+    : (hasPendingRevision ? 'en_revision' : 'pendiente');
 
   return (
     <div className="space-y-6">
       
+
 
 
       {/* Socio Personal Card - Centered & Responsive */}
@@ -110,7 +117,7 @@ export const DashboardSocio = () => {
               const now = new Date();
               const currentMonthIndex = now.getMonth();
               const currentYear = now.getFullYear();
-              const isLastDayOfMonth = new Date(currentYear, currentMonthIndex + 1, 0).getDate() === now.getDate();
+              const isLastDay = isLastDayOfMonth(now);
 
               const monthNames = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
@@ -119,28 +126,28 @@ export const DashboardSocio = () => {
                 return {
                   name: monthNames[date.getMonth()],
                   year: date.getFullYear(),
+                  period: getPeriodString(date),
                   offset
                 };
               };
 
               const months = [
-                getMonthInfo(-1), // Mes Anterior (Junio)
-                getMonthInfo(0),  // Mes Actual (Julio)
-                getMonthInfo(1),  // Mes Siguiente (+1 Agosto)
-                getMonthInfo(2)   // Mes Sub-siguiente (+2 Septiembre)
+                getMonthInfo(-1), // Mes Anterior
+                getMonthInfo(0),  // Mes Actual (En Curso)
+                getMonthInfo(1),  // Mes Siguiente (+1)
+                getMonthInfo(2)   // Mes Sub-siguiente (+2)
               ];
 
               return months.map((m, idx) => {
                 const isPrevious = m.offset === -1;
                 const isCurrent = m.offset === 0;
                 const isNext = m.offset === 1;
-                const isFarNext = m.offset === 2;
 
-                // Estado de pagos
-                const isCurrentPaid = hasApprovedPayment || effectiveFeeStatus === 'al_dia';
+                // Estado de pagos para este mes específico
+                const isCurrentPaid = effectiveFeeStatus === 'al_dia';
                 
-                // Regla del mes siguiente: Se habilita si es el último día del mes O si el mes actual ya está PAGADO (Al día)
-                const isNextUnlocked = isNext && (isLastDayOfMonth || isCurrentPaid);
+                // Regla del mes siguiente: Se habilita si es el último día del mes O si la cuota del mes actual ya fue ABONADA (Al Día)
+                const isNextUnlocked = isNext && (isLastDay || isCurrentPaid);
 
                 if (isPrevious) {
                   return (
@@ -152,7 +159,7 @@ export const DashboardSocio = () => {
                       <div className="flex items-center gap-1.5 text-emerald-400 font-extrabold text-sm">
                         <CheckCircle2 className="w-4 h-4 shrink-0" /> PAGADO
                       </div>
-                      <div className="text-[10px] text-slate-400">Cuota cancelada con éxito.</div>
+                      <div className="text-[10px] text-slate-400">Cuota anterior al día.</div>
                     </div>
                   );
                 }
@@ -166,17 +173,24 @@ export const DashboardSocio = () => {
                       </div>
                       <div className="flex items-center gap-1.5 text-white font-extrabold text-sm">
                         {effectiveFeeStatus === 'al_dia' && <><CheckCircle2 className="w-4 h-4 text-emerald-400" /> AL DÍA</>}
-                        {effectiveFeeStatus === 'pendiente' && <><Clock className="w-4 h-4 text-amber-400 animate-pulse" /> EN REVISIÓN</>}
-                        {effectiveFeeStatus === 'moroso' && <><AlertTriangle className="w-4 h-4 text-rose-400" /> PENDIENTE</>}
+                        {effectiveFeeStatus === 'en_revision' && <><Clock className="w-4 h-4 text-amber-400 animate-pulse" /> EN REVISIÓN</>}
+                        {effectiveFeeStatus === 'pendiente' && <><AlertTriangle className="w-4 h-4 text-rose-400" /> PENDIENTE</>}
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowUploader(!showUploader)}
-                        className="w-full mt-1 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
-                      >
-                        <Upload className="w-3.5 h-3.5" />
-                        {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
-                      </button>
+                      {effectiveFeeStatus !== 'al_dia' && (
+                        <button
+                          type="button"
+                          onClick={() => setShowUploader(!showUploader)}
+                          className="w-full mt-1 px-3 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-black text-[11px] flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          {showUploader ? 'Ocultar Formulario' : 'Subir Comprobante MP'}
+                        </button>
+                      )}
+                      {effectiveFeeStatus === 'al_dia' && (
+                        <div className="text-[10px] text-emerald-400 font-semibold pt-1">
+                          Cuota de {m.name} abonada correctamente.
+                        </div>
+                      )}
                     </div>
                   );
                 }
@@ -205,11 +219,11 @@ export const DashboardSocio = () => {
                     <div key={idx} className="bg-slate-950/40 border border-slate-800 p-4 rounded-2xl space-y-2 opacity-50 select-none grayscale pointer-events-none">
                       <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
                         <span>{m.name} {m.year}</span>
-                        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[9px]">Grisado</span>
+                        <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded text-[9px]">Próximo</span>
                       </div>
                       <div className="text-slate-400 font-medium text-xs">Cuota Próxima</div>
                       <div className="text-[10px] text-slate-500 leading-tight">
-                        {isCurrentPaid ? 'Se activará el último día del mes.' : 'Requiere pago de cuota actual.'}
+                        {isCurrentPaid ? 'Se activará el último día del mes.' : 'Se habilita el último día del mes o al abonar la cuota actual.'}
                       </div>
                     </div>
                   );

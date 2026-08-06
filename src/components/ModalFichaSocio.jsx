@@ -788,7 +788,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                     >
                       <div>
                         <div className="font-bold text-white">N° Op: {p.numeroOperacion || 'Cobro Efectivo'}</div>
-                        <div className="text-[10px] text-slate-400">{p.fechaTransferencia || p.fechaHora || 'Reciente'} • {p.billeteraOrigen || 'Efectivo'}</div>
+                        <div className="text-[10px] text-slate-400">{p.periodo ? `Periodo: ${p.periodo} • ` : ''}{p.fechaTransferencia || p.fechaHora || 'Reciente'} • {p.billeteraOrigen || 'Efectivo'}</div>
                       </div>
                       <div className="text-right">
                         <div className="font-extrabold text-emerald-400">${Number(p.monto || 0).toLocaleString('es-AR')}</div>

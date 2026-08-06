@@ -4,6 +4,7 @@ import { fetchMercadoPagoTransfers } from '../services/mercadopago';
 import { ocrService } from '../services/ocrService';
 import { MOCK_ROLES, MOCK_USERS } from '../mockData/initialData';
 import { uploadFileToStorage, compressBase64Image } from '../lib/storageUtils';
+import { getPeriodString, isLastDayOfMonth, getNextPeriodString } from '../utils/dateUtils';
 
 const AppContext = createContext();
 
@@ -1094,6 +1095,7 @@ export const AppProvider = ({ children }) => {
         `receipt_${targetUser.id}_${Date.now()}.jpg`
       );
     }
+    const targetPeriod = receiptData.periodo || getPeriodString(receiptData.fechaTransferencia || new Date());
     const newPayment = {
       id: `pay-${Date.now()}`,
       socioId: targetUser.id,
@@ -1103,6 +1105,7 @@ export const AppProvider = ({ children }) => {
       billeteraOrigen: receiptData.billeteraOrigen || 'Mercado Pago',
       emisorNombre: receiptData.emisorNombre || `${targetUser.nombre}`,
       fechaTransferencia: receiptData.fechaTransferencia || new Date().toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' }),
+      periodo: targetPeriod,
       comprobanteUrl: finalComprobanteUrl,
       estado: receiptData.estado || 'en_revision',
       observaciones: receiptData.observaciones || 'Comprobante subido desde app.'
@@ -1145,11 +1148,8 @@ export const AppProvider = ({ children }) => {
       }
     }
     
-    // Check if socio already has an approved payment to protect AL DIA status
-    const hasApprovedAlready = payments.some(p => p.socioId === targetUser.id && p.estado === 'aprobado');
-    const newSocioStatus = hasApprovedAlready 
-      ? 'al_dia' 
-      : (newPayment.estado === 'aprobado' ? 'al_dia' : (newPayment.estado === 'en_revision' ? 'pendiente' : (targetUser.estadoCuota || 'moroso')));
+    const updatedPayments = [newPayment, ...payments];
+    const newSocioStatus = newPayment.estado === 'aprobado' ? 'al_dia' : 'pendiente';
     
     const updatedUser = { ...targetUser, estadoCuota: newSocioStatus };
     setUsers(prev => prev.map(u => u.id === targetUser.id ? updatedUser : u));
@@ -1309,13 +1309,29 @@ export const AppProvider = ({ children }) => {
     registrarLog('comprobante_eliminado', `Comprobante N° ${targetPayment.numeroOperacion} de ${targetPayment.socioNombre} eliminado y des-conciliado`);
   };
 
-  const registrarPagoEfectivoCoach = async (socioId, monto = 15000, concepto = 'Cuota en efectivo') => {
+  const registrarPagoEfectivoCoach = async (socioId, monto = 15000, concepto = 'Cuota en efectivo', targetPeriod = getPeriodString()) => {
     const socioTarget = users.find(u => u.id === socioId);
     if (!socioTarget) return false;
 
-    setUsers(prev => prev.map(u => u.id === socioId ? { ...u, estadoCuota: 'al_dia' } : u));
+    const responsable = `${currentUser?.nombre || 'Staff'} ${currentUser?.apellido || ''} (${currentUser?.rol || 'coach'})`;
     
-    const responsable = `${currentUser.nombre} ${currentUser.apellido} (${currentUser.rol})`;
+    const newPayment = {
+      id: `pay-cash-${Date.now()}`,
+      socioId: socioTarget.id,
+      socioNombre: `${socioTarget.nombre} ${socioTarget.apellido}`,
+      numeroOperacion: `EFECTIVO-${Date.now()}`,
+      monto: Number(monto),
+      billeteraOrigen: 'Efectivo',
+      emisorNombre: responsable,
+      fechaTransferencia: new Date().toLocaleDateString('es-AR'),
+      periodo: targetPeriod,
+      comprobanteUrl: null,
+      estado: 'aprobado',
+      observaciones: `${concepto} (Efectivo cobrado por: ${responsable})`
+    };
+
+    setPayments(prev => [newPayment, ...prev]);
+    setUsers(prev => prev.map(u => u.id === socioId ? { ...u, estadoCuota: 'al_dia' } : u));
     
     const movData = {
       id: `mov-${Date.now()}`,
@@ -1332,6 +1348,7 @@ export const AppProvider = ({ children }) => {
 
     if (isSupabaseConfigured) {
       await Promise.all([
+        supabase.from('payments').insert([newPayment]),
         supabase.from('users').update({ estadoCuota: 'al_dia' }).eq('id', socioId),
         supabase.from('movimientos').insert([movData])
       ]).catch(console.error);
@@ -1536,12 +1553,51 @@ export const AppProvider = ({ children }) => {
     });
   };
 
+  // Dynamic fee status evaluation for a socio for a given period YYYY-MM (defaults to current month)
+  const getSocioFeeStatus = React.useCallback((socioTarget, currentPayments = payments, targetPeriod = getPeriodString()) => {
+    if (!socioTarget) return 'pendiente';
+    const socioId = socioTarget.id;
+    const numSocio = socioTarget.numeroSocio;
+
+    const socioPayments = currentPayments.filter(p => 
+      p.socioId === socioId || (numSocio && String(p.numeroSocio) === String(numSocio))
+    );
+
+    const periodPayments = socioPayments.filter(p => {
+      if (p.periodo) return p.periodo === targetPeriod;
+      const pPeriod = getPeriodString(p.fechaTransferencia || p.fecha || p.created_at);
+      return pPeriod === targetPeriod;
+    });
+
+    const hasApproved = periodPayments.some(p => p.estado === 'aprobado');
+    if (hasApproved) return 'al_dia';
+
+    return 'pendiente';
+  }, [payments]);
+
+  // Evaluated users list where every socio's estadoCuota reflects active month status
+  const usersWithEvaluatedStatus = React.useMemo(() => {
+    return users.map(u => {
+      if (u.rol && u.rol !== 'socio') return u;
+      const activeStatus = getSocioFeeStatus(u, payments);
+      return { ...u, estadoCuota: activeStatus };
+    });
+  }, [users, payments, getSocioFeeStatus]);
+
+  const currentUserWithEvaluatedStatus = React.useMemo(() => {
+    if (!currentUser) return null;
+    const evaluated = usersWithEvaluatedStatus.find(u => u.id === currentUser.id);
+    return evaluated || currentUser;
+  }, [currentUser, usersWithEvaluatedStatus]);
+
   // Stats calculation
   const totalRecaudado = payments.filter(p => p.estado === 'aprobado').reduce((sum, p) => sum + Number(p.monto), 0);
   const pagosPendientesRev = payments.filter(p => p.estado === 'en_revision');
-  const sociosAlDiaCount = users.filter(u => u.estadoCuota === 'al_dia').length;
-  const sociosPendientesCount = users.filter(u => u.estadoCuota === 'pendiente').length;
-  const sociosMorososCount = users.filter(u => u.estadoCuota === 'moroso').length;
+  
+  const sociosList = usersWithEvaluatedStatus.filter(u => (!u.rol || u.rol === 'socio'));
+  const sociosAlDiaCount = sociosList.filter(u => u.estadoCuota === 'al_dia').length;
+  const sociosPendientesCount = sociosList.filter(u => u.estadoCuota === 'pendiente').length;
+  const sociosMorososCount = sociosList.filter(u => u.estadoCuota === 'moroso').length;
 
   const ingresosCuotasMov = movimientosFinancieros.filter(m => m.caja === 'cuotas' && m.tipo === 'ingreso').reduce((sum, m) => sum + Number(m.monto), 0);
   const gastosCuotasMov = movimientosFinancieros.filter(m => m.caja === 'cuotas' && m.tipo === 'gasto').reduce((sum, m) => sum + Number(m.monto), 0);
@@ -1564,7 +1620,7 @@ export const AppProvider = ({ children }) => {
     if (typeof socioOrId === 'object') {
       setSelectedSocioForModal(socioOrId);
     } else {
-      const found = users.find(u => u.id === socioOrId || u.numeroSocio === Number(socioOrId));
+      const found = usersWithEvaluatedStatus.find(u => u.id === socioOrId || u.numeroSocio === Number(socioOrId));
       if (found) setSelectedSocioForModal(found);
     }
   };
@@ -1575,9 +1631,9 @@ export const AppProvider = ({ children }) => {
 
   return (
     <AppContext.Provider value={{
-      currentUser, login, logout,
-      users, payments, events, notices, movimientosFinancieros, logs, mercadoPagoTransfers,
-      loadingDb,
+      currentUser: currentUserWithEvaluatedStatus, login, logout,
+      users: usersWithEvaluatedStatus, payments, events, notices, movimientosFinancieros, logs, mercadoPagoTransfers,
+      loadingDb, getSocioFeeStatus,
       selectedSocioForModal, openFichaSocio, closeFichaSocio,
       auditoriaFilterStatus, setAuditoriaFilterStatus, openAuditoriaStatus,
       viewedNotifications, viewedPaymentIds, markNotificationsAsViewed,
@@ -1594,7 +1650,7 @@ export const AppProvider = ({ children }) => {
       registerPushSubscription,
       stats: {
         totalRecaudado, pagosPendientesRev, sociosAlDiaCount, sociosPendientesCount, sociosMorososCount,
-        totalSocios: users.length, ingresosCuotasTotal, gastosCuotasMov, saldoCajaCuotas,
+        totalSocios: sociosList.length, ingresosCuotasTotal, gastosCuotasMov, saldoCajaCuotas,
         ingresosTorneosTotal, gastosTorneosTotal, saldoCajaTorneos, totalIngresosGlobal, totalGastosGlobal, balanceGeneralTotal
       }
     }}>
