@@ -13,16 +13,16 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
   };
   const allNavItems = [
     { 
+      id: 'dashboard', 
+      label: 'Inicio', 
+      icon: Home, 
+      roles: ['admin', 'contador', 'coach', 'socio'] 
+    },
+    { 
       id: 'users', 
       label: 'Socios', 
       icon: Users, 
       roles: ['admin', 'contador', 'coach'] 
-    },
-    { 
-      id: 'dashboard', 
-      label: 'Inicio', 
-      icon: Home, 
-      roles: ['socio'] 
     },
     { 
       id: 'calendar', 
@@ -74,7 +74,7 @@ export const BottomNav = ({ currentTab, setCurrentTab, activeRoleId }) => {
       <div className="flex justify-around items-center max-w-md mx-auto">
         {filteredItems.map((item) => {
           const Icon = item.icon;
-          const isActive = currentTab === item.id || (item.id === 'users' && currentTab === 'dashboard' && activeRoleId !== 'socio');
+          const isActive = currentTab === item.id;
           return (
             <button
               key={item.id}

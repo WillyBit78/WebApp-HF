@@ -297,30 +297,30 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Finanzas</h2>
         </div>
 
-        {/* Main Sub-Tabs + Precios Cuotas */}
-        <div className="flex flex-wrap items-center gap-2">
+        {/* Main Sub-Tabs + Precios Cuotas in 2 lines */}
+        <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
           <button
             onClick={() => setActiveTab('control_financiero')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'control_financiero'
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
-            <Scale className="w-4 h-4" />
-            Balance General
+            <Scale className="w-4 h-4 shrink-0" />
+            Balance
           </button>
 
           <button
             onClick={() => setActiveTab('mp_feed')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'mp_feed'
                 ? 'bg-sky-500 text-slate-950 shadow-lg shadow-sky-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
-            <RefreshCw className="w-4 h-4" />
-            Transferencias Mercado Pago
+            <RefreshCw className="w-4 h-4 shrink-0" />
+            Transf. MP
             {mercadoPagoTransfers.filter(t => t.estado === 'sin_vincular').length > 0 && (
               <span className="bg-sky-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full text-[10px]">
                 {mercadoPagoTransfers.filter(t => t.estado === 'sin_vincular').length}
@@ -330,14 +330,14 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
 
           <button
             onClick={() => setActiveTab('auditoria')}
-            className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
               activeTab === 'auditoria'
                 ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
                 : 'bg-slate-800 text-slate-300 hover:text-white border border-slate-700'
             }`}
           >
-            <FileCheck className="w-4 h-4" />
-            Auditoría de Comprobantes
+            <FileCheck className="w-4 h-4 shrink-0" />
+            Comprobantes
             {pendientesRevCount > 0 && (
               <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.5 rounded-full text-[10px] animate-pulse">
                 {pendientesRevCount}
@@ -345,13 +345,12 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
             )}
           </button>
 
-          {/* Precios Cuotas button — moved here from inside Balance view */}
           <button
             onClick={() => setShowCuotasModal(true)}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
+            className="px-3 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-1.5 cursor-pointer bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30"
           >
-            <DollarSign className="w-4 h-4" />
-            Precios Cuotas por Categoría
+            <DollarSign className="w-4 h-4 shrink-0" />
+            $ Cuotas
           </button>
         </div>
       </div>
@@ -584,30 +583,9 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
       {/* TAB 2: TRANSFERENCIAS EN VIVO MERCADO PAGO */}
       {activeTab === 'mp_feed' && (
         <div className="space-y-6">
-          <div className="bg-slate-900 border border-sky-500/30 p-6 rounded-2xl shadow-xl">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
-              <div>
-                <span className="text-xs font-bold text-sky-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
-                  <RefreshCw className="w-4 h-4 animate-spin" /> CONEXIÓN EN TIEMPO REAL - MERCADO PAGO
-                </span>
-                <h3 className="text-xl font-extrabold text-white">Transferencias Recibidas en Cuenta del Club</h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Alias oficial: <strong className="text-sky-300 font-mono">{clubSettings.aliasMercadoPago}</strong> • Titular: {clubSettings.cuentaTitular}
-                </p>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => sincronizarMercadoPago()}
-                  className="bg-sky-500 hover:bg-sky-600 text-slate-950 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-sky-500/20"
-                >
-                  <RefreshCw className="w-3.5 h-3.5" /> Sincronizar Ahora
-                </button>
-                <div className="bg-sky-950/40 border border-sky-500/20 px-3.5 py-2 rounded-xl text-xs text-sky-300 font-semibold flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  API MP Conectada
-                </div>
-              </div>
+          <div className="bg-slate-900 border border-sky-500/30 p-5 rounded-2xl shadow-xl">
+            <div className="mb-4">
+              <h3 className="text-xl font-extrabold text-white">Transferencias Recibidas</h3>
             </div>
 
             {/* Notification alert banner */}
@@ -658,21 +636,21 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
 
               return (
                 <>
-                  <div className="flex flex-wrap items-center justify-between gap-3 my-4 pb-3 border-b border-slate-800/80">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 my-4 pb-3 border-b border-slate-800/80">
+                    <div className="grid grid-cols-2 gap-2 w-full">
                       {[
                         { id: 'sin_conciliar', label: `Sin Conciliar (${sinConciliarCount})` },
                         { id: 'conciliado', label: `Conciliadas (${conciliadasCount})` },
-                        { id: 'descartado', label: `Descartadas / No Cuotas (${descartadasCount})` },
+                        { id: 'descartado', label: `Descartadas (${descartadasCount})` },
                         { id: 'todos', label: `Todas (${mercadoPagoTransfers.length})` }
                       ].map(t => (
                         <button
                           key={t.id}
                           onClick={() => setMpFilter(t.id)}
-                          className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                          className={`px-3 py-2 rounded-xl text-xs font-bold transition-all text-center cursor-pointer ${
                             mpFilter === t.id 
-                              ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20 font-extrabold scale-105' 
-                              : 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                              ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20 font-extrabold scale-102' 
+                              : 'bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200 border border-slate-700/60'
                           }`}
                         >
                           {t.label}

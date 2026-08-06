@@ -724,24 +724,21 @@ export const PaymentUploader = ({ onSuccess }) => {
       )}
 
       {parsing && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md animate-fade-in">
-          <div className="bg-slate-900 border border-slate-700/80 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl space-y-5 flex flex-col items-center">
-            <div className="relative w-24 h-24 flex items-center justify-center">
-              <div className="absolute inset-0 rounded-full border-4 border-slate-800 border-t-red-500 border-r-amber-400 animate-spin"></div>
-              <div className="w-16 h-16 rounded-full bg-slate-950 p-2 border border-slate-700 shadow-inner flex items-center justify-center z-10">
-                <img 
-                  src="/escudo.png" 
-                  alt="Haedo Futsal" 
-                  className="w-12 h-12 object-contain drop-shadow"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
-                  }}
-                />
-                <div className="hidden w-12 h-12 rounded-full bg-red-600 text-white font-black items-center justify-center text-xs">
-                  HF
-                </div>
-              </div>
+        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-fade-in relative overflow-hidden">
+          {/* Soft Red Background Light Glow */}
+          <div className="absolute w-80 h-80 bg-red-600/25 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
+
+          <div className="relative z-10 bg-slate-900/90 border border-slate-800 p-8 rounded-3xl max-w-sm w-full text-center shadow-2xl space-y-5 flex flex-col items-center">
+            <div className="relative w-28 h-28 mb-2 flex items-center justify-center">
+              {/* Vibrant Blue Spinning Surrounding Circle */}
+              <div className="absolute inset-0 rounded-full border-4 border-blue-600/20 border-t-blue-500 border-r-blue-400 animate-spin shadow-[0_0_15px_rgba(59,130,246,0.5)]"></div>
+
+              {/* Shield Logo with Soft Red Drop-Shadow */}
+              <img 
+                src="/logo.png?v=clean-20260726" 
+                alt="Haedo Futsal Logo" 
+                className="w-20 h-20 object-contain drop-shadow-[0_0_25px_rgba(239,68,68,0.8)] z-10" 
+              />
             </div>
 
             <div>
@@ -755,8 +752,9 @@ export const PaymentUploader = ({ onSuccess }) => {
             </div>
 
             <div className="w-full bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div className="bg-gradient-to-r from-red-500 via-amber-400 to-red-500 h-full w-full animate-pulse"></div>
+              <div className="bg-gradient-to-r from-red-500 via-amber-400 to-blue-500 h-full w-full animate-pulse"></div>
             </div>
+            <span className="text-[10px] text-amber-400 font-extrabold tracking-wider uppercase">HAEDO FUTSAL APP • OFICIAL</span>
           </div>
         </div>
       )}
