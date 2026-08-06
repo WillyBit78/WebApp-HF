@@ -30,7 +30,30 @@ export const AppProvider = ({ children }) => {
     }
   });
   const [users, setUsers] = useState([]);
-  const [payments, setPayments] = useState([]);
+  const [payments, setPayments] = useState(() => {
+    try {
+      const savedPayments = localStorage.getItem('haedo_payments_cache');
+      if (savedPayments) {
+        const parsed = JSON.parse(savedPayments);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(p => normalizeKeys(p));
+        }
+      }
+    } catch (e) {}
+    return [];
+  });
+
+  // Save payments to localStorage whenever they change
+  useEffect(() => {
+    try {
+      if (payments && payments.length > 0) {
+        localStorage.setItem('haedo_payments_cache', JSON.stringify(payments));
+      }
+    } catch (e) {
+      console.warn('Failed to save payments to localStorage:', e);
+    }
+  }, [payments]);
+
   const [events, setEvents] = useState([]);
   const [notices, setNotices] = useState(() => {
     // Load saved notices from localStorage or initialize as empty array
@@ -1619,12 +1642,16 @@ export const AppProvider = ({ children }) => {
   // Dynamic fee status evaluation for a socio for a given period YYYY-MM (defaults to current month)
   const getSocioFeeStatus = React.useCallback((socioTarget, currentPayments = payments, targetPeriod = getPeriodString()) => {
     if (!socioTarget) return 'pendiente';
-    const socioId = socioTarget.id;
-    const numSocio = socioTarget.numeroSocio;
+    const socioId = String(socioTarget.id || '');
+    const numSocio = socioTarget.numeroSocio ? String(socioTarget.numeroSocio) : null;
+    const socioName = `${socioTarget.nombre || ''} ${socioTarget.apellido || ''}`.trim().toLowerCase();
 
-    const socioPayments = currentPayments.filter(p => 
-      p.socioId === socioId || (numSocio && String(p.numeroSocio) === String(numSocio))
-    );
+    const socioPayments = currentPayments.filter(p => {
+      if (p.socioId && String(p.socioId) === socioId) return true;
+      if (numSocio && p.numeroSocio && String(p.numeroSocio) === numSocio) return true;
+      if (p.socioNombre && p.socioNombre.trim().toLowerCase() === socioName) return true;
+      return false;
+    });
 
     const periodPayments = socioPayments.filter(p => {
       if (p.periodo) return p.periodo === targetPeriod;
