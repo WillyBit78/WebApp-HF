@@ -3,7 +3,7 @@ import { useApp } from '../context/AppContext';
 import { Bell, AlertTriangle, Plus, Megaphone, Trash2, Shield, Users, Clock, CheckCircle2, Filter, RotateCcw } from 'lucide-react';
 
 export const NoticeBoard = ({ onOpenModalNotice }) => {
-  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead, markAllNoticesAsRead, registerPushSubscription } = useApp();
+  const { notices, currentUser, getNoticesForUser, deleteNotice, readNoticeIds = [], toggleNoticeRead, registerPushSubscription } = useApp();
 
   const userRole = currentUser?.rol || 'socio';
   const canPublish = userRole === 'admin' || userRole === 'coach' || userRole === 'contador';
@@ -12,9 +12,50 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
   // Filter notices depending on role
   const visibleNotices = getNoticesForUser(currentUser);
 
+  // State for Featured Notice Modal in Foreground (Primer Plano)
+  const [featuredNotice, setFeaturedNotice] = React.useState(null);
+
+  // Detect target notice from URL hash or query string (e.g. #notices:not-123 or ?noticeId=not-123)
   React.useEffect(() => {
-    if (markAllNoticesAsRead) markAllNoticesAsRead(currentUser);
-  }, []);
+    const hash = window.location.hash || '';
+    const params = new URLSearchParams(window.location.search);
+    const targetIdFromQuery = params.get('noticeId');
+    let targetIdFromHash = '';
+
+    if (hash.includes(':')) {
+      targetIdFromHash = hash.split(':')[1];
+    } else if (hash.startsWith('#not-')) {
+      targetIdFromHash = hash.replace('#', '');
+    }
+
+    const targetId = targetIdFromQuery || targetIdFromHash;
+
+    if (targetId) {
+      const match = visibleNotices.find(n => n.id === targetId);
+      if (match) {
+        setFeaturedNotice(match);
+        return;
+      }
+    }
+
+    // Fallback: If opened via push notification link without ID, open latest unread notice in foreground for socio
+    if ((hash.includes('notices') || params.get('tab') === 'notices') && userRole === 'socio') {
+      const unreadNotices = visibleNotices.filter(n => !(readNoticeIds || []).includes(n.id));
+      if (unreadNotices.length > 0) {
+        setFeaturedNotice(unreadNotices[0]);
+      }
+    }
+  }, [visibleNotices, readNoticeIds, userRole]);
+
+  const handleCloseFeaturedNotice = (noticeToMark) => {
+    if (noticeToMark && toggleNoticeRead) {
+      const isRead = (readNoticeIds || []).includes(noticeToMark.id);
+      if (!isRead) {
+        toggleNoticeRead(noticeToMark.id);
+      }
+    }
+    setFeaturedNotice(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -139,8 +180,8 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
                 </div>
 
                 {/* Title & Body */}
-                <div className="space-y-2">
-                  <h3 className={`font-extrabold text-xl tracking-tight ${isRead ? 'text-slate-400' : 'text-white'}`}>{notice.titulo}</h3>
+                <div className="space-y-2 cursor-pointer group/title" onClick={() => setFeaturedNotice(notice)}>
+                  <h3 className={`font-extrabold text-xl tracking-tight group-hover/title:text-purple-300 transition-colors ${isRead ? 'text-slate-400' : 'text-white'}`}>{notice.titulo}</h3>
                   <p className={`text-sm leading-relaxed whitespace-pre-line ${isRead ? 'text-slate-500' : 'text-slate-300'}`}>{notice.contenido || notice.mensaje}</p>
                 </div>
 
@@ -179,6 +220,60 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
           })
         )}
       </div>
+
+      {/* Modal de Aviso en Primer Plano (Foreground Push Notification Modal) */}
+      {featuredNotice && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative overflow-hidden">
+            {/* Header badges */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-purple-500/20 text-purple-300 rounded-xl border border-purple-500/30">
+                  <Megaphone className="w-5 h-5 text-purple-400" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-white text-base sm:text-lg tracking-tight">
+                    Aviso Oficial del Club
+                  </h3>
+                  <span className="text-[11px] text-amber-400 font-bold">📢 Novedad en Primer Plano</span>
+                </div>
+              </div>
+
+              {featuredNotice.urgente && (
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full text-xs font-black uppercase flex items-center gap-1 animate-pulse">
+                  <AlertTriangle className="w-3.5 h-3.5" /> URGENTE
+                </span>
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="space-y-3">
+              <h2 className="text-xl sm:text-2xl font-black text-white leading-snug">
+                {featuredNotice.titulo}
+              </h2>
+              <div className="bg-slate-950/80 border border-slate-800 p-4 rounded-2xl max-h-60 overflow-y-auto">
+                <p className="text-sm text-slate-200 leading-relaxed whitespace-pre-line font-medium">
+                  {featuredNotice.contenido || featuredNotice.mensaje}
+                </p>
+              </div>
+            </div>
+
+            {/* Footer metadata & Entendido Action */}
+            <div className="pt-3 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+              <div className="text-slate-400 font-medium">
+                Emitido por <strong className="text-white">{String(featuredNotice.autor || '').replace(/\s*\([^)]*\)/g, '')}</strong> • {featuredNotice.fecha}
+              </div>
+
+              <button
+                onClick={() => handleCloseFeaturedNotice(featuredNotice)}
+                className="w-full sm:w-auto bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black px-6 py-3 rounded-2xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" /> ¡Entendido! Marcar como Leído
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

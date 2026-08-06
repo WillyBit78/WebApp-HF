@@ -39,16 +39,40 @@ function MainApp() {
 
   const [hash, setHash] = useState(window.location.hash);
 
+  // Dynamic URL / Hash navigation handler (e.g. for Push Notifications)
   useEffect(() => {
-    const handleHashChange = () => setHash(window.location.hash);
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    const handleUrlNavigation = () => {
+      const currentHash = window.location.hash;
+      setHash(currentHash);
+
+      const params = new URLSearchParams(window.location.search);
+      const isNoticesTarget = params.get('tab') === 'notices' || currentHash.includes('notices');
+
+      if (isNoticesTarget) {
+        setCurrentTab('notices');
+      }
+    };
+
+    window.addEventListener('hashchange', handleUrlNavigation);
+    window.addEventListener('popstate', handleUrlNavigation);
+    handleUrlNavigation();
+
+    return () => {
+      window.removeEventListener('hashchange', handleUrlNavigation);
+      window.removeEventListener('popstate', handleUrlNavigation);
+    };
   }, []);
 
-  // Ensure that whenever a user logs in or switches account, the app ALWAYS lands on Panel Principal ('dashboard')
+  // Ensure that when user logs in, if URL requested notices (via Push Notification) land on notices, otherwise dashboard
   useEffect(() => {
     if (currentUser?.id) {
-      setCurrentTab('dashboard');
+      const params = new URLSearchParams(window.location.search);
+      const isNoticesTarget = params.get('tab') === 'notices' || window.location.hash.includes('notices');
+      if (isNoticesTarget) {
+        setCurrentTab('notices');
+      } else {
+        setCurrentTab('dashboard');
+      }
     }
   }, [currentUser?.id]);
 

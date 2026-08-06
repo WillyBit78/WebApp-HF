@@ -21,6 +21,7 @@ export default async function handler(req, res) {
 
   try {
     const { 
+      noticeId = '',
       titulo, 
       contenido, 
       destinatarioTipo = 'todos', 
@@ -84,9 +85,10 @@ export default async function handler(req, res) {
       body: contenido || 'Tienes una nueva novedad importante del club.',
       icon: '/logo_192.png',
       badge: '/logo_192.png',
-      tag: `notice-${Date.now()}`,
+      tag: `notice-${noticeId || Date.now()}`,
       data: {
-        url: '/?tab=notices',
+        url: `/?tab=notices#notices:${noticeId || ''}`,
+        noticeId: noticeId || '',
         urgente
       }
     });
