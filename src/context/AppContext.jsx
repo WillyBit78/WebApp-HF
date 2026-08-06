@@ -1134,47 +1134,60 @@ export const AppProvider = ({ children }) => {
     }
     return existing?.fotoRostro || null;
   };
-  // Helper function to insert payments into Supabase using snake_case with camelCase fallback
+  // Helper function to insert payments into Supabase with schema validation & user ID resolution
   const insertPaymentToSupabase = async (p, socioStatus = null) => {
     if (!isSupabaseConfigured || !supabase) return;
     
-    const snakePayload = {
+    // Resolve socioId against DB users list to satisfy payments_socioId_fkey foreign key constraint
+    let validSocioId = p.socioId;
+    const foundUserInDb = users.find(u => 
+      u.id === p.socioId || 
+      (u.numeroSocio && String(u.numeroSocio) === String(p.numeroSocio)) ||
+      (u.dni && String(u.dni) === String(p.dni)) ||
+      (`${u.nombre || ''} ${u.apellido || ''}`.trim().toLowerCase() === String(p.socioNombre || '').trim().toLowerCase())
+    );
+
+    if (foundUserInDb) {
+      validSocioId = foundUserInDb.id;
+    }
+
+    // Embed periodo into observaciones so it isn't lost, while avoiding unknown column errors
+    const combinedObs = p.periodo 
+      ? `[Periodo: ${p.periodo}] ${p.observaciones || ''}`.trim()
+      : (p.observaciones || 'Comprobante registrado');
+
+    // Clean camelCase payload matching exact column schema in Supabase payments table
+    const cleanPayload = {
       id: p.id,
-      socio_id: p.socioId,
-      socio_nombre: p.socioNombre,
-      numero_operacion: p.numeroOperacion,
+      socioId: validSocioId,
+      socioNombre: p.socioNombre,
+      numeroOperacion: p.numeroOperacion,
       monto: Number(p.monto),
-      billetera_origen: p.billeteraOrigen,
-      emisor_nombre: p.emisorNombre,
-      fecha_transferencia: p.fechaTransferencia,
-      periodo: p.periodo || getPeriodString(),
-      comprobante_url: p.comprobanteUrl,
-      estado: p.estado,
-      observaciones: p.observaciones
+      billeteraOrigen: p.billeteraOrigen || 'Mercado Pago',
+      emisorNombre: p.emisorNombre || p.socioNombre,
+      fechaTransferencia: p.fechaTransferencia || new Date().toLocaleDateString('es-AR'),
+      comprobanteUrl: p.comprobanteUrl || null,
+      estado: p.estado || 'en_revision',
+      observaciones: combinedObs
     };
 
     try {
-      const { error } = await supabase.from('payments').insert([snakePayload]);
+      const { error } = await supabase.from('payments').insert([cleanPayload]);
       if (error) {
-        const camelPayload = {
-          id: p.id,
-          socioId: p.socioId,
-          socioNombre: p.socioNombre,
-          numeroOperacion: p.numeroOperacion,
-          monto: Number(p.monto),
-          billeteraOrigen: p.billeteraOrigen,
-          emisorNombre: p.emisorNombre,
-          fechaTransferencia: p.fechaTransferencia,
-          periodo: p.periodo || getPeriodString(),
-          comprobanteUrl: p.comprobanteUrl,
-          estado: p.estado,
-          observaciones: p.observaciones
-        };
-        await supabase.from('payments').insert([camelPayload]).catch(console.warn);
+        console.error("❌ Error al escribir comprobante en Supabase:", error);
+        registrarLog(
+          'error_insercion_comprobante',
+          `Falló guardado de comprobante N° ${p.numeroOperacion} en Supabase: ${error.message || error.code}`,
+          `Socio: ${p.socioNombre} (ID: ${validSocioId})`
+        );
+      } else {
+        console.log("✅ Comprobante insertado exitosamente en Supabase:", cleanPayload.id);
       }
-      if (socioStatus && p.socioId) {
-        await supabase.from('users').update({ estadoCuota: socioStatus }).eq('id', p.socioId).catch(() => {});
+
+      if (socioStatus && validSocioId) {
+        await supabase.from('users').update({ estadoCuota: socioStatus }).eq('id', validSocioId).catch(() => {});
       }
+
       if (broadcastChannelRef.current) {
         broadcastChannelRef.current.send({
           type: 'broadcast',
@@ -1183,7 +1196,11 @@ export const AppProvider = ({ children }) => {
         }).catch(() => {});
       }
     } catch (err) {
-      console.warn("Supabase payment insert catch:", err);
+      console.error("Fatal catch inserting payment into Supabase:", err);
+      registrarLog(
+        'error_insercion_comprobante',
+        `Error crítico al guardar comprobante N° ${p.numeroOperacion}: ${err.message || String(err)}`
+      );
     }
   };
 
