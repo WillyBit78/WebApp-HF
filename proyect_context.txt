@@ -9,7 +9,7 @@ Last Updated: August 2026
 - Application Name: Haedo Futsal App (haedo-futsal-app)
 - Repository Name: WillyBit78/WebApp-HF
 - Application Type: Progressive Web App (PWA) for Comprehensive Sports Club Management.
-- Primary Objective: Manage club membership roster (Socios), monthly fee collection and payment verification via OCR transfer receipts or cash, institutional notices with web push notifications, match & event calendar, role-based user management (Admin, Accountant/Contador, Coach, Member/Socio), and official club store.
+- Primary Objective: Manage club membership roster (Socios), monthly fee collection and payment verification via OCR transfer receipts or cash, institutional notices with web push notifications, match & event calendar, role-based user management (Admin, Adm.Club/Contador, Coach, Staff, Member/Socio), and official club store.
 
 --------------------------------------------------------------------------------
 2. CONNECTED PLATFORMS & INTEGRATION (.env LOCATION)
@@ -52,59 +52,73 @@ Keys stored in .env include:
 
 A. ROLE-BASED NAVIGATION & PERMISSIONS
    - Socio (Member): Home/Dashboard, Calendar, Notices, Store.
-   - Coach: Member Roster / Rosters, Calendar, Notices, Store, Cash Fee Collection.
-   - Contador (Accountant): Member Roster, Financial Control (Income/Expenses/Audit), Calendar, Notices, Store.
+   - Staff: Home/Dashboard, Calendar, Notices, Store, Member Roster (Gestión de Socios).
+   - Coach: Home/Dashboard, Calendar, Notices, Store, Member Roster (Gestión de Socios), Cash Fee Collection.
+   - Adm.Club / Contador (Accountant): Home/Dashboard, Member Roster, Financial Control (Income/Expenses/Audit), Calendar, Notices, Store.
    - Admin: Full system access (Socios, Calendar, Notices, Store, Financials, System/Staff Config).
 
-B. MEMBER ROSTER & INDIVIDUAL PROFILE (DashboardSocios.jsx, ModalFichaSocio.jsx)
-   - Name Formatting: SURNAME in UPPERCASE (e.g. PAZOS), First Name capitalized (e.g. Guillermo). Automatic stripping of metadata suffixes "| META:...".
-   - Roster Privacy: DNI document number is HIDDEN in the main table grid; phone number is shown with a direct WhatsApp action link.
-   - Socio Profile Modal: Displays SURNAME and Name, face photograph, Auto-generated Socio ID, DNI, Date of Birth, Favorite Club (Hincha de), Phone/WhatsApp, Emergency/Tutor Contact with direct WhatsApp link, 4-digit PIN, and a <select> dropdown for Category/Discipline (Baby, Futsal Masc, Fem, Mayores, Dirigencia, Finanzas).
+B. PANEL PRINCIPAL (MAIN DASHBOARD SUMMARY - MainDashboardSummary.jsx, App.jsx)
+   - Initial View: All staff roles (admin, contador, coach, staff) land on Panel Principal (currentTab = 'dashboard') upon login.
+   - Structured Card Order:
+     1° ESTADO DE CUOTAS MENSUAL: Large 3D Donut Chart, % AL DÍA centered badge, and fee breakdown (Al Día, En Revisión, Pendientes, Total Padrón). Direct navigation to Gestión de Socios (users).
+     2° COMUNICADOS DEL CLUB: Summary of active notices, notice count, and latest official announcement title. Direct navigation to Comunicados (notices).
+     3° SECTOR FINANZAS (Staff Admin/Contador): Net monthly balance, income vs expenses breakdown. Direct navigation to Finanzas (finance).
+     4° AUDITORÍA DE PAGOS (Staff Admin/Contador): Pending receipt audit count. Direct navigation to Auditoría (finance with en_revision filter).
+   - Clean Screen Navigation: MainDashboardSummary is excluded from DashboardContador.jsx so opening Finanzas or Auditoría displays the clean targeted module without top summary cards.
+   - Removed: Socios Activos card was completely eliminated to prevent redundant data.
 
-C. NOTICES & ANNOUNCEMENTS MODULE (NoticeBoard.jsx, AppContext.jsx)
+C. MEMBER ROSTER & STAFF MANAGEMENT (DashboardSocios.jsx, ModalAddUser.jsx, ModalFichaSocio.jsx)
+   - Top Header Panel: Replaced top cards with 3D Donut Chart card (% AL DÍA centered) + padrón details breakdown. Removed redundant headers.
+   - Toolbar: Search bar occupies full width; eliminated redundant filter buttons.
+   - Compact Hierarchy Gauges: Mini circular Donut SVG gauges positioned strictly on the RIGHT side of card headers across all screen sizes (mobile & desktop) next to collapse arrows.
+   - Coach Assignment Display: Discipline and Category headers display assigned Coach/DT badges (e.g. Coach: Juan Pérez).
+   - Staff Registration & Editing:
+     * Single "Nombre" field (Apellido removed). Entered name automatically populates Username (@nombre).
+     * Role selection: Staff (no finance access), Coach (includes multi-select checkboxes for assigned sports categories from CLUB_CATEGORIES), Adm.Club (Contador permissions).
+     * Fee section hidden for Staff. Save button reads "Guardar Staff" / "Guardar Cambios".
+     * Staff Accordion positioned below all sports disciplines; header simplified to "Staff e Integrantes del Club".
+     * ModalFichaSocio.jsx staff edit mode is identical to ModalAddUser.jsx, allowing admins to reassign categories or roles at any time.
+
+D. PERSISTENT NOTIFICATION BADGES (Navbar.jsx, AppContext.jsx)
+   - Strict string ID normalization (String(id)) stored in localStorage (haedo_read_notice_ids and haedo_viewed_payment_ids).
+   - Clicking notice or payment notification badges in Navbar permanently clears unread counters so badges never reappear on reload for those items.
+
+E. INSTITUTIONAL NOTICES MODULE (NoticeBoard.jsx, AppContext.jsx)
    - Direct Supabase persistence (notices table) with explicit exception handling.
    - Automated Web Push Notifications broadcast to all subscribed devices upon publication.
-   - Displayed exclusively in the Avisos section (NoticeBoard.jsx). Urgent/purple banner removed from Socio Dashboard.
    - Sender name formatted as clean name without role brackets.
 
-D. OCR RECEIPT READER, WEB SHARE TARGET & PAYMENTS (PaymentUploader.jsx, sw.js)
-   - Android PWA Web Share Target (sw.js): Intercepts native POST requests to /share-receipt when sharing PDF/Image bank receipts directly from banking apps (Mercado Pago, Cuenta DNI, BNA, etc.).
-   - Service Worker (sw.js): Caches payload to /shared-receipt-file and performs safe absolute redirection to /?shared=true.
-   - Hybrid OCR Reader: Processes images/PDFs with Gemini Flash. On network failure or API latency, advances to en_revision state with spinning crest animation.
-   - Differentiated Audit Views:
-     * Socio View: Clean status "Comprobante recibido. En proceso de verificacion por Administracion."
-     * Admin/Contador View: Full OCR extraction details (Amount, Date, Time, COELSA ID vs Missing fields).
+F. OCR RECEIPT READER, WEB SHARE TARGET & PAYMENTS (PaymentUploader.jsx, sw.js)
+   - Android PWA Web Share Target (sw.js): Intercepts native POST requests to /share-receipt when sharing PDF/Image bank receipts directly from banking apps.
+   - Hybrid OCR Reader: Processes images/PDFs with Gemini Flash.
    - Cash Payment Collection: Coaches and Admins can record cash fee payments directly from the Socio profile modal.
 
-E. OFFICIAL CLUB STORE (StoreModule.jsx)
-   - Mobile: Accessible via "Tienda" tab on the bottom navigation bar (BottomNav.jsx).
-   - Desktop: Accessible via "Tienda Oficial" on the fixed sidebar (Sidebar.jsx).
+G. OFFICIAL CLUB STORE (StoreModule.jsx)
+   - Mobile: Accessible via "Tienda" tab on BottomNav.jsx.
+   - Desktop: Accessible via "Tienda Oficial" on Sidebar.jsx.
 
-F. HORIZONTAL SWIPE REMOVAL
-   - Horizontal touch gesture navigation (swipe between tabs) was COMPLETELY REMOVED to prevent mobile scroll conflicts and ensure smooth vertical scrolling.
-
-G. PWA INSTALLATION BANNER & PUSH PROMPT (PWAInstallBanner.jsx)
-   - Automatically hides when the app is running in standalone mode (PWA) or push notification permissions have already been granted.
+H. FOOTER TEXT (App.jsx)
+   - Standardized strictly to: "© 2026 Haedo Futsal App - Sistema de Gestión Integral".
 
 --------------------------------------------------------------------------------
 6. SUPABASE DATABASE SCHEMA (users & CORE TABLES)
 --------------------------------------------------------------------------------
 users Table:
-- id: Text format usr-[DNI] (e.g. usr-26.248.272)
-- dni: Clean document text (e.g. 26.248.272)
-- nombre: First Name (e.g. Guillermo)
-- apellido: SURNAME in UPPERCASE (e.g. PAZOS)
-- telefono: WhatsApp phone string (e.g. 11 6740-9620)
-- fecha_nacimiento: Birthdate text (e.g. 14/08/1982)
-- hincha_de: Club preference text (e.g. Haedo Futsal)
-- nombre_contacto: Tutor/Family contact name (e.g. Tutor Guillermo)
-- telefono_contacto: Tutor WhatsApp phone (e.g. 11 5544-3322)
+- id: Text format usr-[DNI] or generated text
+- dni: Document text
+- nombre: Full Name / Staff Name
+- apellido: SURNAME in UPPERCASE (or empty for Staff)
+- telefono: WhatsApp phone string
+- fecha_nacimiento: Birthdate text
+- hincha_de: Club preference text
+- nombre_contacto: Tutor/Family contact name
+- telefono_contacto: Tutor WhatsApp phone
 - foto_rostro: Official face image URL/base64
-- clave: Exact 4-digit PIN (e.g. 1234)
-- rol: socio, coach, contador, admin
-- categoria: Assigned sports category / discipline
+- clave: 4-digit PIN (default 1234)
+- rol: socio, staff, coach, contador (Adm.Club), admin
+- categoria: Assigned sports category, or joined Coach categories string (e.g. "BAFI Femenino, EDEFI Baby")
 
-Other Core Tables:
+Core Tables:
 - notices: Institutional announcements and news.
 - events: Matches, training sessions, and calendar events.
 - payments: Fee payment history, OCR metadata, and audit verification states.
@@ -131,19 +145,24 @@ Nueva APP/
         ├── BottomNav.jsx              # Mobile bottom navigation bar
         ├── Sidebar.jsx                # Desktop fixed sidebar
         ├── Navbar.jsx                 # Top header bar
+        ├── MainDashboardSummary.jsx   # Interactive 4-card Main Dashboard Summary
         ├── DashboardAdmin.jsx         # Administrator dashboard
-        ├── DashboardContador.jsx      # Financial control dashboard
+        ├── DashboardContador.jsx      # Financial control dashboard (Finanzas)
         ├── DashboardCoach.jsx         # Coach dashboard
         ├── DashboardSocio.jsx         # Socio/Member dashboard
-        ├── DashboardSocios.jsx        # General Member roster management
-        ├── ModalFichaSocio.jsx        # Member profile & cash payment modal
+        ├── DashboardSocios.jsx        # General Member & Staff roster management
+        ├── ModalFichaSocio.jsx        # Member/Staff profile & edit modal
         ├── NoticeBoard.jsx            # Notices & news board
         ├── CalendarModule.jsx         # Calendar & events module
         ├── StoreModule.jsx            # Official club store module
         ├── PaymentUploader.jsx        # OCR receipt reader & upload tool
         ├── LoginScreen.jsx            # Authentication screen
         ├── PublicRegistrationScreen.jsx # Public socio self-registration screen
-        └── PWAInstallBanner.jsx       # PWA install & Push prompt banner
+        ├── PWAInstallBanner.jsx       # PWA install & Push prompt banner
+        └── Modals/
+            ├── ModalAddUser.jsx       # Staff registration modal (Alta Staff)
+            ├── ModalAddNotice.jsx     # Notice creation modal
+            └── ModalAddEvent.jsx      # Event creation modal
 
 --------------------------------------------------------------------------------
 8. DEV COMMANDS & VERIFICATION WORKFLOW
