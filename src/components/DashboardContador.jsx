@@ -29,9 +29,12 @@ import {
 } from 'lucide-react';
 
 import { MainDashboardSummary } from './MainDashboardSummary';
+import { HistorialMovimientosTable } from './HistorialMovimientosTable';
+import { ModalDetalleCajaEfectivo } from './Modals/ModalDetalleCajaEfectivo';
 import { isDateInRange } from '../utils/dateUtils';
 
 export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'control_financiero' }) => {
+  const [detalleCajaModal, setDetalleCajaModal] = useState(null);
   const { 
     payments, 
     users,
@@ -392,9 +395,13 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
             </div>
 
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
-              <div>
+              <div 
+                onClick={() => setDetalleCajaModal({ title: 'Balance General', type: 'todas' })}
+                className="cursor-pointer group hover:opacity-90 transition-opacity"
+                title="Haz clic para ver desglose en Cuenta vs Efectivo por Staff"
+              >
                 <span className="text-xs font-bold text-amber-400 uppercase tracking-widest flex items-center gap-1.5 mb-1">
-                  <Scale className="w-4 h-4" /> BALANCE GENERAL DEL CLUB
+                  <Scale className="w-4 h-4" /> BALANCE GENERAL DEL CLUB <span className="text-[10px] text-sky-400 font-semibold lowercase underline group-hover:text-amber-300">(ver desglose)</span>
                 </span>
                 <div className={`text-3xl sm:text-4xl font-black ${
                   balanceTotal >= 0 ? 'text-emerald-400' : 'text-rose-400'
@@ -415,7 +422,7 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
               <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setShowModalMov(true)}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20"
+                  className="bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-4 py-3 rounded-xl text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" /> Registrar Ingreso / Gasto
                 </button>
@@ -426,17 +433,21 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
           {/* Las 2 Cajas Separadas */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* CAJA 1: CUOTAS */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/20 border border-amber-500/30 p-5 rounded-2xl shadow-xl space-y-4">
+            <div 
+              onClick={() => setDetalleCajaModal({ title: 'Caja 1: Cuotas', type: 'cuotas' })}
+              className="bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/20 border border-amber-500/30 hover:border-amber-400 p-5 rounded-2xl shadow-xl space-y-4 cursor-pointer transition-all hover:scale-[1.01] group"
+              title="Haz clic para ver desglose en Cuenta vs Efectivo"
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4" /> CAJA 1: CUOTAS
+                    <Building2 className="w-4 h-4" /> CAJA 1: CUOTAS <span className="text-[10px] text-sky-400 font-semibold lowercase underline group-hover:text-amber-300">(ver desglose)</span>
                   </span>
                   <div className="text-2xl font-black text-white mt-1">
                     ${saldoCuotas.toLocaleString('es-AR')}
                   </div>
                 </div>
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl">
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-xl group-hover:scale-110 transition-all">
                   <DollarSign className="w-6 h-6" />
                 </div>
               </div>
@@ -454,17 +465,21 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
             </div>
 
             {/* CAJA 2: TORNEOS */}
-            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/20 border border-blue-500/30 p-5 rounded-2xl shadow-xl space-y-4">
+            <div 
+              onClick={() => setDetalleCajaModal({ title: 'Caja 2: Torneos', type: 'torneos' })}
+              className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950/20 border border-blue-500/30 hover:border-blue-400 p-5 rounded-2xl shadow-xl space-y-4 cursor-pointer transition-all hover:scale-[1.01] group"
+              title="Haz clic para ver desglose en Cuenta vs Efectivo"
+            >
               <div className="flex justify-between items-start">
                 <div>
                   <span className="text-xs font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Trophy className="w-4 h-4" /> CAJA 2: TORNEOS
+                    <Trophy className="w-4 h-4" /> CAJA 2: TORNEOS <span className="text-[10px] text-sky-400 font-semibold lowercase underline group-hover:text-blue-300">(ver desglose)</span>
                   </span>
                   <div className="text-2xl font-black text-white mt-1">
                     ${saldoTorneos.toLocaleString('es-AR')}
                   </div>
                 </div>
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl">
+                <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl group-hover:scale-110 transition-all">
                   <Trophy className="w-6 h-6" />
                 </div>
               </div>
@@ -482,102 +497,18 @@ export const DashboardContador = ({ onOpenModalUser, onNavigate, initialTab = 'c
             </div>
           </div>
 
-          {/* Tabla de Movimientos Contables */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <h3 className="font-bold text-white text-base flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-amber-400" />
-                Historial de Movimientos
-              </h3>
-
-              <div className="flex flex-wrap gap-2 text-xs">
-                <select
-                  value={filterCaja}
-                  onChange={(e) => setFilterCaja(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl font-medium"
-                >
-                  <option value="todas">Todas las Cajas</option>
-                  <option value="cuotas">CUOTAS</option>
-                  <option value="torneos">TORNEOS</option>
-                </select>
-
-                <select
-                  value={filterTipo}
-                  onChange={(e) => setFilterTipo(e.target.value)}
-                  className="bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl font-medium"
-                >
-                  <option value="todos">Todos los Movimientos</option>
-                  <option value="ingreso">Ingresos (+)</option>
-                  <option value="gasto">Gastos (-)</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold text-[10px] tracking-wider">
-                  <tr>
-                    <th className="p-3 rounded-l-xl">Fecha</th>
-                    <th className="p-3">Caja</th>
-                    <th className="p-3">Tipo</th>
-                    <th className="p-3">Concepto / Descripción</th>
-                    <th className="p-3">Responsable / Custodia Efectivo</th>
-                    <th className="p-3 text-right">Monto</th>
-                    <th className="p-3 text-right rounded-r-xl">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800 text-slate-200">
-                  {filteredMovimientos.length === 0 ? (
-                    <tr>
-                      <td colSpan="7" className="p-8 text-center text-slate-500">
-                        No hay movimientos registrados en este filtro.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredMovimientos.map((m) => (
-                      <tr key={m.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="p-3 text-slate-400 font-mono">{m.fecha}</td>
-                        <td className="p-3 font-semibold">
-                          <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold ${
-                            m.caja === 'cuotas' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                          }`}>
-                            {m.caja === 'cuotas' ? 'CUOTAS' : 'TORNEOS'}
-                          </span>
-                        </td>
-                        <td className="p-3">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 w-fit ${
-                            m.tipo === 'ingreso' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'
-                          }`}>
-                            {m.tipo === 'ingreso' ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-                            {m.tipo === 'ingreso' ? 'Ingreso' : 'Gasto'}
-                          </span>
-                        </td>
-                        <td className="p-3 font-medium text-white">{m.concepto}</td>
-                        <td className="p-3 font-semibold text-amber-300 text-[11px]">
-                          {m.responsable || 'Administración Central'}
-                        </td>
-                        <td className={`p-3 text-right font-black text-sm ${
-                          m.tipo === 'ingreso' ? 'text-emerald-400' : 'text-rose-400'
-                        }`}>
-                          {m.tipo === 'ingreso' ? '+' : '-'}${Number(m.monto).toLocaleString('es-AR')}
-                        </td>
-                        <td className="p-3 text-right">
-                          <button 
-                            onClick={() => deleteMovimientoFinanciero(m.id)}
-                            className="p-1 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 rounded-lg transition-colors"
-                            title="Eliminar movimiento"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          {/* Tabla de Movimientos Contables Compacta Reusable */}
+          <HistorialMovimientosTable />
         </div>
+      )}
+
+      {/* Modal Desglose Efectivo vs Banco por Staff */}
+      {detalleCajaModal && (
+        <ModalDetalleCajaEfectivo
+          cajaTitle={detalleCajaModal.title}
+          cajaType={detalleCajaModal.type}
+          onClose={() => setDetalleCajaModal(null)}
+        />
       )}
 
       {/* TAB 2: TRANSFERENCIAS EN VIVO MERCADO PAGO */}

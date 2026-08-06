@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { isSameMonthAndYear } from '../utils/dateUtils';
+import { HistorialMovimientosTable } from './HistorialMovimientosTable';
 import { 
   Wallet, 
   Clock, 
@@ -353,6 +354,13 @@ export const MainDashboardSummary = ({ onNavigate }) => {
         )}
 
       </div>
+
+      {/* Historial de Movimientos Visible en Panel Principal para Staff */}
+      {isStaffAdmin && (
+        <div className="pt-2">
+          <HistorialMovimientosTable limit={10} />
+        </div>
+      )}
     </div>
   );
 };

@@ -298,44 +298,44 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     <div className="space-y-6">
 
       {/* Top Banner & Stats Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 p-6 rounded-3xl shadow-2xl relative overflow-hidden">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 relative z-10">
+      <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-amber-950/40 border border-slate-800 p-4 sm:p-5 rounded-3xl shadow-2xl">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Gestión de Socios
             </h2>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
             {onOpenModalUser && (
               <button
                 onClick={onOpenModalUser}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all cursor-pointer"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-2.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1 shadow-lg shadow-amber-500/20 transition-all cursor-pointer flex-1 sm:flex-initial whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" /> Alta Socio
+                <Plus className="w-3.5 h-3.5 shrink-0" /> + Socio
               </button>
             )}
 
             <button
               onClick={handleCopyLink}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-2.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1 border border-slate-700 transition-all cursor-pointer flex-1 sm:flex-initial whitespace-nowrap"
             >
-              <Share2 className="w-4 h-4 text-emerald-400" /> {copiedLink ? '¡Link Copiado!' : 'Copiar Link Inscripción'}
+              <Share2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> {copiedLink ? 'Link Copiado' : 'Link'}
             </button>
 
             {isStaffAdmin && onOpenModalStaff && (
               <button
                 onClick={onOpenModalStaff}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+                className="bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold px-2.5 py-2 rounded-xl text-xs flex items-center justify-center gap-1 border border-slate-700 transition-all cursor-pointer flex-1 sm:flex-initial whitespace-nowrap"
               >
-                <Plus className="w-4 h-4" /> Alta Staff
+                <Plus className="w-3.5 h-3.5 shrink-0" /> + Staff
               </button>
             )}
           </div>
         </div>
 
         {/* Modern 3D Donut Chart & Breakdown Panel */}
-        <div className="mt-6 pt-6 border-t border-slate-800/80">
+        <div className="mt-4 pt-4 border-t border-slate-800/80">
           <div className="bg-gradient-to-br from-slate-900 via-slate-900/95 to-slate-950 border border-slate-800 hover:border-amber-500/30 p-6 rounded-3xl shadow-2xl transition-all flex flex-col items-center justify-center gap-5">
             
             {/* Agrandado Gráfico Donut 3D Centrado */}

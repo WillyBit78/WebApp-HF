@@ -20,22 +20,20 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
     <div className="space-y-6">
       
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/40 border border-slate-800 p-6 rounded-3xl shadow-2xl relative overflow-hidden">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/40 border border-slate-800 p-5 rounded-3xl shadow-2xl">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1">
-            <Bell className="w-4 h-4" /> COMUNICADOS Y NOTIFICACIONES OFICIALES
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Novedades y Avisos del Club</h2>
-          <p className="text-xs text-slate-400 mt-1">Información oficial para socios, deportistas, contadores y cuerpo técnico</p>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+            <Bell className="w-5 h-5 text-amber-400" /> Novedades y Avisos
+          </h2>
         </div>
 
-        <div className="flex flex-wrap gap-2 shrink-0">
+        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
           {canPublish && (
             <button
               onClick={() => onOpenModalNotice()}
-              className="bg-purple-600 hover:bg-purple-700 text-white font-black px-4 py-3 rounded-2xl text-xs flex items-center gap-2 shadow-lg shadow-purple-600/25 transition-all cursor-pointer"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-black px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-purple-600/25 transition-all cursor-pointer flex-1 sm:flex-initial"
             >
-              <Megaphone className="w-4.5 h-4.5" /> Enviar Comunicado Masivo
+              <Megaphone className="w-4 h-4 shrink-0" /> Comunicado
             </button>
           )}
 
@@ -51,10 +49,10 @@ export const NoticeBoard = ({ onOpenModalNotice }) => {
                   alert('🔔 Permiso concedido. Se guardará tu dispositivo para el próximo aviso.');
                 }
               }}
-              className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold px-3 py-3 rounded-2xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Registrar y Vincular este celular para notificaciones Push con la App cerrada"
+              className="bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-bold px-3.5 py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer flex-1 sm:flex-initial"
+              title="Registrar y Vincular este celular para notificaciones Push"
             >
-              <Bell className="w-4 h-4 text-amber-400" /> Registrar Alertas Push
+              <Bell className="w-4 h-4 text-amber-400 shrink-0" /> Push
             </button>
           )}
         </div>

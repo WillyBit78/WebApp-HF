@@ -46,8 +46,12 @@ export const Sidebar = ({ currentTab, setCurrentTab, activeRoleId }) => {
 
   return (
     <aside className="hidden md:flex flex-col w-64 h-screen fixed top-0 left-0 bottom-0 bg-slate-900 border-r border-slate-800 text-slate-300 z-50 overflow-hidden">
-      {/* Logo Section */}
-      <div className="p-6 flex items-center gap-3">
+      {/* Logo Section - Click abre Panel Principal */}
+      <div 
+        onClick={() => setCurrentTab('dashboard')} 
+        className="p-6 flex items-center gap-3 cursor-pointer select-none hover:opacity-90 transition-opacity"
+        title="Ir al Panel Principal"
+      >
         <div className="w-[72px] h-[72px] flex items-center justify-center overflow-hidden">
           <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-md" />
         </div>
