@@ -44,6 +44,13 @@ function MainApp() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
+  // Ensure that whenever a user logs in or switches account, the app ALWAYS lands on Panel Principal ('dashboard')
+  useEffect(() => {
+    if (currentUser?.id) {
+      setCurrentTab('dashboard');
+    }
+  }, [currentUser?.id]);
+
   if (loadingDb) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-slate-400 relative overflow-hidden">

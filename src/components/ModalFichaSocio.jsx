@@ -28,7 +28,7 @@ import {
 import { CLUB_CATEGORIES } from './Modals/ModalAddUser';
 
 export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
-  const { deleteUser, addOrUpdateUser, registrarLog, payments, currentUser, fetchUserPhotoUrl } = useApp();
+  const { deleteUser, addOrUpdateUser, registrarLog, payments, currentUser, fetchUserPhotoUrl, getSocioFeeStatus } = useApp();
   
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -105,6 +105,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
   const waLink = getWhatsAppLink(socio.telefono);
   const waContactLink = getWhatsAppLink(socio.telefonoContacto);
   const socioPayments = payments.filter(p => p.socioId === socio.id || String(p.numeroSocio) === String(socio.numeroSocio));
+  const effectiveFeeStatus = getSocioFeeStatus ? getSocioFeeStatus(socio, payments) : (socio.estadoCuota || 'pendiente');
 
   const handleDeleteSocio = () => {
     deleteUser(socio.id);
@@ -406,7 +407,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
                 <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
                   Rol: {socio.rol?.toUpperCase()}
                 </span>
-                {isSocioRole && getStatusBadge(socio.estadoCuota)}
+                {isSocioRole && getStatusBadge(effectiveFeeStatus)}
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight truncate">
@@ -748,7 +749,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
 
                       <div className="flex justify-between items-center">
                         <span className="text-slate-500">Estado de Pago:</span>
-                        {getStatusBadge(socio.estadoCuota)}
+                        {getStatusBadge(effectiveFeeStatus)}
                       </div>
                     </>
                   )}

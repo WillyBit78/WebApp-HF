@@ -342,14 +342,28 @@ export const AppProvider = ({ children }) => {
               supabase.from('users').upsert(seedPayloads).catch(console.warn);
             }
           }
-          if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
+          if (pRes.data) {
+            const dbPayments = pRes.data.map(normalizeKeys);
+            setPayments(prev => {
+              const dbIds = new Set(dbPayments.map(p => String(p.id)));
+              const localOnly = prev.filter(p => p.id && !dbIds.has(String(p.id)));
+              return [...dbPayments, ...localOnly];
+            });
+          }
           if (eRes.data) setEvents(eRes.data.map(normalizeKeys));
           if (nRes.data) {
             const loadedNotices = nRes.data.map(normalizeKeys);
             setNotices(loadedNotices);
             try { localStorage.setItem('haedo_notices_cache', JSON.stringify(loadedNotices)); } catch (e) {}
           }
-          if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
+          if (mRes.data) {
+            const dbMovs = mRes.data.map(normalizeKeys);
+            setMovimientosFinancieros(prev => {
+              const dbIds = new Set(dbMovs.map(m => String(m.id)));
+              const localOnly = prev.filter(m => m.id && !dbIds.has(String(m.id)));
+              return [...dbMovs, ...localOnly];
+            });
+          }
           if (lRes.data) {
             const dbLogs = lRes.data.map(normalizeKeys);
             setLogs(prev => {
@@ -385,8 +399,22 @@ export const AppProvider = ({ children }) => {
         if (uRes.data) {
           setUsers(uRes.data.map(normalizeKeys));
         }
-        if (pRes.data) setPayments(pRes.data.map(normalizeKeys));
-        if (mRes.data) setMovimientosFinancieros(mRes.data.map(normalizeKeys));
+        if (pRes.data) {
+          const dbPayments = pRes.data.map(normalizeKeys);
+          setPayments(prev => {
+            const dbIds = new Set(dbPayments.map(p => String(p.id)));
+            const localOnly = prev.filter(p => p.id && !dbIds.has(String(p.id)));
+            return [...dbPayments, ...localOnly];
+          });
+        }
+        if (mRes.data) {
+          const dbMovs = mRes.data.map(normalizeKeys);
+          setMovimientosFinancieros(prev => {
+            const dbIds = new Set(dbMovs.map(m => String(m.id)));
+            const localOnly = prev.filter(m => m.id && !dbIds.has(String(m.id)));
+            return [...dbMovs, ...localOnly];
+          });
+        }
         if (lRes.data) {
           const dbLogs = lRes.data.map(normalizeKeys);
           setLogs(prev => {
@@ -1081,7 +1109,57 @@ export const AppProvider = ({ children }) => {
         console.warn("Failed to fetch user photo on-demand:", e);
       }
     }
-    return existing?.fotoRostro || null;
+  // Helper function to insert payments into Supabase using snake_case with camelCase fallback
+  const insertPaymentToSupabase = async (p, socioStatus = null) => {
+    if (!isSupabaseConfigured || !supabase) return;
+    
+    const snakePayload = {
+      id: p.id,
+      socio_id: p.socioId,
+      socio_nombre: p.socioNombre,
+      numero_operacion: p.numeroOperacion,
+      monto: Number(p.monto),
+      billetera_origen: p.billeteraOrigen,
+      emisor_nombre: p.emisorNombre,
+      fecha_transferencia: p.fechaTransferencia,
+      periodo: p.periodo || getPeriodString(),
+      comprobante_url: p.comprobanteUrl,
+      estado: p.estado,
+      observaciones: p.observaciones
+    };
+
+    try {
+      const { error } = await supabase.from('payments').insert([snakePayload]);
+      if (error) {
+        const camelPayload = {
+          id: p.id,
+          socioId: p.socioId,
+          socioNombre: p.socioNombre,
+          numeroOperacion: p.numeroOperacion,
+          monto: Number(p.monto),
+          billeteraOrigen: p.billeteraOrigen,
+          emisorNombre: p.emisorNombre,
+          fechaTransferencia: p.fechaTransferencia,
+          periodo: p.periodo || getPeriodString(),
+          comprobanteUrl: p.comprobanteUrl,
+          estado: p.estado,
+          observaciones: p.observaciones
+        };
+        await supabase.from('payments').insert([camelPayload]).catch(console.warn);
+      }
+      if (socioStatus && p.socioId) {
+        await supabase.from('users').update({ estadoCuota: socioStatus }).eq('id', p.socioId).catch(() => {});
+      }
+      if (broadcastChannelRef.current) {
+        broadcastChannelRef.current.send({
+          type: 'broadcast',
+          event: 'new_payment',
+          payload: p
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.warn("Supabase payment insert catch:", err);
+    }
   };
 
   // Payments
@@ -1155,23 +1233,7 @@ export const AppProvider = ({ children }) => {
     setUsers(prev => prev.map(u => u.id === targetUser.id ? updatedUser : u));
     if (currentUser && currentUser.id === targetUser.id) setCurrentUser(updatedUser);
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        await Promise.all([
-          supabase.from('payments').insert([newPayment]),
-          supabase.from('users').update({ estadoCuota: newSocioStatus }).eq('id', targetUser.id)
-        ]);
-        if (broadcastChannelRef.current) {
-          broadcastChannelRef.current.send({
-            type: 'broadcast',
-            event: 'new_payment',
-            payload: newPayment
-          }).catch(() => {});
-        }
-      } catch (err) {
-        console.warn("Supabase payment insert error:", err);
-      }
-    }
+    await insertPaymentToSupabase(newPayment, newSocioStatus);
 
     if (newPayment.estado === 'rechazado') {
       registrarLog(
@@ -1348,8 +1410,7 @@ export const AppProvider = ({ children }) => {
 
     if (isSupabaseConfigured) {
       await Promise.all([
-        supabase.from('payments').insert([newPayment]),
-        supabase.from('users').update({ estadoCuota: 'al_dia' }).eq('id', socioId),
+        insertPaymentToSupabase(newPayment, 'al_dia'),
         supabase.from('movimientos').insert([movData])
       ]).catch(console.error);
     }
