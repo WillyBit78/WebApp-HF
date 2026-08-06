@@ -1109,6 +1109,8 @@ export const AppProvider = ({ children }) => {
         console.warn("Failed to fetch user photo on-demand:", e);
       }
     }
+    return existing?.fotoRostro || null;
+  };
   // Helper function to insert payments into Supabase using snake_case with camelCase fallback
   const insertPaymentToSupabase = async (p, socioStatus = null) => {
     if (!isSupabaseConfigured || !supabase) return;
