@@ -94,20 +94,20 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-3 sm:p-4 py-6 relative overflow-y-auto w-full">
       {/* Background Decorative Elements */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md relative z-10">
-        <div className="flex flex-col items-center justify-center mb-8">
+      <div className="w-full max-w-md relative z-10 my-auto">
+        <div className="flex flex-col items-center justify-center mb-3 sm:mb-6 text-center">
           <div 
             onClick={handleLogoClick}
-            className="w-48 h-48 flex items-center justify-center mb-4 cursor-pointer select-none active:scale-95 transition-transform"
+            className="w-28 h-28 sm:w-44 sm:h-44 flex items-center justify-center mb-2 cursor-pointer select-none active:scale-95 transition-transform"
           >
             <img src="/logo.png?v=clean-20260726" alt="Haedo Futsal Logo" className="w-full h-full object-contain drop-shadow-[0_10px_25px_rgba(0,0,0,0.5)]" />
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight flex items-center gap-1.5">
+          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight flex items-center gap-1.5 justify-center">
             <span className="text-white font-bold">HAEDO</span>
             <span className="text-red-500 font-normal">FUTSAL</span>
           </h1>
@@ -115,8 +115,8 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             className="text-white font-medium tracking-wider"
             style={{ 
               fontFamily: "'Caveat', cursive", 
-              fontSize: '2.0rem',
-              lineHeight: '1',
+              fontSize: '1.5rem',
+              lineHeight: '1.1',
               textShadow: '0 0 8px #1d4ed8, 0 0 16px rgba(59, 130, 246, 0.8), 0 0 24px rgba(37, 99, 235, 0.6)'
             }}
           >
@@ -124,10 +124,10 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-8 shadow-2xl space-y-6">
-          <div className="space-y-4">
+        <form onSubmit={handleSubmit} className="bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-4">
+          <div className="space-y-3">
             {hasSharedReceipt && (
-              <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3.5 rounded-xl flex items-center gap-3 text-xs font-semibold animate-fadeIn shadow-lg shadow-emerald-500/5">
+              <div className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 p-3 rounded-xl flex items-center gap-3 text-xs font-semibold animate-fadeIn shadow-lg shadow-emerald-500/5">
                 <Sparkles className="w-5 h-5 shrink-0 text-emerald-400 animate-pulse" />
                 <div>
                   <div className="font-bold text-emerald-300">📥 ¡Comprobante recibido desde tu billetera!</div>
@@ -137,33 +137,33 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
             )}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex items-center gap-2 text-sm font-medium animate-pulse">
-                <AlertCircle className="w-5 h-5 shrink-0" />
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-xl flex items-center gap-2 text-xs font-medium animate-pulse">
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>Usuario o clave incorrectos.</span>
               </div>
             )}
 
             <div>
-              <label className="block text-slate-400 text-sm font-medium mb-1.5 ml-1">Usuario</label>
+              <label className="block text-slate-400 text-xs font-medium mb-1 ml-1">Usuario</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="w-5 h-5 text-slate-500" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <User className="w-4 h-4 text-slate-500" />
                 </div>
                 <input
                   type="text"
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value.toUpperCase())}
                   placeholder="Ej: PLOPEZ"
-                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all font-medium uppercase"
+                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all text-xs font-medium uppercase"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-400 text-sm font-medium mb-1.5 ml-1">PIN de 4 dígitos</label>
+              <label className="block text-slate-400 text-xs font-medium mb-1 ml-1">PIN de 4 dígitos</label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <KeyRound className="w-5 h-5 text-slate-500" />
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <KeyRound className="w-4 h-4 text-slate-500" />
                 </div>
                 <input
                   type="password"
@@ -172,7 +172,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
                   value={clave}
                   onChange={(e) => setClave(e.target.value.replace(/\D/g, ''))}
                   placeholder="••••"
-                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-11 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all text-xl tracking-[0.5em] font-black"
+                  className="w-full bg-slate-950/50 border border-slate-700/50 text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:border-red-500/50 transition-all text-lg tracking-[0.4em] font-black"
                 />
               </div>
             </div>
@@ -180,16 +180,16 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
 
           <button
             type="submit"
-            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-base cursor-pointer"
+            className="w-full bg-blue-900 hover:bg-blue-950 text-white font-bold py-2.5 rounded-xl shadow-lg shadow-blue-900/25 transition-all flex items-center justify-center gap-2 text-sm cursor-pointer"
           >
             Ingresar
           </button>
 
-          <div className="pt-3 border-t border-slate-800/80 space-y-2 text-center">
+          <div className="pt-2 border-t border-slate-800/80 space-y-2 text-center">
             <button
               type="button"
               onClick={onOpenPublicRegister}
-              className="w-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 font-bold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+              className="w-full bg-amber-400/10 hover:bg-amber-400/20 text-amber-400 border border-amber-400/30 font-bold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
             >
               👥 ¿Sos Socio Nuevo? Inscribite acá
             </button>
@@ -198,7 +198,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
               <button
                 type="button"
                 onClick={handleInstallApp}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-extrabold py-3 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
+                className="w-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-extrabold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/10"
               >
                 <Download className="w-4 h-4 text-emerald-400 animate-bounce" />
                 Instalar Haedo Futsal App
@@ -207,7 +207,7 @@ export const LoginScreen = ({ onOpenPublicRegister }) => {
 
             {/* iOS Instructions Dropdown */}
             {showIOSInstructions && isIOS && (
-              <div className="bg-slate-950 p-4 rounded-2xl border border-amber-500/40 text-left text-xs space-y-2 animate-fadeIn text-slate-200 mt-2">
+              <div className="bg-slate-950 p-3.5 rounded-2xl border border-amber-500/40 text-left text-xs space-y-2 animate-fadeIn text-slate-200 mt-2">
                 <div className="font-bold text-amber-400 flex items-center gap-1.5">
                   <Smartphone className="w-4 h-4" /> Cómo instalar en tu iPhone:
                 </div>
