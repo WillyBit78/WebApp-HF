@@ -467,13 +467,13 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
           )}
         </div>
 
-        {/* Quick Status Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs select-none scrollbar-none">
-          <span className="text-[10px] font-bold text-slate-400 shrink-0 uppercase tracking-tight mr-0.5">Filtrar:</span>
+        {/* Quick Status Filter Pills (Compact Single-Letter Badges A, R, P) */}
+        <div className="flex items-center gap-1 overflow-x-auto text-xs select-none scrollbar-none">
+          <span className="text-[9px] font-bold text-slate-400 shrink-0 uppercase tracking-tight mr-0.5">Filtrar:</span>
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('todos')}
-            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition-all cursor-pointer whitespace-nowrap ${
               selectedStatusFilter === 'todos'
                 ? 'bg-slate-700 text-white border border-slate-600 shadow-md'
                 : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
@@ -485,40 +485,43 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('al_dia')}
-            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
               selectedStatusFilter === 'al_dia'
                 ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-500/60 shadow-md'
-                : 'bg-slate-950 text-emerald-400/80 border border-slate-800 hover:border-emerald-500/40'
+                : 'bg-slate-950 text-emerald-400 border border-slate-800 hover:border-emerald-500/40'
             }`}
+            title="Filtrar Al Día (A)"
           >
             <span className="w-4 h-4 rounded-full bg-emerald-500/30 border border-emerald-400 flex items-center justify-center text-[9px] font-black text-emerald-300">A</span>
-            Al Día ({globalStats.alDia})
+            <span className="text-[9px] font-extrabold text-emerald-300">({globalStats.alDia})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('en_revision')}
-            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
               selectedStatusFilter === 'en_revision'
                 ? 'bg-amber-500/30 text-amber-200 border border-amber-500/60 shadow-md'
-                : 'bg-slate-950 text-amber-400/80 border border-slate-800 hover:border-amber-500/40'
+                : 'bg-slate-950 text-amber-400 border border-slate-800 hover:border-amber-500/40'
             }`}
+            title="Filtrar En Revisión (R)"
           >
             <span className="w-4 h-4 rounded-full bg-amber-500/30 border border-amber-400 flex items-center justify-center text-[9px] font-black text-amber-300">R</span>
-            En Revisión ({globalStats.enRevision || 0})
+            <span className="text-[9px] font-extrabold text-amber-300">({globalStats.enRevision || 0})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setSelectedStatusFilter('pendiente')}
-            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+            className={`px-2 py-0.5 rounded-lg font-bold text-[10px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
               selectedStatusFilter === 'pendiente'
                 ? 'bg-rose-500/30 text-rose-200 border border-rose-500/60 shadow-md'
-                : 'bg-slate-950 text-rose-400/80 border border-slate-800 hover:border-rose-500/40'
+                : 'bg-slate-950 text-rose-400 border border-slate-800 hover:border-rose-500/40'
             }`}
+            title="Filtrar Pendientes (P)"
           >
             <span className="w-4 h-4 rounded-full bg-rose-500/30 border border-rose-400 flex items-center justify-center text-[9px] font-black text-rose-300">P</span>
-            Pendientes ({globalStats.pendiente})
+            <span className="text-[9px] font-extrabold text-rose-300">({globalStats.pendiente})</span>
           </button>
         </div>
       </div>
