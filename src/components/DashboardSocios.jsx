@@ -418,20 +418,20 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
       </div>
 
       {/* Search Toolbar */}
-      <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
+      <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-3 rounded-2xl shadow-xl">
         <div className="relative w-full">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
             type="text"
             placeholder="Buscar por nombre, usuario, DNI..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-8 py-2 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
+            className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-8 py-1.5 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
           />
           {searchTerm && (
             <button
               onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-2.5 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+              className="absolute right-3 top-2 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
               title="Limpiar búsqueda"
             >
               ✕
@@ -442,40 +442,40 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
 
       {/* Direct Search Results Panel (Directamente debajo de la casilla de búsqueda) */}
       {searchTerm.trim() !== '' && (
-        <div className="bg-slate-900 border border-amber-500/40 p-4 sm:p-5 rounded-3xl shadow-2xl space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2">
-              <Search className="w-4 h-4 text-amber-400 shrink-0" />
-              <h3 className="font-extrabold text-white text-sm sm:text-base">
+        <div className="bg-slate-900 border border-amber-500/40 p-2.5 sm:p-3.5 rounded-2xl shadow-2xl space-y-2.5">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div className="flex items-center gap-1.5">
+              <Search className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <h3 className="font-extrabold text-white text-xs sm:text-sm">
                 Resultados de Búsqueda
               </h3>
-              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-black">
-                {directSearchResults.length} {directSearchResults.length === 1 ? 'socio encontrado' : 'socios encontrados'}
+              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-black">
+                {directSearchResults.length} {directSearchResults.length === 1 ? 'socio' : 'socios'}
               </span>
             </div>
             <button
               onClick={() => setSearchTerm('')}
-              className="text-xs font-bold text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+              className="text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
             >
-              Limpiar búsqueda ✕
+              Limpiar ✕
             </button>
           </div>
 
           {directSearchResults.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
+              <table className="w-full text-left border-collapse">
+                <thead className="bg-slate-950 text-slate-400 uppercase text-[9px] font-bold tracking-tight">
                   <tr>
-                    <th className="p-2.5 rounded-l-lg">Foto</th>
-                    <th className="p-2.5">Nombre y Apellido</th>
-                    <th className="p-2.5">Categoría</th>
-                    <th className="p-2.5">Usuario / DNI</th>
-                    <th className="p-2.5">Teléfono</th>
-                    <th className="p-2.5">Estado Cuenta</th>
-                    <th className="p-2.5 text-right rounded-r-lg">Acciones</th>
+                    <th className="px-1 py-1 rounded-l-md text-center">Foto</th>
+                    <th className="px-1.5 py-1">Apellido / Nombre</th>
+                    <th className="px-1.5 py-1">Categoría</th>
+                    <th className="px-1.5 py-1">Usuario / DNI</th>
+                    <th className="px-1.5 py-1">Teléfono</th>
+                    <th className="px-1 py-1 text-center">Estado</th>
+                    <th className="px-1.5 py-1 text-right rounded-r-md">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                <tbody className="divide-y divide-slate-800/50 text-slate-200">
                   {directSearchResults.map(socio => {
                     const rawAp = socio.apellido || '';
                     const cleanNoMeta = rawAp.split(' | META:')[0] || rawAp;
@@ -491,13 +491,25 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                       .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
                       .join(' ');
 
+                    const { catName, subName } = matchSocioToHierarchy(socio);
+
+                    const isAlDia = socio.estadoCuota === 'al_dia';
+                    const isRevision = socio.estadoCuota === 'pendiente';
+                    const letter = isAlDia ? 'A' : isRevision ? 'R' : 'P';
+                    const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente / Sin Pagar';
+                    const badgeClass = isAlDia
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                      : isRevision
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-500/50';
+
                     return (
-                      <tr key={socio.id} className="hover:bg-slate-800/50 transition-colors">
+                      <tr key={socio.id} className="hover:bg-slate-800/60 transition-colors">
                         {/* Foto */}
-                        <td className="p-2.5">
+                        <td className="px-1 py-1 text-center">
                           <div 
                             onClick={() => openFichaSocio(socio)}
-                            className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
+                            className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-[10px] shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors mx-auto"
                             title="Ver Ficha Personal"
                           >
                             {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
@@ -508,85 +520,96 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                           </div>
                         </td>
 
-                        {/* Nombre y Apellido (SIN COMA entre Apellido y Nombre) */}
-                        <td className="p-2.5">
+                        {/* Apellido (Arriba) y Nombre (Abajo) */}
+                        <td className="px-1.5 py-1">
                           <button
                             onClick={() => openFichaSocio(socio)}
-                            className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs flex items-center gap-1.5"
+                            className="text-left leading-tight cursor-pointer hover:underline block max-w-[130px] sm:max-w-none"
                             title="Haz clic para ver Ficha Personal completa"
                           >
-                            <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>{' '}
-                            <span className="font-semibold text-slate-200">{formattedNombre}</span>
+                            <div className="font-black text-white text-[11px] uppercase tracking-wide truncate">
+                              {formattedApellido || '—'}
+                            </div>
+                            <div className="font-semibold text-slate-300 text-[10px] truncate">
+                              {formattedNombre || '—'}
+                            </div>
                           </button>
                         </td>
 
-                        {/* Categoría (Requerido: visibilidad fuera de disciplina/categoria) */}
-                        <td className="p-2.5">
-                          <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[11px] font-extrabold inline-block whitespace-nowrap shadow-sm">
-                            {socio.categoria || 'General'}
-                          </span>
+                        {/* Categoría (Arriba) y Sub-categoría (Abajo) */}
+                        <td className="px-1.5 py-1">
+                          <div className="leading-tight text-left max-w-[110px] sm:max-w-none">
+                            <span className="font-extrabold text-amber-300 text-[10px] block truncate">
+                              {catName || socio.categoria || 'General'}
+                            </span>
+                            <span className="text-[9px] text-slate-400 font-semibold block truncate">
+                              {subName || 'General'}
+                            </span>
+                          </div>
                         </td>
 
-                        {/* Usuario y DNI */}
-                        <td className="p-2.5 font-mono text-slate-300 text-xs">
-                          <div className="font-semibold text-slate-200">@{socio.usuario || 'N/A'}</div>
-                          {socio.dni && <div className="text-[10px] text-slate-400">DNI: {socio.dni}</div>}
+                        {/* Usuario (Arriba) y DNI (Abajo) */}
+                        <td className="px-1.5 py-1 font-mono text-left">
+                          <div className="leading-tight max-w-[90px] sm:max-w-none">
+                            <div className="font-bold text-slate-200 text-[10px] truncate">@{socio.usuario || 'N/A'}</div>
+                            <div className="text-[9px] text-slate-400 font-semibold truncate">{socio.dni ? `DNI: ${socio.dni}` : ''}</div>
+                          </div>
                         </td>
 
                         {/* Teléfono */}
-                        <td className="p-2.5 text-slate-300 text-xs">
+                        <td className="px-1.5 py-1 text-left">
                           {displayTel ? (
                             <a
                               href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
+                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold text-[10px] whitespace-nowrap"
                               title="Abrir chat de WhatsApp"
                             >
-                              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                              {displayTel}
+                              <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
+                              <span>{displayTel}</span>
                             </a>
                           ) : (
-                            <span className="text-slate-500 italic">Sin registrar</span>
+                            <span className="text-slate-500 italic text-[9px]">Sin registrar</span>
                           )}
                         </td>
 
-                        {/* Estado Cuenta */}
-                        <td className="p-2.5">
-                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                            socio.estadoCuota === 'al_dia'
-                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                              : socio.estadoCuota === 'pendiente'
-                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                          }`}>
-                            {socio.estadoCuota === 'al_dia' ? 'Al Día' : socio.estadoCuota === 'pendiente' ? 'En Revisión' : 'Sin Pagar'}
-                          </span>
+                        {/* Estado Cuenta: Solo Inicial A, R, P */}
+                        <td className="px-1 py-1 text-center">
+                          <div className="flex items-center justify-center">
+                            <span
+                              className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border flex items-center justify-center font-black text-[10px] shadow-sm cursor-help ${badgeClass}`}
+                              title={`Estado: ${label}`}
+                            >
+                              {letter}
+                            </span>
+                          </div>
                         </td>
 
-                        {/* Acciones */}
-                        <td className="p-2.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
+                        {/* Acciones: Icono arriba, Efectivo abajo */}
+                        <td className="px-1.5 py-1 text-right">
+                          <div className="flex items-center justify-end gap-1">
                             {canManage && (
                               <button
                                 onClick={() => {
                                   setCashModalSocio(socio);
                                   setCashMonto(socio.montoCuota || 15000);
                                 }}
-                                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+                                className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[9px] transition-all cursor-pointer leading-none"
                                 title="Cobrar cuota en efectivo"
                               >
-                                <Banknote className="w-3.5 h-3.5" /> Efectivo
+                                <Banknote className="w-3.5 h-3.5 mb-0.5 text-emerald-400" />
+                                <span>Efectivo</span>
                               </button>
                             )}
 
                             {canManage && (
                               <button
                                 onClick={() => setUserToDelete(socio)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                                className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
                                 title="Dar de baja socio (pide confirmación)"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             )}
                           </div>
@@ -598,7 +621,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
               </table>
             </div>
           ) : (
-            <div className="text-center py-6 text-slate-400 text-xs italic">
+            <div className="text-center py-4 text-slate-400 text-xs italic">
               No se encontraron socios que coincidan con "<span className="text-amber-400 font-semibold">{searchTerm}</span>".
             </div>
           )}
@@ -771,17 +794,18 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
 
                                   {/* LEVEL 4: SOCIOS LIST TABLE */}
                                   {isSubOpen && (
-                                    <div className="p-3 bg-slate-950 border-t border-slate-800/80 overflow-x-auto">
+                                    <div className="p-1 sm:p-2 bg-slate-950 border-t border-slate-800/80 overflow-x-auto">
                                       {subSocios.length > 0 ? (
-                                        <table className="w-full text-left text-xs">
-                                          <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
+                                        <table className="w-full text-left border-collapse">
+                                          <thead className="bg-slate-900 text-slate-400 uppercase text-[9px] font-bold tracking-tight">
                                             <tr>
-                                              <th className="p-2.5 rounded-l-lg">Foto</th>
-                                              <th className="p-2.5">Nombre y Apellido</th>
-                                              <th className="p-2.5">Usuario</th>
-                                              <th className="p-2.5">Teléfono</th>
-                                              <th className="p-2.5">Estado Cuenta</th>
-                                              <th className="p-2.5 text-right rounded-r-lg">Acciones</th>
+                                              <th className="px-1 py-1 rounded-l-md text-center">Foto</th>
+                                              <th className="px-1.5 py-1">Apellido / Nombre</th>
+                                              <th className="px-1.5 py-1">Categoría</th>
+                                              <th className="px-1.5 py-1">Usuario / DNI</th>
+                                              <th className="px-1.5 py-1">Teléfono</th>
+                                              <th className="px-1 py-1 text-center">Estado</th>
+                                              <th className="px-1.5 py-1 text-right rounded-r-md">Acciones</th>
                                             </tr>
                                           </thead>
                                           <tbody className="divide-y divide-slate-800/60 text-slate-200">
@@ -793,7 +817,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                               const embeddedTel = apParts[1] || '';
                                               const displayTel = socio.telefono || embeddedTel || '';
 
-                                              // Format: APELLIDO EN MAYUSCULAS, Nombre con 1ra letra mayuscula
                                               const formattedApellido = cleanApellido.toUpperCase();
                                               const rawNombre = (socio.nombre || socio.nombres || '').trim();
                                               const formattedNombre = rawNombre
@@ -801,14 +824,24 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                 .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
                                                 .join(' ');
 
+                                              const isAlDia = socio.estadoCuota === 'al_dia';
+                                              const isRevision = socio.estadoCuota === 'pendiente';
+                                              const letter = isAlDia ? 'A' : isRevision ? 'R' : 'P';
+                                              const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente / Sin Pagar';
+                                              const badgeClass = isAlDia
+                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                                                : isRevision
+                                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                                                : 'bg-rose-500/20 text-rose-300 border-rose-500/50';
+
                                               return (
                                                 <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
                                                   
                                                   {/* Foto Socio */}
-                                                  <td className="p-2.5">
+                                                  <td className="px-1 py-1 text-center">
                                                     <div 
                                                       onClick={() => openFichaSocio(socio)}
-                                                      className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
+                                                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-[10px] shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors mx-auto"
                                                       title="Ver Ficha Personal"
                                                     >
                                                       {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
@@ -819,83 +852,102 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                     </div>
                                                   </td>
 
-                                                  {/* Nombre y Apellido - APELLIDO (MAYUSCULAS), Nombre (Capitalizado) */}
-                                                  <td className="p-2.5">
+                                                  {/* Apellido (Arriba) y Nombre (Abajo) */}
+                                                  <td className="px-1.5 py-1">
                                                     <button
                                                       onClick={() => openFichaSocio(socio)}
-                                                      className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs flex items-center gap-1.5"
+                                                      className="text-left leading-tight cursor-pointer hover:underline block max-w-[130px] sm:max-w-none"
                                                       title="Haz clic para ver Ficha Personal completa"
                                                     >
-                                                      <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>{' '}
-                                                      <span className="font-semibold text-slate-200">{formattedNombre}</span>
+                                                      <div className="font-black text-white text-[11px] uppercase tracking-wide truncate">
+                                                        {formattedApellido || '—'}
+                                                      </div>
+                                                      <div className="font-semibold text-slate-300 text-[10px] truncate">
+                                                        {formattedNombre || '—'}
+                                                      </div>
                                                     </button>
                                                   </td>
 
-                                                  {/* Usuario */}
-                                                  <td className="p-2.5 font-mono text-slate-300 text-xs">
-                                                    @{socio.usuario || 'N/A'}
+                                                  {/* Categoría (Arriba) y Sub-categoría (Abajo) */}
+                                                  <td className="px-1.5 py-1">
+                                                    <div className="leading-tight text-left max-w-[110px] sm:max-w-none">
+                                                      <span className="font-extrabold text-amber-300 text-[10px] block truncate">
+                                                        {catName || socio.categoria || 'General'}
+                                                      </span>
+                                                      <span className="text-[9px] text-slate-400 font-semibold block truncate">
+                                                        Sub: {subName || 'General'}
+                                                      </span>
+                                                    </div>
+                                                  </td>
+
+                                                  {/* Usuario (Arriba) y DNI (Abajo) */}
+                                                  <td className="px-1.5 py-1 font-mono text-left">
+                                                    <div className="leading-tight max-w-[90px] sm:max-w-none">
+                                                      <div className="font-bold text-slate-200 text-[10px] truncate">@{socio.usuario || 'N/A'}</div>
+                                                      <div className="text-[9px] text-slate-400 font-semibold truncate">{socio.dni ? `DNI: ${socio.dni}` : ''}</div>
+                                                    </div>
                                                   </td>
 
                                                   {/* Teléfono / WA Link */}
-                                                  <td className="p-2.5 text-slate-300 text-xs">
+                                                  <td className="px-1.5 py-1 text-left">
                                                     {displayTel ? (
                                                       <a
                                                         href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
+                                                        className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold text-[10px] whitespace-nowrap"
                                                         title="Abrir chat de WhatsApp"
                                                       >
-                                                        <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                                                        {displayTel}
+                                                        <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
+                                                        <span>{displayTel}</span>
                                                       </a>
                                                     ) : (
-                                                      <span className="text-slate-500 italic">Sin registrar</span>
+                                                      <span className="text-slate-500 italic text-[9px]">Sin registrar</span>
                                                     )}
                                                   </td>
 
-                                                {/* Estado Cuenta */}
-                                                <td className="p-2.5">
-                                                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                                                    socio.estadoCuota === 'al_dia'
-                                                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
-                                                      : socio.estadoCuota === 'pendiente'
-                                                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                                                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                                                  }`}>
-                                                    {socio.estadoCuota === 'al_dia' ? 'Al Día' : socio.estadoCuota === 'pendiente' ? 'En Revisión' : 'Sin Pagar'}
-                                                  </span>
-                                                </td>
-
-                                                {/* Acciones: Boton Efectivo y Boton Eliminar */}
-                                                <td className="p-2.5 text-right">
-                                                  <div className="flex items-center justify-end gap-1.5">
-                                                    {canManage && (
-                                                      <button
-                                                        onClick={() => {
-                                                          setCashModalSocio(socio);
-                                                          setCashMonto(socio.montoCuota || 15000);
-                                                        }}
-                                                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
-                                                        title="Cobrar cuota en efectivo"
+                                                  {/* Estado Cuenta: Solo Inicial A, R, P */}
+                                                  <td className="px-1 py-1 text-center">
+                                                    <div className="flex items-center justify-center">
+                                                      <span
+                                                        className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border flex items-center justify-center font-black text-[10px] shadow-sm cursor-help ${badgeClass}`}
+                                                        title={`Estado: ${label}`}
                                                       >
-                                                        <Banknote className="w-3.5 h-3.5" /> Efectivo
-                                                      </button>
-                                                    )}
+                                                        {letter}
+                                                      </span>
+                                                    </div>
+                                                  </td>
 
-                                                    {canManage && (
-                                                      <button
-                                                        onClick={() => setUserToDelete(socio)}
-                                                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
-                                                        title="Dar de baja socio (pide confirmación)"
-                                                      >
-                                                        <Trash2 className="w-4 h-4" />
-                                                      </button>
-                                                    )}
-                                                  </div>
-                                                </td>
+                                                  {/* Acciones: Icono arriba, Efectivo abajo */}
+                                                  <td className="px-1.5 py-1 text-right">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                      {canManage && (
+                                                        <button
+                                                          onClick={() => {
+                                                            setCashModalSocio(socio);
+                                                            setCashMonto(socio.montoCuota || 15000);
+                                                          }}
+                                                          className="flex flex-col items-center justify-center px-1.5 py-0.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[9px] transition-all cursor-pointer leading-none"
+                                                          title="Cobrar cuota en efectivo"
+                                                        >
+                                                          <Banknote className="w-3.5 h-3.5 mb-0.5 text-emerald-400" />
+                                                          <span>Efectivo</span>
+                                                        </button>
+                                                      )}
 
-                                              </tr>
+                                                      {canManage && (
+                                                        <button
+                                                          onClick={() => setUserToDelete(socio)}
+                                                          className="p-1 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                                                          title="Dar de baja socio (pide confirmación)"
+                                                        >
+                                                          <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                  </td>
+
+                                                </tr>
                                               );
                                             })}
                                           </tbody>
