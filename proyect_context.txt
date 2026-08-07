@@ -9,7 +9,7 @@ Last Updated: August 2026
 - Application Name: Haedo Futsal App (haedo-futsal-app)
 - Repository Name: WillyBit78/WebApp-HF
 - Application Type: Progressive Web App (PWA) for Comprehensive Sports Club Management.
-- Primary Objective: Manage club membership roster (Socios), monthly fee collection and payment verification via OCR transfer receipts or cash, institutional notices with web push notifications, match & event calendar, role-based user management (Admin, Adm.Club/Contador, Coach, Staff, Member/Socio), and official club store.
+- Primary Objective: Manage club membership roster (Socios), monthly fee collection and payment verification via OCR transfer receipts or cash, strict monthly fee periods (YYYY-MM), institutional notices with web push notifications & foreground popups, match & event calendar, role-based user management (Admin, Adm.Club/Contador, Coach, Staff, Member/Socio), cash vs bank balance tracking by staff member, and official club store.
 
 --------------------------------------------------------------------------------
 2. CONNECTED PLATFORMS & INTEGRATION (.env LOCATION)
@@ -50,55 +50,54 @@ Keys stored in .env include:
 5. FEATURE BREAKDOWN & HISTORICAL CONFIGURATIONS
 --------------------------------------------------------------------------------
 
-A. ROLE-BASED NAVIGATION & PERMISSIONS
-   - Socio (Member): Home/Dashboard, Calendar, Notices, Store.
-   - Staff: Home/Dashboard, Calendar, Notices, Store, Member Roster (Gestión de Socios).
-   - Coach: Home/Dashboard, Calendar, Notices, Store, Member Roster (Gestión de Socios), Cash Fee Collection.
-   - Adm.Club / Contador (Accountant): Home/Dashboard, Member Roster, Financial Control (Income/Expenses/Audit), Calendar, Notices, Store.
-   - Admin: Full system access (Socios, Calendar, Notices, Store, Financials, System/Staff Config).
+A. ROLE-BASED NAVIGATION & INITIAL VIEW (App.jsx, BottomNav.jsx, Sidebar.jsx, Navbar.jsx)
+   - Initial View: ALL Staff roles (Admin, Adm.Club/Contador, Coach, Staff) land directly on Panel Principal (currentTab = 'dashboard') upon login, clicking the "Inicio" tab, or clicking the Club Shield Logo (/logo.png).
+   - Socio (Member): Home/Dashboard (DashboardSocio), Calendar, Notices, Store.
+   - Staff: Panel Principal (MainDashboardSummary), Calendar, Notices, Store, Member Roster (Gestión de Socios).
+   - Coach: Panel Principal (MainDashboardSummary), Calendar, Notices, Store, Member Roster (Gestión de Socios), Cash Fee Collection.
+   - Adm.Club / Contador (Accountant): Panel Principal (MainDashboardSummary), Member Roster, Financial Control (Income/Expenses/Audit), Calendar, Notices, Store.
+   - Admin: Full system access (Panel Principal, Socios, Calendar, Notices, Store, Financials, System/Staff Config).
 
-B. PANEL PRINCIPAL (MAIN DASHBOARD SUMMARY - MainDashboardSummary.jsx, App.jsx)
-   - Initial View: All staff roles (admin, contador, coach, staff) land on Panel Principal (currentTab = 'dashboard') upon login.
+B. PANEL PRINCIPAL (MAIN DASHBOARD SUMMARY - MainDashboardSummary.jsx)
    - Structured Card Order:
      1° ESTADO DE CUOTAS MENSUAL: Large 3D Donut Chart, % AL DÍA centered badge, and fee breakdown (Al Día, En Revisión, Pendientes, Total Padrón). Direct navigation to Gestión de Socios (users).
      2° COMUNICADOS DEL CLUB: Summary of active notices, notice count, and latest official announcement title. Direct navigation to Comunicados (notices).
-     3° SECTOR FINANZAS (Staff Admin/Contador): Net monthly balance, income vs expenses breakdown. Direct navigation to Finanzas (finance).
+     3° SECTOR FINANZAS (Staff Admin/Contador): Net monthly balance, income vs expenses breakdown. Direct navigation to Finanzas (finance). Clickable balance cards open Cash vs Bank breakdown.
      4° AUDITORÍA DE PAGOS (Staff Admin/Contador): Pending receipt audit count. Direct navigation to Auditoría (finance with en_revision filter).
-   - Clean Screen Navigation: MainDashboardSummary is excluded from DashboardContador.jsx so opening Finanzas or Auditoría displays the clean targeted module without top summary cards.
-   - Removed: Socios Activos card was completely eliminated to prevent redundant data.
+   - Includes compact HistorialMovimientosTable right below summary cards for immediate financial visibility.
 
-C. MEMBER ROSTER & STAFF MANAGEMENT (DashboardSocios.jsx, ModalAddUser.jsx, ModalFichaSocio.jsx)
-   - Top Header Panel: Replaced top cards with 3D Donut Chart card (% AL DÍA centered) + padrón details breakdown. Removed redundant headers.
-   - Toolbar: Search bar occupies full width; eliminated redundant filter buttons.
-   - Compact Hierarchy Gauges: Mini circular Donut SVG gauges positioned strictly on the RIGHT side of card headers across all screen sizes (mobile & desktop) next to collapse arrows.
-   - Coach Assignment Display: Discipline and Category headers display assigned Coach/DT badges (e.g. Coach: Juan Pérez).
-   - Staff Registration & Editing:
-     * Single "Nombre" field (Apellido removed). Entered name automatically populates Username (@nombre).
-     * Role selection: Staff (no finance access), Coach (includes multi-select checkboxes for assigned sports categories from CLUB_CATEGORIES), Adm.Club (Contador permissions).
-     * Fee section hidden for Staff. Save button reads "Guardar Staff" / "Guardar Cambios".
-     * Staff Accordion positioned below all sports disciplines; header simplified to "Staff e Integrantes del Club".
-     * ModalFichaSocio.jsx staff edit mode is identical to ModalAddUser.jsx, allowing admins to reassign categories or roles at any time.
+C. MEMBER ROSTER & FEE PERIOD REGULATION (DashboardSocios.jsx, ModalAddUser.jsx, ModalFichaSocio.jsx, AppContext.jsx)
+   - Strict Monthly Fee Rule: On the last day of each month, the new month's fee becomes available. Unpaid accounts transition to PENDIENTE.
+   - No Automatic Day 20-31 Rollover: Payments on days 20-31 of a month count strictly for that month unless already paid. August 2026 starts at 0% AL DÍA (100% Pendiente) until explicit 2026-08 payments are made.
+   - Period Selectors (YYYY-MM): Provided in PaymentUploader.jsx and DashboardSocios.jsx cash modal so users/staff can select which month is being paid.
+   - Profile History Breakdown (ModalFichaSocio.jsx): Renders a 4-month status grid (Agosto, Julio, Junio, Mayo) with AL DÍA / PENDIENTE badges and full receipt operation details.
+   - Toolbar & Buttons: Action buttons aligned in a single row (+ Socio | Link | + Staff) with reduced mobile padding.
+   - Coach Badges: Display assigned Coach/DT badges at both Discipline and Category header levels.
 
-D. PERSISTENT NOTIFICATION BADGES (Navbar.jsx, AppContext.jsx)
-   - Strict string ID normalization (String(id)) stored in localStorage (haedo_read_notice_ids and haedo_viewed_payment_ids).
-   - Clicking notice or payment notification badges in Navbar permanently clears unread counters so badges never reappear on reload for those items.
+D. FINANCIAL CONTROL, COMPACT MOVEMENTS TABLE & STAFF CASH BREAKDOWN (DashboardContador.jsx, HistorialMovimientosTable.jsx, ModalDetalleCajaEfectivo.jsx)
+   - Sub-Tabs Grid: Top 4 finance action buttons arranged in a 2x2 grid (Line 1: Balance | Transf. MP, Line 2: Comprobantes | $ Cuotas).
+   - Mercado Pago Feed: Header title simplified to "Transferencias Recibidas". Filter buttons arranged in a 2x2 grid (Sin Conciliar, Conciliadas, Descartadas, Todas).
+   - Compact Movements Table (HistorialMovimientosTable.jsx):
+     * FECHA: Formatted as short DD/MM/AA.
+     * CAJA: Display initial badge C (Cuotas) or T (Torneos).
+     * TIPO: Hidden (implied by +/- sign and green/red color of Monto).
+     * MONTO: +$50.000 (green) / -$10.000 (rose).
+     * CONCEPTO: Description text.
+     * STAFF: Header "Staff", displaying ONLY the first name of the member (e.g. Willy, Bocha).
+   - Cash vs Bank Breakdown (ModalDetalleCajaEfectivo.jsx): Clicking any balance total card (Balance General, Caja 1 Cuotas, Caja 2 Torneos) opens popover showing En Cuenta MP vs En Efectivo. Clicking En Efectivo expands per-staff physical cash in hand (collected income minus expenses).
 
-E. INSTITUTIONAL NOTICES MODULE (NoticeBoard.jsx, AppContext.jsx)
-   - Direct Supabase persistence (notices table) with explicit exception handling.
-   - Automated Web Push Notifications broadcast to all subscribed devices upon publication.
-   - Sender name formatted as clean name without role brackets.
+E. INSTITUTIONAL NOTICES & PUSH NOTIFICATIONS IN FOREGROUND (NoticeBoard.jsx, sw.js, api/send-push.js)
+   - Push Deep Linking: Push notifications include noticeId in URL (/?tab=notices#notices:${noticeId}). Clicking notification opens app directly on Avisos tab.
+   - Foreground Notice Modal (Primer Plano): Opened notice displays in a high-impact modal popup with title, message, emisor name, urgency badges, and an explicit "✓ ¡Entendido! Marcar como Leído" button that marks ONLY that notice as read.
+   - No Automatic Mark-All-Read: Removed automatic mark-all-read on mount so unread notices retain their status until viewed.
 
-F. OCR RECEIPT READER, WEB SHARE TARGET & PAYMENTS (PaymentUploader.jsx, sw.js)
-   - Android PWA Web Share Target (sw.js): Intercepts native POST requests to /share-receipt when sharing PDF/Image bank receipts directly from banking apps.
-   - Hybrid OCR Reader: Processes images/PDFs with Gemini Flash.
-   - Cash Payment Collection: Coaches and Admins can record cash fee payments directly from the Socio profile modal.
+F. OCR RECEIPT READER & WEB SHARE TARGET (PaymentUploader.jsx, sw.js)
+   - Parsing Loading Screen: Uses official club logo (/logo.png), soft red backdrop glow, and spinning blue ring matching app startup screen.
+   - Cash Payment Collection: Coaches and Admins can record cash fee payments directly from socio profile modal or dashboard.
 
-G. OFFICIAL CLUB STORE (StoreModule.jsx)
-   - Mobile: Accessible via "Tienda" tab on BottomNav.jsx.
-   - Desktop: Accessible via "Tienda Oficial" on Sidebar.jsx.
-
-H. FOOTER TEXT (App.jsx)
-   - Standardized strictly to: "© 2026 Haedo Futsal App - Sistema de Gestión Integral".
+G. OFFICIAL CLUB STORE & FOOTER
+   - Store accessible via BottomNav.jsx (mobile) and Sidebar.jsx (desktop).
+   - Standardized Footer: "© 2026 Haedo Futsal App - Sistema de Gestión Integral".
 
 --------------------------------------------------------------------------------
 6. SUPABASE DATABASE SCHEMA (users & CORE TABLES)
@@ -118,10 +117,13 @@ users Table:
 - rol: socio, staff, coach, contador (Adm.Club), admin
 - categoria: Assigned sports category, or joined Coach categories string (e.g. "BAFI Femenino, EDEFI Baby")
 
+payments Table (camelCase columns):
+- id, socioId, socioNombre, numeroOperacion, monto, billeteraOrigen, emisorNombre, fechaTransferencia, comprobanteUrl, estado, observaciones, created_at.
+
 Core Tables:
 - notices: Institutional announcements and news.
 - events: Matches, training sessions, and calendar events.
-- payments: Fee payment history, OCR metadata, and audit verification states.
+- movimientos: Cash/bank income and expenses.
 - push_subscriptions: Device push notification tokens.
 
 --------------------------------------------------------------------------------
@@ -136,33 +138,37 @@ Nueva APP/
 ├── vite.config.js        # Vite bundler configuration
 ├── package.json          # Node dependencies & NPM scripts
 ├── scripts/              # Build scripts and utilities
+├── api/
+│   └── send-push.js      # Web push serverless endpoint
 └── src/
     ├── App.jsx           # Main Application entry point & router
     ├── main.jsx          # React DOM mounting
     ├── context/
     │   └── AppContext.jsx # Global state & Supabase data operations
     └── components/
-        ├── BottomNav.jsx              # Mobile bottom navigation bar
-        ├── Sidebar.jsx                # Desktop fixed sidebar
-        ├── Navbar.jsx                 # Top header bar
-        ├── MainDashboardSummary.jsx   # Interactive 4-card Main Dashboard Summary
-        ├── DashboardAdmin.jsx         # Administrator dashboard
-        ├── DashboardContador.jsx      # Financial control dashboard (Finanzas)
-        ├── DashboardCoach.jsx         # Coach dashboard
-        ├── DashboardSocio.jsx         # Socio/Member dashboard
-        ├── DashboardSocios.jsx        # General Member & Staff roster management
-        ├── ModalFichaSocio.jsx        # Member/Staff profile & edit modal
-        ├── NoticeBoard.jsx            # Notices & news board
-        ├── CalendarModule.jsx         # Calendar & events module
-        ├── StoreModule.jsx            # Official club store module
-        ├── PaymentUploader.jsx        # OCR receipt reader & upload tool
-        ├── LoginScreen.jsx            # Authentication screen
-        ├── PublicRegistrationScreen.jsx # Public socio self-registration screen
-        ├── PWAInstallBanner.jsx       # PWA install & Push prompt banner
+        ├── BottomNav.jsx                 # Mobile bottom navigation bar
+        ├── Sidebar.jsx                   # Desktop fixed sidebar
+        ├── Navbar.jsx                    # Top header bar
+        ├── MainDashboardSummary.jsx      # Interactive 4-card Main Dashboard Summary
+        ├── DashboardAdmin.jsx            # Administrator dashboard
+        ├── DashboardContador.jsx         # Financial control dashboard (Finanzas)
+        ├── DashboardCoach.jsx            # Coach dashboard
+        ├── DashboardSocio.jsx            # Socio/Member dashboard
+        ├── DashboardSocios.jsx           # General Member & Staff roster management
+        ├── ModalFichaSocio.jsx           # Member/Staff profile & edit modal
+        ├── NoticeBoard.jsx               # Notices & news board with Foreground Modal
+        ├── CalendarModule.jsx            # Calendar & events module
+        ├── StoreModule.jsx               # Official club store module
+        ├── PaymentUploader.jsx           # OCR receipt reader & upload tool
+        ├── HistorialMovimientosTable.jsx # Compact reusable movement history table
+        ├── LoginScreen.jsx               # Authentication screen
+        ├── PublicRegistrationScreen.jsx    # Public socio self-registration screen
+        ├── PWAInstallBanner.jsx          # PWA install & Push prompt banner
         └── Modals/
-            ├── ModalAddUser.jsx       # Staff registration modal (Alta Staff)
-            ├── ModalAddNotice.jsx     # Notice creation modal
-            └── ModalAddEvent.jsx      # Event creation modal
+            ├── ModalAddUser.jsx          # Staff registration modal (Alta Staff)
+            ├── ModalAddNotice.jsx        # Notice creation modal
+            ├── ModalAddEvent.jsx         # Event creation modal
+            └── ModalDetalleCajaEfectivo.jsx # Cash vs Bank breakdown by Staff modal
 
 --------------------------------------------------------------------------------
 8. DEV COMMANDS & VERIFICATION WORKFLOW
