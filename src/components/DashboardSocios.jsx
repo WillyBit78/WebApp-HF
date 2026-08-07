@@ -108,6 +108,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDiscFilter, setSelectedDiscFilter] = useState('todas');
+  const [selectedStatusFilter, setSelectedStatusFilter] = useState('todos'); // 'todos', 'al_dia', 'en_revision', 'pendiente'
 
   // Expanded states for drill-down accordion
   const [expandedDisc, setExpandedDisc] = useState({});
@@ -131,15 +132,26 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     });
   }, [users]);
 
-  // Direct search results for immediate rendering right under search input
+  // Direct search / status filter results for immediate rendering right under search input
   const directSearchResults = useMemo(() => {
-    if (!searchTerm.trim()) return [];
+    const hasSearch = Boolean(searchTerm.trim());
+    const hasStatus = selectedStatusFilter !== 'todos';
+    if (!hasSearch && !hasStatus) return [];
+
     const q = searchTerm.toLowerCase().trim();
     return socios.filter(s => {
-      const full = `${s.nombre || ''} ${s.apellido || ''} ${s.dni || ''} ${s.numeroSocio || ''} ${s.usuario || ''} ${s.categoria || ''}`.toLowerCase();
-      return full.includes(q);
+      if (hasSearch) {
+        const full = `${s.nombre || ''} ${s.apellido || ''} ${s.dni || ''} ${s.numeroSocio || ''} ${s.usuario || ''} ${s.categoria || ''}`.toLowerCase();
+        if (!full.includes(q)) return false;
+      }
+      if (hasStatus) {
+        if (selectedStatusFilter === 'al_dia' && s.estadoCuota !== 'al_dia') return false;
+        if (selectedStatusFilter === 'en_revision' && s.estadoCuota !== 'en_revision') return false;
+        if (selectedStatusFilter === 'pendiente' && (s.estadoCuota === 'al_dia' || s.estadoCuota === 'en_revision')) return false;
+      }
+      return true;
     });
-  }, [socios, searchTerm]);
+  }, [socios, searchTerm, selectedStatusFilter]);
 
   // Group socios into hierarchy
   const hierarchyData = useMemo(() => {
@@ -180,6 +192,13 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
         if (!full.includes(q)) return;
       }
 
+      // Check status filter
+      if (selectedStatusFilter !== 'todos') {
+        if (selectedStatusFilter === 'al_dia' && s.estadoCuota !== 'al_dia') return;
+        if (selectedStatusFilter === 'en_revision' && s.estadoCuota !== 'en_revision') return;
+        if (selectedStatusFilter === 'pendiente' && (s.estadoCuota === 'al_dia' || s.estadoCuota === 'en_revision')) return;
+      }
+
       const { discId, catName, subName } = matchSocioToHierarchy(s);
       const targetDisc = map[discId] || map['otras'];
       
@@ -194,18 +213,19 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     });
 
     return map;
-  }, [socios, searchTerm]);
+  }, [socios, searchTerm, selectedStatusFilter]);
 
-  // 2-Color Stats calculator (Verde = Al día, Rojo = Pendiente)
+  // 3-Color Stats calculator (Verde = Al día, Amarillo = En revisión, Rojo = Pendiente)
   const getStats = (socioList) => {
     const total = socioList.length;
     const alDia = socioList.filter(s => s.estadoCuota === 'al_dia').length;
-    const pendiente = total - alDia;
+    const enRevision = socioList.filter(s => s.estadoCuota === 'en_revision').length;
+    const pendiente = total - alDia - enRevision;
     
     const pctAlDia = total > 0 ? Math.round((alDia / total) * 100) : 0;
     const pctPendiente = total > 0 ? (100 - pctAlDia) : 0;
 
-    return { total, alDia, pendiente, pctAlDia, pctPendiente };
+    return { total, alDia, enRevision, pendiente, pctAlDia, pctPendiente };
   };
 
   // Global total stats
@@ -261,7 +281,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     setCashModalSocio(null);
   };
 
-  const isSearchActive = Boolean(searchTerm);
+  const isSearchActive = Boolean(searchTerm.trim() || selectedStatusFilter !== 'todos');
   const canManage = currentUser?.rol === 'admin' || currentUser?.rol === 'coach' || currentUser?.rol === 'contador';
   const isStaffAdmin = currentUser?.rol === 'admin' || currentUser?.rol === 'contador';
 
@@ -425,8 +445,8 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
         </div>
       </div>
 
-      {/* Search Toolbar */}
-      <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-3 rounded-2xl shadow-xl">
+      {/* Search Toolbar & Quick Status Filter */}
+      <div className="bg-slate-900 border border-slate-800 p-2.5 sm:p-3 rounded-2xl shadow-xl space-y-2.5">
         <div className="relative w-full">
           <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
           <input
@@ -446,23 +466,81 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
             </button>
           )}
         </div>
+
+        {/* Quick Status Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 text-xs select-none scrollbar-none">
+          <span className="text-[10px] font-bold text-slate-400 shrink-0 uppercase tracking-tight mr-0.5">Filtrar:</span>
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('todos')}
+            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap ${
+              selectedStatusFilter === 'todos'
+                ? 'bg-slate-700 text-white border border-slate-600 shadow-md'
+                : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
+            }`}
+          >
+            Todos ({globalStats.total})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('al_dia')}
+            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              selectedStatusFilter === 'al_dia'
+                ? 'bg-emerald-500/30 text-emerald-200 border border-emerald-500/60 shadow-md'
+                : 'bg-slate-950 text-emerald-400/80 border border-slate-800 hover:border-emerald-500/40'
+            }`}
+          >
+            <span className="w-4 h-4 rounded-full bg-emerald-500/30 border border-emerald-400 flex items-center justify-center text-[9px] font-black text-emerald-300">A</span>
+            Al Día ({globalStats.alDia})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('en_revision')}
+            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              selectedStatusFilter === 'en_revision'
+                ? 'bg-amber-500/30 text-amber-200 border border-amber-500/60 shadow-md'
+                : 'bg-slate-950 text-amber-400/80 border border-slate-800 hover:border-amber-500/40'
+            }`}
+          >
+            <span className="w-4 h-4 rounded-full bg-amber-500/30 border border-amber-400 flex items-center justify-center text-[9px] font-black text-amber-300">R</span>
+            En Revisión ({globalStats.enRevision || 0})
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedStatusFilter('pendiente')}
+            className={`px-2.5 py-1 rounded-xl font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 ${
+              selectedStatusFilter === 'pendiente'
+                ? 'bg-rose-500/30 text-rose-200 border border-rose-500/60 shadow-md'
+                : 'bg-slate-950 text-rose-400/80 border border-slate-800 hover:border-rose-500/40'
+            }`}
+          >
+            <span className="w-4 h-4 rounded-full bg-rose-500/30 border border-rose-400 flex items-center justify-center text-[9px] font-black text-rose-300">P</span>
+            Pendientes ({globalStats.pendiente})
+          </button>
+        </div>
       </div>
 
-      {/* Direct Search Results Panel (Directamente debajo de la casilla de búsqueda) */}
-      {searchTerm.trim() !== '' && (
+      {/* Direct Search / Filter Results Panel */}
+      {(searchTerm.trim() !== '' || selectedStatusFilter !== 'todos') && (
         <div className="bg-slate-900 border border-amber-500/40 p-2.5 sm:p-3.5 rounded-2xl shadow-2xl space-y-2.5">
           <div className="flex items-center justify-between border-b border-slate-800 pb-2">
             <div className="flex items-center gap-1.5">
               <Search className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               <h3 className="font-extrabold text-white text-xs sm:text-sm">
-                Resultados de Búsqueda
+                {searchTerm.trim() !== '' ? 'Resultados de Búsqueda' : `Socios ${selectedStatusFilter === 'al_dia' ? 'Al Día' : selectedStatusFilter === 'en_revision' ? 'En Revisión' : 'Pendientes'}`}
               </h3>
               <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-black">
                 {directSearchResults.length} {directSearchResults.length === 1 ? 'socio' : 'socios'}
               </span>
             </div>
             <button
-              onClick={() => setSearchTerm('')}
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedStatusFilter('todos');
+              }}
               className="text-[11px] font-bold text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
             >
               Limpiar ✕
@@ -810,7 +888,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                             <tr>
                                               <th className="px-1 py-1 rounded-l-md text-center">Foto</th>
                                               <th className="px-1.5 py-1">Nombre</th>
-                                              <th className="px-1.5 py-1">Categoría</th>
                                               <th className="px-1.5 py-1">Usuario</th>
                                               <th className="px-1.5 py-1">Teléfono</th>
                                               <th className="px-1 py-1 text-center">Estado</th>
@@ -875,18 +952,6 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                         {formattedNombre || '—'}
                                                       </div>
                                                     </button>
-                                                  </td>
-
-                                                  {/* Categoría (Arriba) y Sub-categoría (Abajo) */}
-                                                  <td className="px-1.5 py-1">
-                                                    <div className="leading-tight text-left max-w-[110px] sm:max-w-none">
-                                                      <span className="font-extrabold text-amber-300 text-[10px] block truncate">
-                                                        {formatShortCategoryName(catName || socio.categoria || 'General')}
-                                                      </span>
-                                                      <span className="text-[9px] text-slate-400 font-semibold block truncate">
-                                                        Sub: {subName || 'General'}
-                                                      </span>
-                                                    </div>
                                                   </td>
 
                                                   {/* Usuario (Solo Usuario, DNI oculto) */}
