@@ -36,34 +36,42 @@ export const DISCIPLINAS_CONFIG = [
   },
   {
     id: 'futsal_masculino',
-    nombre: 'Futsal Masculino',
+    nombre: 'Futsal Masc',
     icon: Trophy,
     color: 'from-blue-500/20 via-slate-900 to-slate-900 border-blue-500/30 text-blue-400',
     categorias: {
       'FUTSALA Promo': ['2016', '2017', '2018'],
-      'FUTSALA Masculino': ['1ra', '3ra', '4ta', '5ta', '6ta', '7ma', '8va'],
-      'BAFI Masculino': ['1ra', 'Reserva', '3ra', '4ta', '5ta']
+      'FUTSALA Masc': ['1ra', '3ra', '4ta', '5ta', '6ta', '7ma', '8va'],
+      'BAFI Masc': ['1ra', 'Reserva', '3ra', '4ta', '5ta']
     }
   },
   {
     id: 'futsal_femenino',
-    nombre: 'Futsal Femenino',
+    nombre: 'Futsal Fem',
     icon: Heart,
     color: 'from-purple-500/20 via-slate-900 to-slate-900 border-purple-500/30 text-purple-400',
     categorias: {
-      'BAFI Femenino': ['1ra', 'Reserva']
+      'BAFI Fem': ['1ra', 'Reserva']
     }
   },
   {
     id: 'futsal_mayores',
-    nombre: 'Futsal Mayores',
+    nombre: 'Futsal May',
     icon: Shield,
     color: 'from-emerald-500/20 via-slate-900 to-slate-900 border-emerald-500/30 text-emerald-400',
     categorias: {
-      'EDEFI Mayores': ['+30', '+35', '+42']
+      'EDEFI May': ['+30', '+35', '+42']
     }
   }
 ];
+
+export function formatShortCategoryName(cat) {
+  if (!cat) return 'General';
+  return cat
+    .replace(/Masculino/gi, 'Masc')
+    .replace(/Femenino/gi, 'Fem')
+    .replace(/Mayores/gi, 'May');
+}
 
 export function matchSocioToHierarchy(socio) {
   const userCat = socio.categoria || '';
@@ -467,9 +475,9 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                 <thead className="bg-slate-950 text-slate-400 uppercase text-[9px] font-bold tracking-tight">
                   <tr>
                     <th className="px-1 py-1 rounded-l-md text-center">Foto</th>
-                    <th className="px-1.5 py-1">Apellido / Nombre</th>
+                    <th className="px-1.5 py-1">Nombre</th>
                     <th className="px-1.5 py-1">Categoría</th>
-                    <th className="px-1.5 py-1">Usuario / DNI</th>
+                    <th className="px-1.5 py-1">Usuario</th>
                     <th className="px-1.5 py-1">Teléfono</th>
                     <th className="px-1 py-1 text-center">Estado</th>
                     <th className="px-1.5 py-1 text-right rounded-r-md">Acciones</th>
@@ -494,14 +502,14 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                     const { catName, subName } = matchSocioToHierarchy(socio);
 
                     const isAlDia = socio.estadoCuota === 'al_dia';
-                    const isRevision = socio.estadoCuota === 'pendiente';
+                    const isRevision = socio.estadoCuota === 'en_revision';
                     const letter = isAlDia ? 'A' : isRevision ? 'R' : 'P';
-                    const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente / Sin Pagar';
+                    const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente';
                     const badgeClass = isAlDia
-                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
                       : isRevision
-                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                      : 'bg-rose-500/20 text-rose-300 border-rose-500/50';
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/10'
+                      : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10';
 
                     return (
                       <tr key={socio.id} className="hover:bg-slate-800/60 transition-colors">
@@ -540,7 +548,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                         <td className="px-1.5 py-1">
                           <div className="leading-tight text-left max-w-[110px] sm:max-w-none">
                             <span className="font-extrabold text-amber-300 text-[10px] block truncate">
-                              {catName || socio.categoria || 'General'}
+                              {formatShortCategoryName(catName || socio.categoria || 'General')}
                             </span>
                             <span className="text-[9px] text-slate-400 font-semibold block truncate">
                               {subName || 'General'}
@@ -548,33 +556,34 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                           </div>
                         </td>
 
-                        {/* Usuario (Arriba) y DNI (Abajo) */}
+                        {/* Usuario (Solo Usuario, DNI oculto) */}
                         <td className="px-1.5 py-1 font-mono text-left">
-                          <div className="leading-tight max-w-[90px] sm:max-w-none">
-                            <div className="font-bold text-slate-200 text-[10px] truncate">@{socio.usuario || 'N/A'}</div>
-                            <div className="text-[9px] text-slate-400 font-semibold truncate">{socio.dni ? `DNI: ${socio.dni}` : ''}</div>
+                          <div className="font-bold text-slate-200 text-[10px] truncate max-w-[90px] sm:max-w-none">
+                            @{socio.usuario || 'N/A'}
                           </div>
                         </td>
 
-                        {/* Teléfono */}
+                        {/* Teléfono (en 2 líneas) */}
                         <td className="px-1.5 py-1 text-left">
                           {displayTel ? (
                             <a
                               href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold text-[10px] whitespace-nowrap"
+                              className="inline-flex flex-col items-start text-emerald-400 hover:text-emerald-300 hover:underline font-semibold leading-tight"
                               title="Abrir chat de WhatsApp"
                             >
-                              <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
-                              <span>{displayTel}</span>
+                              <div className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
+                                <Phone className="w-3 h-3 shrink-0" /> WA
+                              </div>
+                              <div className="text-[10px] text-emerald-300 font-mono tracking-tight">{displayTel}</div>
                             </a>
                           ) : (
                             <span className="text-slate-500 italic text-[9px]">Sin registrar</span>
                           )}
                         </td>
 
-                        {/* Estado Cuenta: Solo Inicial A, R, P */}
+                        {/* Estado Cuenta: Solo Inicial A, R, P (Por defecto P) */}
                         <td className="px-1 py-1 text-center">
                           <div className="flex items-center justify-center">
                             <span
@@ -730,7 +739,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                           <div className="flex items-center gap-2.5 min-w-0 flex-1">
                             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0"></span>
                             <div className="min-w-0 flex-1">
-                              <h4 className="font-bold text-white text-sm sm:text-base truncate">{catName}</h4>
+                              <h4 className="font-bold text-white text-sm sm:text-base truncate">{formatShortCategoryName(catName)}</h4>
                               {catCoaches.length > 0 && (
                                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
                                   <span className="text-[10px] font-black text-amber-300">
@@ -800,9 +809,9 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                           <thead className="bg-slate-900 text-slate-400 uppercase text-[9px] font-bold tracking-tight">
                                             <tr>
                                               <th className="px-1 py-1 rounded-l-md text-center">Foto</th>
-                                              <th className="px-1.5 py-1">Apellido / Nombre</th>
+                                              <th className="px-1.5 py-1">Nombre</th>
                                               <th className="px-1.5 py-1">Categoría</th>
-                                              <th className="px-1.5 py-1">Usuario / DNI</th>
+                                              <th className="px-1.5 py-1">Usuario</th>
                                               <th className="px-1.5 py-1">Teléfono</th>
                                               <th className="px-1 py-1 text-center">Estado</th>
                                               <th className="px-1.5 py-1 text-right rounded-r-md">Acciones</th>
@@ -825,14 +834,14 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                 .join(' ');
 
                                               const isAlDia = socio.estadoCuota === 'al_dia';
-                                              const isRevision = socio.estadoCuota === 'pendiente';
+                                              const isRevision = socio.estadoCuota === 'en_revision';
                                               const letter = isAlDia ? 'A' : isRevision ? 'R' : 'P';
-                                              const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente / Sin Pagar';
+                                              const label = isAlDia ? 'Al Día' : isRevision ? 'En Revisión' : 'Pendiente';
                                               const badgeClass = isAlDia
-                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-500/10'
                                                 : isRevision
-                                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                                                : 'bg-rose-500/20 text-rose-300 border-rose-500/50';
+                                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/10'
+                                                : 'bg-rose-500/20 text-rose-300 border-rose-500/50 shadow-rose-500/10';
 
                                               return (
                                                 <tr key={socio.id} className="hover:bg-slate-900/60 transition-colors">
@@ -872,7 +881,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                   <td className="px-1.5 py-1">
                                                     <div className="leading-tight text-left max-w-[110px] sm:max-w-none">
                                                       <span className="font-extrabold text-amber-300 text-[10px] block truncate">
-                                                        {catName || socio.categoria || 'General'}
+                                                        {formatShortCategoryName(catName || socio.categoria || 'General')}
                                                       </span>
                                                       <span className="text-[9px] text-slate-400 font-semibold block truncate">
                                                         Sub: {subName || 'General'}
@@ -880,33 +889,34 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                     </div>
                                                   </td>
 
-                                                  {/* Usuario (Arriba) y DNI (Abajo) */}
+                                                  {/* Usuario (Solo Usuario, DNI oculto) */}
                                                   <td className="px-1.5 py-1 font-mono text-left">
-                                                    <div className="leading-tight max-w-[90px] sm:max-w-none">
-                                                      <div className="font-bold text-slate-200 text-[10px] truncate">@{socio.usuario || 'N/A'}</div>
-                                                      <div className="text-[9px] text-slate-400 font-semibold truncate">{socio.dni ? `DNI: ${socio.dni}` : ''}</div>
+                                                    <div className="font-bold text-slate-200 text-[10px] truncate max-w-[90px] sm:max-w-none">
+                                                      @{socio.usuario || 'N/A'}
                                                     </div>
                                                   </td>
 
-                                                  {/* Teléfono / WA Link */}
+                                                  {/* Teléfono / WA Link (en 2 líneas) */}
                                                   <td className="px-1.5 py-1 text-left">
                                                     {displayTel ? (
                                                       <a
                                                         href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold text-[10px] whitespace-nowrap"
+                                                        className="inline-flex flex-col items-start text-emerald-400 hover:text-emerald-300 hover:underline font-semibold leading-tight"
                                                         title="Abrir chat de WhatsApp"
                                                       >
-                                                        <Phone className="w-3 h-3 text-emerald-400 shrink-0" />
-                                                        <span>{displayTel}</span>
+                                                        <div className="flex items-center gap-1 text-[9px] text-emerald-400 font-bold">
+                                                          <Phone className="w-3 h-3 shrink-0" /> WA
+                                                        </div>
+                                                        <div className="text-[10px] text-emerald-300 font-mono tracking-tight">{displayTel}</div>
                                                       </a>
                                                     ) : (
                                                       <span className="text-slate-500 italic text-[9px]">Sin registrar</span>
                                                     )}
                                                   </td>
 
-                                                  {/* Estado Cuenta: Solo Inicial A, R, P */}
+                                                  {/* Estado Cuenta: Solo Inicial A, R, P (Por defecto P) */}
                                                   <td className="px-1 py-1 text-center">
                                                     <div className="flex items-center justify-center">
                                                       <span

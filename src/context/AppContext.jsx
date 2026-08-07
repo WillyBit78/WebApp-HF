@@ -1689,6 +1689,9 @@ export const AppProvider = ({ children }) => {
     const hasApproved = periodPayments.some(p => p.estado === 'aprobado');
     if (hasApproved) return 'al_dia';
 
+    const hasPendingReview = periodPayments.some(p => p.estado === 'en_revision' || p.estado === 'pendiente_revision');
+    if (hasPendingReview) return 'en_revision';
+
     return 'pendiente';
   }, [payments]);
 
