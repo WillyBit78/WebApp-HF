@@ -411,7 +411,7 @@ export const ModalFichaSocio = ({ socio, onClose, onOpenCashModal }) => {
               </div>
 
               <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight truncate">
-                <span className="text-white uppercase font-black">{editForm.apellido}</span>, {(editForm.nombre || '').split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ')}
+                <span className="text-white uppercase font-black">{editForm.apellido}</span> {(editForm.nombre || '').split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ')}
               </h2>
 
               <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 text-xs text-amber-400 font-semibold">

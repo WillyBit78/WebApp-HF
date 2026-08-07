@@ -123,6 +123,16 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
     });
   }, [users]);
 
+  // Direct search results for immediate rendering right under search input
+  const directSearchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    const q = searchTerm.toLowerCase().trim();
+    return socios.filter(s => {
+      const full = `${s.nombre || ''} ${s.apellido || ''} ${s.dni || ''} ${s.numeroSocio || ''} ${s.usuario || ''} ${s.categoria || ''}`.toLowerCase();
+      return full.includes(q);
+    });
+  }, [socios, searchTerm]);
+
   // Group socios into hierarchy
   const hierarchyData = useMemo(() => {
     const map = {};
@@ -407,7 +417,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
         </div>
       </div>
 
-      {/* Search Toolbar (Sin botones de filtro sobrantes) */}
+      {/* Search Toolbar */}
       <div className="bg-slate-900 border border-slate-800 p-3.5 rounded-2xl shadow-xl">
         <div className="relative w-full">
           <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
@@ -416,10 +426,184 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
             placeholder="Buscar por nombre, usuario, DNI..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-3 py-2 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
+            className="w-full bg-slate-950 border border-slate-700 text-white pl-9 pr-8 py-2 rounded-xl text-xs font-medium focus:border-amber-400 focus:outline-none transition-colors"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-2.5 text-slate-400 hover:text-white text-xs font-bold cursor-pointer"
+              title="Limpiar búsqueda"
+            >
+              ✕
+            </button>
+          )}
         </div>
       </div>
+
+      {/* Direct Search Results Panel (Directamente debajo de la casilla de búsqueda) */}
+      {searchTerm.trim() !== '' && (
+        <div className="bg-slate-900 border border-amber-500/40 p-4 sm:p-5 rounded-3xl shadow-2xl space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-amber-400 shrink-0" />
+              <h3 className="font-extrabold text-white text-sm sm:text-base">
+                Resultados de Búsqueda
+              </h3>
+              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-full text-xs font-black">
+                {directSearchResults.length} {directSearchResults.length === 1 ? 'socio encontrado' : 'socios encontrados'}
+              </span>
+            </div>
+            <button
+              onClick={() => setSearchTerm('')}
+              className="text-xs font-bold text-slate-400 hover:text-amber-400 transition-colors cursor-pointer"
+            >
+              Limpiar búsqueda ✕
+            </button>
+          </div>
+
+          {directSearchResults.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-950 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
+                  <tr>
+                    <th className="p-2.5 rounded-l-lg">Foto</th>
+                    <th className="p-2.5">Nombre y Apellido</th>
+                    <th className="p-2.5">Categoría</th>
+                    <th className="p-2.5">Usuario / DNI</th>
+                    <th className="p-2.5">Teléfono</th>
+                    <th className="p-2.5">Estado Cuenta</th>
+                    <th className="p-2.5 text-right rounded-r-lg">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 text-slate-200">
+                  {directSearchResults.map(socio => {
+                    const rawAp = socio.apellido || '';
+                    const cleanNoMeta = rawAp.split(' | META:')[0] || rawAp;
+                    const apParts = cleanNoMeta.split(' | Tel: ');
+                    const cleanApellido = (apParts[0] || cleanNoMeta).trim();
+                    const embeddedTel = apParts[1] || '';
+                    const displayTel = socio.telefono || embeddedTel || '';
+
+                    const formattedApellido = cleanApellido.toUpperCase();
+                    const rawNombre = (socio.nombre || socio.nombres || '').trim();
+                    const formattedNombre = rawNombre
+                      .split(' ')
+                      .map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '')
+                      .join(' ');
+
+                    return (
+                      <tr key={socio.id} className="hover:bg-slate-800/50 transition-colors">
+                        {/* Foto */}
+                        <td className="p-2.5">
+                          <div 
+                            onClick={() => openFichaSocio(socio)}
+                            className="w-9 h-9 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-amber-400 font-bold text-xs shrink-0 overflow-hidden cursor-pointer hover:border-amber-400 transition-colors"
+                            title="Ver Ficha Personal"
+                          >
+                            {socio.fotoRostro || socio.fotoUrl || socio.foto ? (
+                              <img src={socio.fotoRostro || socio.fotoUrl || socio.foto} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              (formattedNombre || 'S').charAt(0).toUpperCase()
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Nombre y Apellido (SIN COMA entre Apellido y Nombre) */}
+                        <td className="p-2.5">
+                          <button
+                            onClick={() => openFichaSocio(socio)}
+                            className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs flex items-center gap-1.5"
+                            title="Haz clic para ver Ficha Personal completa"
+                          >
+                            <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>{' '}
+                            <span className="font-semibold text-slate-200">{formattedNombre}</span>
+                          </button>
+                        </td>
+
+                        {/* Categoría (Requerido: visibilidad fuera de disciplina/categoria) */}
+                        <td className="p-2.5">
+                          <span className="bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-lg text-[11px] font-extrabold inline-block whitespace-nowrap shadow-sm">
+                            {socio.categoria || 'General'}
+                          </span>
+                        </td>
+
+                        {/* Usuario y DNI */}
+                        <td className="p-2.5 font-mono text-slate-300 text-xs">
+                          <div className="font-semibold text-slate-200">@{socio.usuario || 'N/A'}</div>
+                          {socio.dni && <div className="text-[10px] text-slate-400">DNI: {socio.dni}</div>}
+                        </td>
+
+                        {/* Teléfono */}
+                        <td className="p-2.5 text-slate-300 text-xs">
+                          {displayTel ? (
+                            <a
+                              href={`https://wa.me/${displayTel.replace(/\D/g, '').replace(/^0+/, '').replace(/^(?!54)/, '549')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 hover:underline font-semibold"
+                              title="Abrir chat de WhatsApp"
+                            >
+                              <Phone className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                              {displayTel}
+                            </a>
+                          ) : (
+                            <span className="text-slate-500 italic">Sin registrar</span>
+                          )}
+                        </td>
+
+                        {/* Estado Cuenta */}
+                        <td className="p-2.5">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            socio.estadoCuota === 'al_dia'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                              : socio.estadoCuota === 'pendiente'
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                              : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                          }`}>
+                            {socio.estadoCuota === 'al_dia' ? 'Al Día' : socio.estadoCuota === 'pendiente' ? 'En Revisión' : 'Sin Pagar'}
+                          </span>
+                        </td>
+
+                        {/* Acciones */}
+                        <td className="p-2.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {canManage && (
+                              <button
+                                onClick={() => {
+                                  setCashModalSocio(socio);
+                                  setCashMonto(socio.montoCuota || 15000);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+                                title="Cobrar cuota en efectivo"
+                              >
+                                <Banknote className="w-3.5 h-3.5" /> Efectivo
+                              </button>
+                            )}
+
+                            {canManage && (
+                              <button
+                                onClick={() => setUserToDelete(socio)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all cursor-pointer"
+                                title="Dar de baja socio (pide confirmación)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-6 text-slate-400 text-xs italic">
+              No se encontraron socios que coincidan con "<span className="text-amber-400 font-semibold">{searchTerm}</span>".
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Main Hierarchy List (Disciplinas -> Categorías -> Sub-categorías -> Socios) */}
       <div className="space-y-4">
@@ -642,7 +826,7 @@ export const DashboardSocios = ({ onOpenModalUser = () => {}, onOpenModalStaff =
                                                       className="text-left font-bold text-white hover:text-amber-400 hover:underline transition-colors cursor-pointer text-xs flex items-center gap-1.5"
                                                       title="Haz clic para ver Ficha Personal completa"
                                                     >
-                                                      <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>, 
+                                                      <span className="font-extrabold tracking-wide text-white">{formattedApellido}</span>{' '}
                                                       <span className="font-semibold text-slate-200">{formattedNombre}</span>
                                                     </button>
                                                   </td>
